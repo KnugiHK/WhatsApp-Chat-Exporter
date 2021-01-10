@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Whatsapp - {{ name }}</title> 
+		<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
+	</head>
+	<body>
+		<h1 class="w3-center w3-top" style="position:sticky">Chat history with {{ name }}</h1>
+		<div class="w3-container w3-sand w3-center" style="width:60%;margin:auto;z-index: 999999;">
+			<table class="w3-center" style="width:100%;margin-right:;">
+				<div style="width:100%">
+				{% for msg in msgs -%}
+					<tr>
+					{% if msg.from_me == true %}
+					<td style="text-align: right;height:auto;">{{ msg.data }}</td>
+					{% else %}
+					<td style="text-align: left;height:auto;">{{ msg.data }}</td>
+					{% endif %}
+					</tr>
+				{% endfor %}
+				</div>
+			</table>
+		</div>
+	</body>
+</html>
