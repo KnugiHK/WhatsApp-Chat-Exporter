@@ -48,7 +48,13 @@
 						</div>
 						<div class="w3-row">
 							<div class="w3-col m10 l10">
-								<div style="text-align: right;">{% filter escape %}{{ msg.data }}{% endfilter %}</div>
+								<div style="text-align: right;">
+								{% if msg.media == false %}
+								{% filter escape %}{{ msg.data }}{% endfilter %}
+								{% else %}
+								<img src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+								{% endif %}
+								</div>
 							</div>
 							<div class="w3-col m2 l2" style="padding-left: 10px"><span>{icon}</span></div>
 						</div>
@@ -60,7 +66,13 @@
 						<div class="w3-row">
 							<div class="w3-col m2 l2"><span>{icon}</span></div>
 							<div class="w3-col m10 l10">
-								<div style="text-align: left;">{% filter escape %}{{ msg.data }}{% endfilter %}</div>
+								<div style="text-align: left;">
+								{% if msg.media == false %}
+								{% filter escape %}{{ msg.data }}{% endfilter %}
+								{% else %}
+								<img style="max-width:100%; max-height:100%;" src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+								{% endif %}
+								</div>
 							</div>
 						</div>
 						{% endif %}
