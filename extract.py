@@ -105,10 +105,11 @@ for current, i in enumerate(data):
         f.write(template.render(name=data[i]["name"] if data[i]["name"] is not None else phone_number, msgs=data[i]["messages"].values()))
     if current % 10 == 0:
         print(f"Creating HTML...({current}/{total_row_number})", end="\r")
-print(f"\nCreating HTML...({total_row_number}/{total_row_number})", end="\r")
+print(f"Creating HTML...({total_row_number}/{total_row_number})", end="\r")
 
-print("\nWriting JSON file...")
 with open("result.json", "w") as f:
-    f.write(json.dumps(data))
+    data = json.dumps(data)
+    print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
+    f.write(data)
 
 print("Everything is done!")
