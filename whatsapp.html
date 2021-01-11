@@ -3,23 +3,73 @@
 	<head>
 		<title>Whatsapp - {{ name }}</title> 
 		<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
+		<style>
+		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400&display=swap');
+		html {
+			font-family: 'Noto Sans HK', sans-serif;
+			font-size: 12px;
+		}
+		header {
+			position: fixed;
+			z-index: 20;
+			border-bottom: 2px solid #e3e6e8;
+			font-size: 2em;
+			font-weight: bolder;
+			background-color: white;
+			padding: 20px 0 20px 0;
+		}
+		footer {
+			border-top: 2px solid #e3e6e8;
+			font-size: 2em;
+			padding: 20px 0 20px 0;
+		}
+		article {
+			width:500px;
+			margin:100px auto;
+			z-index:10;
+		}
+		</style>
 	</head>
 	<body>
-		<h1 class="w3-center w3-top" style="position:sticky">Chat history with {{ name }}</h1>
-		<div class="w3-container w3-sand w3-center" style="width:60%;margin:auto;z-index: 999999;">
-			<table class="w3-center" style="width:100%;margin-right:;">
-				<div style="width:100%">
+		<header class="w3-center w3-top">Chat history with {{ name }}</header>
+		<article class="w3-container">
+				<div class="table" style="width:100%">
+				{% set last = {'last': 946688461.001} %}
 				{% for msg in msgs -%}
-					<tr>
-					{% if msg.from_me == true %}
-					<td style="text-align: right;height:auto;">{{ msg.data }}</td>
-					{% else %}
-					<td style="text-align: left;height:auto;">{{ msg.data }}</td>
-					{% endif %}
-					</tr>
+					<div class="w3-row" style="padding-bottom: 10px">
+						{% if determine_day(last.last, msg.timestamp) is not none  %}
+						<div class="w3-center" style="color:#70777c;padding: 10px 0 10px 0;">{{ determine_day(last.last, msg.timestamp) }}</div>
+						{% if last.update({'last': msg.timestamp}) %}{% endif %}
+						{% endif %}
+						{% if msg.from_me == true %}
+						<div class="w3-row">
+							<div style="float: left; color:#70777c;">{{ msg.time }}</div>
+							<div style="padding-left: 10px; text-align: right; color: #3892da;">You</div>
+						</div>
+						<div class="w3-row">
+							<div class="w3-col m10 l10">
+								<div style="text-align: right;">{% filter escape %}{{ msg.data }}{% endfilter %}</div>
+							</div>
+							<div class="w3-col m2 l2" style="padding-left: 10px"><span>{icon}</span></div>
+						</div>
+						{% else %}
+						<div class="w3-row">
+							<div style="padding-right: 10px; float: left; color: #3892da;">{{ name }}</div>
+							<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
+						</div>
+						<div class="w3-row">
+							<div class="w3-col m2 l2"><span>{icon}</span></div>
+							<div class="w3-col m10 l10">
+								<div style="text-align: left;">{% filter escape %}{{ msg.data }}{% endfilter %}</div>
+							</div>
+						</div>
+						{% endif %}
+					</div>
 				{% endfor %}
 				</div>
-			</table>
-		</div>
+		</article>
+		<footer class="w3-center">
+			End of history
+		</footer>
 	</body>
 </html>
