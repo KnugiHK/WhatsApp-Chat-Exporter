@@ -28,6 +28,11 @@
 			margin:100px auto;
 			z-index:10;
 		}
+		img, video {
+			max-width:100%;
+			
+			width: 70%;
+		}
 		</style>
 	</head>
 	<body>
@@ -50,9 +55,23 @@
 							<div class="w3-col m10 l10">
 								<div style="text-align: right;">
 								{% if msg.media == false %}
-								{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% filter escape %}{{ msg.data }}{% endfilter %}
 								{% else %}
-								<img src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									{% if "image/" in msg.mime %}
+									<img src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									{% elif "audio/" in msg.mime %}
+									<audio controls="controls" autobuffer="autobuffer">
+										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									</audio>
+									{% elif "video/" in msg.mime %}
+									<video controls="controls" autobuffer="autobuffer">
+										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									</video>
+									{% elif "/" in msg.mime %}
+										{document}
+									{% else %}
+										{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% endif %}
 								{% endif %}
 								</div>
 							</div>
@@ -68,9 +87,23 @@
 							<div class="w3-col m10 l10">
 								<div style="text-align: left;">
 								{% if msg.media == false %}
-								{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% filter escape %}{{ msg.data }}{% endfilter %}
 								{% else %}
-								<img style="max-width:100%; max-height:100%;" src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									{% if "image/" in msg.mime %}
+									<img src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									{% elif "audio/" in msg.mime %}
+									<audio controls="controls" autobuffer="autobuffer">
+										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									</audio>
+									{% elif "video/" in msg.mime %}
+									<video controls="controls" autobuffer="autobuffer">
+										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									</video>
+									{% elif "/" in msg.mime %}
+										{document}
+									{% else %}
+										{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% endif %}
 								{% endif %}
 								</div>
 							</div>

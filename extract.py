@@ -6,12 +6,13 @@ import json
 import jinja2
 import os
 import base64
+import requests
 from datetime import datetime
+from mimetypes import MimeTypes
 
 def determine_day(last, current):
     last = datetime.fromtimestamp(last).date()
     current = datetime.fromtimestamp(current).date()
-    #print(last, current)
     if last == current:
         return None
     else:
@@ -31,6 +32,7 @@ row = c.fetchone()
 while row is not None:
     data[row[0]] = {"name": row[1], "messages":{}}
     row = c.fetchone()
+wa.close()
 
 # Get message history
 msg = sqlite3.connect("msgstore.db")
@@ -65,13 +67,38 @@ print(f"\nGathering media...(0/{total_row_number})", end="\r")
 i = 0
 c.execute("""SELECT messages.key_remote_jid, message_row_id, file_path, message_url, mime_type, media_key FROM message_media INNER JOIN messages ON message_media.message_row_id = messages._id ORDER BY messages.key_remote_jid ASC""")
 content = c.fetchone()
+mime = MimeTypes()
 while content is not None:
     file_path = f"WhatsApp/{content[2]}"
     if os.path.isfile(file_path):
         with open(file_path, "rb") as f:
             data[content[0]]["messages"][content[1]]["data"] = base64.b64encode(f.read()).decode("utf-8")
             data[content[0]]["messages"][content[1]]["media"] = True
-    data[content[0]]["messages"][content[1]]["mime"] = content[4]
+        if content[4] is None:
+            guess = mime.guess_type(file_path)[0]
+            if guess is not None:
+                data[content[0]]["messages"][content[1]]["mime"] = guess
+            else:
+                data[content[0]]["messages"][content[1]]["mime"] = "image/jpeg"
+        else:
+            data[content[0]]["messages"][content[1]]["mime"] = content[4]
+    else:
+        if "https://mmg" in content[4]:
+            try:
+                r = requests.get(content[3])
+                if r.status_code != 200:
+                    raise RuntimeError()
+            except:
+                data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+                data[content[0]]["messages"][content[1]]["media"] = True
+                data[content[0]]["messages"][content[1]]["mime"] = "media"
+            else:
+                open('temp.file', 'wb').write(r.content)
+                open('temp.asdasda', "a").write(content[3])
+        else:
+            data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+            data[content[0]]["messages"][content[1]]["media"] = True
+            data[content[0]]["messages"][content[1]]["mime"] = "media"
     i += 1
     if i % 1000 == 0:
         print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -87,6 +114,14 @@ template = templateEnv.get_template(TEMPLATE_FILE)
 total_row_number = len(data)
 print(f"\nCreating HTML...(0/{total_row_number})", end="\r")
 
+if len(sys.argv) < 3:
+    output_folder = "temp"    
+else:
+    output_folder = sys.argv[2]
+
+if not os.path.isdir(output_folder):
+    os.mkdir(output_folder)
+
 for current, i in enumerate(data):
     if len(data[i]["messages"]) == 0:
         continue
@@ -100,11 +135,12 @@ for current, i in enumerate(data):
         if file_name != "":
             file_name += "-"
         file_name += data[i]["name"].replace("/", "-")
-    
-    with open(f"temp/{file_name}.html", "w", encoding="utf-8") as f:
+
+    with open(f"{output_folder}/{file_name}.html", "w", encoding="utf-8") as f:
         f.write(template.render(name=data[i]["name"] if data[i]["name"] is not None else phone_number, msgs=data[i]["messages"].values()))
     if current % 10 == 0:
         print(f"Creating HTML...({current}/{total_row_number})", end="\r")
+    
 print(f"Creating HTML...({total_row_number}/{total_row_number})", end="\r")
 
 with open("result.json", "w") as f:
