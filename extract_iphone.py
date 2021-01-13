@@ -7,8 +7,10 @@ import jinja2
 import os
 import base64
 import requests
+import shutil
 from datetime import datetime
 from mimetypes import MimeTypes
+
 
 def determine_day(last, current):
     last = datetime.fromtimestamp(last).date()
@@ -69,10 +71,9 @@ content = c.fetchone()
 mime = MimeTypes()
 while content is not None:
     file_path = f"Message/{content[2]}"
+    data[content[0]]["messages"][content[1]]["media"] = True
     if os.path.isfile(file_path):
-        with open(file_path, "rb") as f:
-            data[content[0]]["messages"][content[1]]["data"] = base64.b64encode(f.read()).decode("utf-8")
-            data[content[0]]["messages"][content[1]]["media"] = True
+        data[content[0]]["messages"][content[1]]["data"] = file_path
         if content[4] is None:
             guess = mime.guess_type(file_path)[0]
             if guess is not None:
@@ -82,22 +83,17 @@ while content is not None:
         else:
             data[content[0]]["messages"][content[1]]["mime"] = content[4]
     else:
-        if "https://mmg" in content[4]:
-            try:
-                r = requests.get(content[3])
-                if r.status_code != 200:
-                    raise RuntimeError()
-            except:
-                data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
-                data[content[0]]["messages"][content[1]]["media"] = True
-                data[content[0]]["messages"][content[1]]["mime"] = "media"
-            else:
-                open('temp.file', 'wb').write(r.content)
-                open('temp.asdasda', "a").write(content[3])
-        else:
-            data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
-            data[content[0]]["messages"][content[1]]["media"] = True
-            data[content[0]]["messages"][content[1]]["mime"] = "media"
+        # if "https://mmg" in content[4]:
+            # try:
+                # r = requests.get(content[3])
+                # if r.status_code != 200:
+                    # raise RuntimeError()
+            # except:
+                # data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+                # data[content[0]]["messages"][content[1]]["mime"] = "media"
+        # else:
+        data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+        data[content[0]]["messages"][content[1]]["mime"] = "media"
     i += 1
     if i % 1000 == 0:
         print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -141,6 +137,9 @@ for current, i in enumerate(data):
         print(f"Creating HTML...({current}/{total_row_number})", end="\r")
     
 print(f"Creating HTML...({total_row_number}/{total_row_number})", end="\r")
+
+if not os.path.isdir(f"{output_folder}/Message"):
+    shutil.move("Message", f"{output_folder}/")
 
 with open("result.json", "w") as f:
     data = json.dumps(data)

@@ -58,14 +58,14 @@
 									{% filter escape %}{{ msg.data }}{% endfilter %}
 								{% else %}
 									{% if "image/" in msg.mime %}
-									<img src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									<img src="{{ msg.data }}" />
 									{% elif "audio/" in msg.mime %}
 									<audio controls="controls" autobuffer="autobuffer">
-										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+										<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
 									<video controls="controls" autobuffer="autobuffer">
-										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+										<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									</video>
 									{% elif "/" in msg.mime %}
 										{document}
@@ -90,14 +90,14 @@
 									{% filter escape %}{{ msg.data }}{% endfilter %}
 								{% else %}
 									{% if "image/" in msg.mime %}
-									<img src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+									<img src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									{% elif "audio/" in msg.mime %}
 									<audio controls="controls" autobuffer="autobuffer">
-										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+										<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
 									<video controls="controls" autobuffer="autobuffer">
-										<source src="data:{{ msg.mime }};base64, {% filter escape %}{{ msg.data }}{% endfilter %}" />
+										<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									</video>
 									{% elif "/" in msg.mime %}
 										{document}
