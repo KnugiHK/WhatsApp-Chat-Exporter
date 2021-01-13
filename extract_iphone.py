@@ -23,32 +23,33 @@ data = {}
 # Get contacts
 msg = sqlite3.connect("7c7fba66680ef796b916b067077cc246adacf01d")
 c = msg.cursor()
-c.execute("""SELECT count() FROM wa_contacts""")
+c.execute("""SELECT count() FROM ZWACHATSESSION""")
 total_row_number = c.fetchone()[0]
 print(f"Gathering contacts...({total_row_number})")
 
-c.execute("""SELECT CONTEACTJID, ZPARTNERNAME FROM ZWACHATSESSION; """)
+c.execute("""SELECT ZCONTACTJID, ZPARTNERNAME FROM ZWACHATSESSION; """)
 row = c.fetchone()
 while row is not None:
     data[row[0]] = {"name": row[1], "messages":{}}
     row = c.fetchone()
-wa.close()
 
 # Get message history
 c.execute("""SELECT count() FROM ZWAMESSAGE""")
 total_row_number = c.fetchone()[0]
+apple_time = datetime.timestamp(datetime(2001,1,1))
 print(f"Gathering messages...(0/{total_row_number})", end="\r")
 
-c.execute("""SELECT COALESCE(ZFROMJID, ZTOJID), Z_PK, ZISFROMME, ZSENTDATE, ZTEXT FROM ZWAMESSAGE;""")
+c.execute("""SELECT COALESCE(ZFROMJID, ZTOJID), Z_PK, ZISFROMME, ZMESSAGEDATE, ZTEXT FROM ZWAMESSAGE;""")
 i = 0
 content = c.fetchone()
 while content is not None:
     if content[0] not in data:
         data[content[0]] = {"name": None, "messages": {}}
+    ts = apple_time + content[3]
     data[content[0]]["messages"][content[1]] = {
         "from_me": bool(content[2]),
-        "timestamp": content[3]/1000,
-        "time": datetime.fromtimestamp(content[3]/1000).strftime("%H:%M"),
+        "timestamp": ts,
+        "time": datetime.fromtimestamp(ts).strftime("%H:%M"),
         "data": content[4],
         "media": False
     }
@@ -67,7 +68,7 @@ c.execute("""SELECT COALESCE(ZWAMESSAGE.ZFROMJID, ZWAMESSAGE.ZTOJID) as _id, ZME
 content = c.fetchone()
 mime = MimeTypes()
 while content is not None:
-    file_path = f"WhatsApp/{content[2]}"
+    file_path = f"Message/{content[2]}"
     if os.path.isfile(file_path):
         with open(file_path, "rb") as f:
             data[content[0]]["messages"][content[1]]["data"] = base64.b64encode(f.read()).decode("utf-8")
@@ -133,8 +134,7 @@ for current, i in enumerate(data):
         if file_name != "":
             file_name += "-"
         file_name += data[i]["name"].replace("/", "-")
-    with open("asd", "w") as f:
-        f.write(json.dumps(data[i]["messages"]))
+
     with open(f"{output_folder}/{file_name}.html", "w", encoding="utf-8") as f:
         f.write(template.render(name=data[i]["name"] if data[i]["name"] is not None else phone_number, msgs=data[i]["messages"].values()))
     if current % 10 == 0:
