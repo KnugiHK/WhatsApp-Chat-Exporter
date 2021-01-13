@@ -12,14 +12,14 @@
 		header {
 			position: fixed;
 			z-index: 20;
-			border-bottom: 2px solid #e3e6e8;
+			border-bottom: 2px solid #e3e6e7;
 			font-size: 2em;
 			font-weight: bolder;
 			background-color: white;
 			padding: 20px 0 20px 0;
 		}
 		footer {
-			border-top: 2px solid #e3e6e8;
+			border-top: 2px solid #e3e6e7;
 			font-size: 2em;
 			padding: 20px 0 20px 0;
 		}
@@ -68,14 +68,14 @@
 										<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									</video>
 									{% elif "/" in msg.mime %}
-										{document}
+										{The file cannot be displayed here, however it should be located at {% filter escape %}{{ msg.data }}{% endfilter %}}
 									{% else %}
 										{% filter escape %}{{ msg.data }}{% endfilter %}
 									{% endif %}
 								{% endif %}
 								</div>
 							</div>
-							<div class="w3-col m2 l2" style="padding-left: 10px"><span>{icon}</span></div>
+							<div class="w3-col m2 l2" style="padding-left: 10px"><img src="{{ my_avatar }}"></div>
 						</div>
 						{% else %}
 						<div class="w3-row">
@@ -83,7 +83,7 @@
 							<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
 						</div>
 						<div class="w3-row">
-							<div class="w3-col m2 l2"><span>{icon}</span></div>
+							<div class="w3-col m2 l2"><img src="{{ their_avatar }}"></div>
 							<div class="w3-col m10 l10">
 								<div style="text-align: left;">
 								{% if msg.media == false %}
@@ -100,7 +100,7 @@
 										<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
 									</video>
 									{% elif "/" in msg.mime %}
-										{document}
+										{The file cannot be displayed here, however it should be located at {% filter escape %}{{ msg.data }}{% endfilter %}}
 									{% else %}
 										{% filter escape %}{{ msg.data }}{% endfilter %}
 									{% endif %}

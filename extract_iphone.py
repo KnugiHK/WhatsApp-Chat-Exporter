@@ -79,7 +79,7 @@ while content is not None:
             if guess is not None:
                 data[content[0]]["messages"][content[1]]["mime"] = guess
             else:
-                data[content[0]]["messages"][content[1]]["mime"] = "image/jpeg"
+                data[content[0]]["messages"][content[1]]["mime"] = "data/data"
         else:
             data[content[0]]["messages"][content[1]]["mime"] = content[4]
     else:
@@ -95,7 +95,7 @@ while content is not None:
         data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
         data[content[0]]["messages"][content[1]]["mime"] = "media"
     i += 1
-    if i % 1000 == 0:
+    if i % 100 == 0:
         print(f"Gathering media...({i}/{total_row_number})", end="\r")
     content = c.fetchone()
 print(f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
@@ -130,9 +130,12 @@ for current, i in enumerate(data):
         if file_name != "":
             file_name += "-"
         file_name += data[i]["name"].replace("/", "-")
+        name = data[i]["name"]
+    else:
+        name = phone_number
 
     with open(f"{output_folder}/{file_name}.html", "w", encoding="utf-8") as f:
-        f.write(template.render(name=data[i]["name"] if data[i]["name"] is not None else phone_number, msgs=data[i]["messages"].values()))
+        f.write(template.render(name=name, msgs=data[i]["messages"].values(), my_avatar=None, their_avatar=f"WhatsApp/Avatars/{i}.j"))
     if current % 10 == 0:
         print(f"Creating HTML...({current}/{total_row_number})", end="\r")
     
