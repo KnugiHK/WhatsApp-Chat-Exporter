@@ -45,7 +45,7 @@ total_row_number = c.fetchone()[0]
 print(f"Gathering messages...(0/{total_row_number})", end="\r")
 
 phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
-c.execute("""SELECT messages.key_remote_jid, messages._id, messages.key_from_me, messages.timestamp, messages.data, messages.status, messages.edit_version, messages.thumb_image, messages.remote_resource, messages.media_wa_type, messages.latitude, messages.longitude, messages_quotes.key_id as quoted, messages.key_id, messages_quotes.data FROM messages LEFT JOIN messages_quotes ON messages.quoted_row_id = messages_quotes._id; """)
+c.execute("""SELECT messages.key_remote_jid, messages._id, messages.key_from_me, messages.timestamp, messages.data, messages.status, messages.edit_version, messages.thumb_image, messages.remote_resource, messages.media_wa_type, messages.latitude, messages.longitude, messages_quotes.key_id as quoted, messages.key_id, messages_quotes.data, messages.media_caption FROM messages LEFT JOIN messages_quotes ON messages.quoted_row_id = messages_quotes._id; """)
 i = 0
 content = c.fetchone()
 while content is not None:
@@ -72,6 +72,11 @@ while content is not None:
         data[content[0]]["messages"][content[1]]["quoted_data"] = content[14]
     else:
         data[content[0]]["messages"][content[1]]["reply"] = None
+    
+    if content[15] is not None:
+        data[content[0]]["messages"][content[1]]["caption"] = content[15]
+    else:
+        data[content[0]]["messages"][content[1]]["caption"] = None
     
     if content[5] == 6:
         if "-" in content[0]:
@@ -229,7 +234,7 @@ for current, i in enumerate(data):
     else:
         name = phone_number
     safe_file_name = ''
-    safe_file_name = "".join(x for x in file_name if x.isalnum())
+    safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
     with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
         f.write(template.render(name=name, msgs=data[i]["messages"].values(), my_avatar=None, their_avatar=f"WhatsApp/Avatars/{i}.j"))
     if current % 10 == 0:

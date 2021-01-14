@@ -52,7 +52,9 @@ while content is not None:
         "from_me": bool(content[2]),
         "timestamp": ts,
         "time": datetime.fromtimestamp(ts).strftime("%H:%M"),
-        "media": False
+        "media": False,
+        "reply": None,
+        "caption": None
     }
     if "-" in content[0] and content[2] == 0:
         name = None
@@ -108,12 +110,13 @@ c.execute("""SELECT count() FROM ZWAMEDIAITEM""")
 total_row_number = c.fetchone()[0]
 print(f"\nGathering media...(0/{total_row_number})", end="\r")
 i = 0
-c.execute("""SELECT COALESCE(ZWAMESSAGE.ZFROMJID, ZWAMESSAGE.ZTOJID) as _id, ZMESSAGE, ZMEDIALOCALPATH, ZMEDIAURL, ZVCARDSTRING, ZMEDIAKEY FROM ZWAMEDIAITEM INNER JOIN ZWAMESSAGE ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK WHERE ZMEDIALOCALPATH IS NOT NULL ORDER BY _id ASC""")
+c.execute("""SELECT COALESCE(ZWAMESSAGE.ZFROMJID, ZWAMESSAGE.ZTOJID) as _id, ZMESSAGE, ZMEDIALOCALPATH, ZMEDIAURL, ZVCARDSTRING, ZMEDIAKEY, ZTITLE FROM ZWAMEDIAITEM INNER JOIN ZWAMESSAGE ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK WHERE ZMEDIALOCALPATH IS NOT NULL ORDER BY _id ASC""")
 content = c.fetchone()
 mime = MimeTypes()
 while content is not None:
     file_path = f"Message/{content[2]}"
     data[content[0]]["messages"][content[1]]["media"] = True
+    
     if os.path.isfile(file_path):
         data[content[0]]["messages"][content[1]]["data"] = file_path
         if content[4] is None:
@@ -136,6 +139,8 @@ while content is not None:
         # else:
         data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
         data[content[0]]["messages"][content[1]]["mime"] = "media"
+    if content[6] is not None:
+        data[content[0]]["messages"][content[1]]["caption"] = content[6]
     i += 1
     if i % 100 == 0:
         print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -195,7 +200,7 @@ for current, i in enumerate(data):
         name = phone_number
     
     safe_file_name = ''
-    safe_file_name = "".join(x for x in file_name if x.isalnum())
+    safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
     with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
         f.write(template.render(name=name, msgs=data[i]["messages"].values(), my_avatar=None, their_avatar=f"WhatsApp/Avatars/{i}.j"))
     if current % 10 == 0:

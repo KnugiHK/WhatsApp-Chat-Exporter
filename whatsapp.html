@@ -33,7 +33,6 @@
 		}
 		img, video {
 			max-width:100%;
-			width: 70%;
 		}
 		a.anchor {
 			display: block;
@@ -77,19 +76,23 @@
 								{% filter escape %}{{ msg.data or "{This message is not supported yet}" | replace('\n', '<br>') }}{% endfilter %}
 							{% else %}
 								{% if "image/" in msg.mime %}
-								<img src="{{ msg.data }}" />
+								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
 								{% elif "audio/" in msg.mime %}
 								<audio controls="controls" autobuffer="autobuffer">
-									<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
+									<source src="{{ msg.data }}" />
 								</audio>
 								{% elif "video/" in msg.mime %}
 								<video controls="controls" autobuffer="autobuffer">
-									<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
+									<source src="{{ msg.data }}" />
 								</video>
 								{% elif "/" in msg.mime %}
-									{The file cannot be displayed here, however it should be located at {% filter escape %}{{ msg.data }}{% endfilter %}}
+									{The file cannot be displayed here, however it should be located at {{ msg.data }}}
 								{% else %}
 									{% filter escape %}{{ msg.data }}{% endfilter %}
+								{% endif %}
+								{% if msg.caption is not none %}
+								<br>
+								{{ msg.caption }}
 								{% endif %}
 							{% endif %}
 							</div>
@@ -121,19 +124,23 @@
 								{% filter escape %}{{ msg.data or "{This message is not supported yet}" }}{% endfilter %}
 							{% else %}
 								{% if "image/" in msg.mime %}
-								<img src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
+								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
 								{% elif "audio/" in msg.mime %}
 								<audio controls="controls" autobuffer="autobuffer">
-									<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
+									<source src="{{ msg.data }}" />
 								</audio>
 								{% elif "video/" in msg.mime %}
 								<video controls="controls" autobuffer="autobuffer">
-									<source src="{% filter escape %}{{ msg.data }}{% endfilter %}" />
+									<source src="{{ msg.data }}" />
 								</video>
 								{% elif "/" in msg.mime %}
-									{The file cannot be displayed here, however it should be located at {% filter escape %}{{ msg.data }}{% endfilter %}}
+									{The file cannot be displayed here, however it should be located at {{ msg.data }}}
 								{% else %}
 									{% filter escape %}{{ msg.data }}{% endfilter %}
+								{% endif %}
+								{% if msg.caption is not none %}
+								<br>
+								{{ msg.caption }}
 								{% endif %}
 							{% endif %}
 							</div>
