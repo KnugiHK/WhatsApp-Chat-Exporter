@@ -30,7 +30,6 @@
 		}
 		img, video {
 			max-width:100%;
-			
 			width: 70%;
 		}
 		</style>
@@ -55,7 +54,7 @@
 							<div class="w3-col m10 l10">
 								<div style="text-align: right;">
 								{% if msg.media == false %}
-									{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% filter escape %}{{ msg.data or "{This message is not supported yet}" }}{% endfilter %}
 								{% else %}
 									{% if "image/" in msg.mime %}
 									<img src="{{ msg.data }}" />
@@ -79,7 +78,13 @@
 						</div>
 						{% else %}
 						<div class="w3-row">
-							<div style="padding-right: 10px; float: left; color: #3892da;">{{ name }}</div>
+							<div style="padding-right: 10px; float: left; color: #3892da;">
+								{% if msg.sender is not none %}
+								{{ msg.sender }}
+								{% else %}
+								{{ name }}
+								{% endif %}
+							</div>
 							<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
 						</div>
 						<div class="w3-row">
@@ -87,7 +92,7 @@
 							<div class="w3-col m10 l10">
 								<div style="text-align: left;">
 								{% if msg.media == false %}
-									{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% filter escape %}{{ msg.data or "{This message is not supported yet}" }}{% endfilter %}
 								{% else %}
 									{% if "image/" in msg.mime %}
 									<img src="{% filter escape %}{{ msg.data }}{% endfilter %}" />

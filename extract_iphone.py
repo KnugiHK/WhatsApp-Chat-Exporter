@@ -41,7 +41,7 @@ total_row_number = c.fetchone()[0]
 apple_time = datetime.timestamp(datetime(2001,1,1))
 print(f"Gathering messages...(0/{total_row_number})", end="\r")
 
-c.execute("""SELECT COALESCE(ZFROMJID, ZTOJID), Z_PK, ZISFROMME, ZMESSAGEDATE, ZTEXT FROM ZWAMESSAGE;""")
+c.execute("""SELECT COALESCE(ZFROMJID, ZTOJID), ZWAMESSAGE.Z_PK, ZISFROMME, ZMESSAGEDATE, ZTEXT, ZMESSAGETYPE, ZWAGROUPMEMBER.ZMEMBERJID FROM main.ZWAMESSAGE LEFT JOIN main.ZWAGROUPMEMBER ON main.ZWAMESSAGE.ZGROUPMEMBER = main.ZWAGROUPMEMBER.Z_PK;""")
 i = 0
 content = c.fetchone()
 while content is not None:
@@ -52,9 +52,51 @@ while content is not None:
         "from_me": bool(content[2]),
         "timestamp": ts,
         "time": datetime.fromtimestamp(ts).strftime("%H:%M"),
-        "data": content[4],
         "media": False
     }
+    if "-" in content[0] and content[2] == 0:
+        name = None
+        if content[6] is not None:
+            if content[6] in data:
+                name = data[content[6]]["name"]
+            if "@" in content[6]:
+                fallback = content[6].split('@')[0]
+            else:
+                fallback = None
+        else:
+            fallback = None
+        data[content[0]]["messages"][content[1]]["sender"] = name or fallback
+    else:
+        data[content[0]]["messages"][content[1]]["sender"] = None
+    if content[5] == 6:
+        # Metadata
+        if "-" in content[0]:
+            # Group
+            if content[4] is not None:
+                # Chnaged name
+                try:
+                    int(content[4])
+                except:
+                    data[content[0]]["messages"][content[1]]["data"] = "{The group name changed to "f"{content[4]}"" }"
+                else:
+                    del data[content[0]]["messages"][content[1]]
+            else:
+                data[content[0]]["messages"][content[1]]["data"] = None
+        else:
+            data[content[0]]["messages"][content[1]]["data"] = None
+    else:
+        # real message
+        if content[2] == 1:
+            if content[5] == 14:
+                data[content[0]]["messages"][content[1]]["data"] = "{Message deleted}"
+            else:
+                data[content[0]]["messages"][content[1]]["data"] = content[4]
+        else:
+            if content[5] == 14:
+                data[content[0]]["messages"][content[1]]["data"] = "{Message deleted}"
+            else:
+                data[content[0]]["messages"][content[1]]["data"] = content[4]
+            
     i += 1
     if i % 1000 == 0:
         print(f"Gathering messages...({i}/{total_row_number})", end="\r")
@@ -100,6 +142,24 @@ while content is not None:
     content = c.fetchone()
 print(f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
 
+c.execute("""SELECT DISTINCT ZWAVCARDMENTION.ZMEDIAITEM, ZWAMEDIAITEM.ZMESSAGE, COALESCE(ZWAMESSAGE.ZFROMJID, ZWAMESSAGE.ZTOJID) as _id, ZVCARDNAME, ZVCARDSTRING FROM ZWAVCARDMENTION INNER JOIN ZWAMEDIAITEM ON ZWAVCARDMENTION.ZMEDIAITEM = ZWAMEDIAITEM.Z_PK INNER JOIN ZWAMESSAGE ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK""")
+rows = c.fetchall()
+total_row_number = len(rows)
+print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
+base = "Message/vCards"
+for index, row in enumerate(rows):
+    if not os.path.isdir(base):
+        os.mkdir(base)
+    file_name = "".join(x for x in row[3] if x.isalnum())
+    file_path = f"{base}/{file_name[:200]}.vcf"
+    if not os.path.isfile(file_path):
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(row[4])
+    data[row[2]]["messages"][row[1]]["data"] = row[3] + "{ The vCard file cannot be displayed here, however it should be located at " + file_path + "}"
+    data[row[2]]["messages"][row[1]]["mime"] = "x-vcard"
+    data[row[2]]["messages"][row[1]]["media"] = True
+    print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
+
 templateLoader = jinja2.FileSystemLoader(searchpath="./")
 templateEnv = jinja2.Environment(loader=templateLoader)
 templateEnv.globals.update(determine_day=determine_day)
@@ -133,8 +193,10 @@ for current, i in enumerate(data):
         name = data[i]["name"]
     else:
         name = phone_number
-
-    with open(f"{output_folder}/{file_name}.html", "w", encoding="utf-8") as f:
+    
+    safe_file_name = ''
+    safe_file_name = "".join(x for x in file_name if x.isalnum())
+    with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
         f.write(template.render(name=name, msgs=data[i]["messages"].values(), my_avatar=None, their_avatar=f"WhatsApp/Avatars/{i}.j"))
     if current % 10 == 0:
         print(f"Creating HTML...({current}/{total_row_number})", end="\r")
