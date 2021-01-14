@@ -45,7 +45,7 @@ total_row_number = c.fetchone()[0]
 print(f"Gathering messages...(0/{total_row_number})", end="\r")
 
 phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
-c.execute("""SELECT key_remote_jid, _id, key_from_me, timestamp, data, status, edit_version, thumb_image, remote_resource, media_wa_type, latitude, longitude FROM messages; """)
+c.execute("""SELECT messages.key_remote_jid, messages._id, messages.key_from_me, messages.timestamp, messages.data, messages.status, messages.edit_version, messages.thumb_image, messages.remote_resource, messages.media_wa_type, messages.latitude, messages.longitude, messages_quotes.key_id as quoted, messages.key_id, messages_quotes.data FROM messages LEFT JOIN messages_quotes ON messages.quoted_row_id = messages_quotes._id; """)
 i = 0
 content = c.fetchone()
 while content is not None:
@@ -55,7 +55,8 @@ while content is not None:
         "from_me": bool(content[2]),
         "timestamp": content[3]/1000,
         "time": datetime.fromtimestamp(content[3]/1000).strftime("%H:%M"),
-        "media": False
+        "media": False,
+        "key_id": content[13]
     }
     if "-" in content[0] and content[2] == 0:
         if content[8] in data:
@@ -65,6 +66,12 @@ while content is not None:
         data[content[0]]["messages"][content[1]]["sender"] = name or content[8].split('@')[0]
     else:
         data[content[0]]["messages"][content[1]]["sender"] = None
+    
+    if content[12] is not None:
+        data[content[0]]["messages"][content[1]]["reply"] = content[12]
+        data[content[0]]["messages"][content[1]]["quoted_data"] = content[14]
+    else:
+        data[content[0]]["messages"][content[1]]["reply"] = None
     
     if content[5] == 6:
         if "-" in content[0]:
