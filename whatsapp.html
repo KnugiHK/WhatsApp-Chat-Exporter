@@ -111,7 +111,7 @@
 						<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
 					</div>
 					<div class="w3-row">
-						<div class="w3-col m2 l2"><img src="{{ their_avatar }}"></div>
+						<div class="w3-col m2 l2"><img src="{{ their_avatar }}" onerror="this.style.display='none'"></div>
 						<div class="w3-col m10 l10">
 							<div style="text-align: left;">
 							{% if msg.reply is not none %}

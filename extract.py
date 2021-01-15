@@ -24,18 +24,19 @@ def determine_day(last, current):
 data = {}
 
 # Get contacts
-wa = sqlite3.connect("wa.db")
-c = wa.cursor()
-c.execute("""SELECT count() FROM wa_contacts""")
-total_row_number = c.fetchone()[0]
-print(f"Gathering contacts...({total_row_number})")
+if os.path.isfile("wa.db"):
+    wa = sqlite3.connect("wa.db")
+    c = wa.cursor()
+    c.execute("""SELECT count() FROM wa_contacts""")
+    total_row_number = c.fetchone()[0]
+    print(f"Gathering contacts...({total_row_number})")
 
-c.execute("""SELECT jid, display_name FROM wa_contacts; """)
-row = c.fetchone()
-while row is not None:
-    data[row[0]] = {"name": row[1], "messages":{}}
+    c.execute("""SELECT jid, display_name FROM wa_contacts; """)
     row = c.fetchone()
-wa.close()
+    while row is not None:
+        data[row[0]] = {"name": row[1], "messages":{}}
+        row = c.fetchone()
+    wa.close()
 
 # Get message history
 msg = sqlite3.connect("msgstore.db")
@@ -59,11 +60,17 @@ while content is not None:
         "key_id": content[13]
     }
     if "-" in content[0] and content[2] == 0:
+        name = None
         if content[8] in data:
             name = data[content[8]]["name"]
+            if "@" in content[8]:
+                fallback = content[8].split('@')[0]
+            else:
+                fallback = None
         else:
-            name = None
-        data[content[0]]["messages"][content[1]]["sender"] = name or content[8].split('@')[0]
+            fallback = None
+        
+        data[content[0]]["messages"][content[1]]["sender"] = name or fallback
     else:
         data[content[0]]["messages"][content[1]]["sender"] = None
     
