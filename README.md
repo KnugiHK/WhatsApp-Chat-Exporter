@@ -1,4 +1,4 @@
-# Message-From-Whatsapp-DB
+# Whatsapp-Chat-Exporter
 A Whatsapp database parser that will give you the history of your Whatsapp conversation in HTML and JSON
 
 # Usage
