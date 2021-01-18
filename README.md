@@ -34,6 +34,7 @@ And you will get these:
 # To do
 1. Convert ```\r\n``` to ```<br>```
 2. Reply in iPhone
+3. The CSS for metadata (e.g. {Message Deleted})
 
 # Copyright
 This is a MIT licensed project.
