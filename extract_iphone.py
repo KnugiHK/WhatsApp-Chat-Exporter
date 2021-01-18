@@ -220,28 +220,34 @@ def create_html(data, output_folder):
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
 
-    for current, i in enumerate(data):
-        if len(data[i]["messages"]) == 0:
+    for current, contact in enumerate(data):
+        if len(data[contact]["messages"]) == 0:
             continue
-        phone_number = i.split('@')[0]
-        if "-" in i:
+        phone_number = contact.split('@')[0]
+        if "-" in contact:
             file_name = ""
         else:
             file_name = phone_number
 
-        if data[i]["name"] is not None:
+        if data[contact]["name"] is not None:
             if file_name != "":
                 file_name += "-"
-            file_name += data[i]["name"].replace("/", "-")
-            name = data[i]["name"]
+            file_name += data[contact]["name"].replace("/", "-")
+            name = data[contact]["name"]
         else:
             name = phone_number
 
         safe_file_name = ''
         safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
         with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
-            f.write(template.render(name=name, msgs=data[i]["messages"].values(
-            ), my_avatar=None, their_avatar=f"WhatsApp/Avatars/{i}.j"))
+            f.write(
+                template.render(
+                    name=name,
+                    msgs=data[contact]["messages"].values(),
+                    my_avatar=None,
+                    their_avatar=f"WhatsApp/Avatars/{contact}.j"
+                )
+            )
         if current % 10 == 0:
             print(f"Creating HTML...({current}/{total_row_number})", end="\r")
 
