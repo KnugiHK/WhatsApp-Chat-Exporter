@@ -74,8 +74,7 @@ def messages(db, data):
                     fallback = None
             else:
                 fallback = None
-            data[content[0]]["messages"][content[1]
-                                         ]["sender"] = name or fallback
+            data[content[0]]["messages"][content[1]]["sender"] = name or fallback
         else:
             data[content[0]]["messages"][content[1]]["sender"] = None
         if content[5] == 6:
@@ -161,8 +160,7 @@ def media(db, data, media_folder):
             # data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
             # data[content[0]]["messages"][content[1]]["mime"] = "media"
             # else:
-            data[content[0]]["messages"][content[1]
-                                         ]["data"] = "{The media is missing}"
+            data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
             data[content[0]]["messages"][content[1]]["mime"] = "media"
         if content[6] is not None:
             data[content[0]]["messages"][content[1]]["caption"] = content[6]
@@ -202,7 +200,7 @@ def vcard(db, data):
         data[row[2]]["messages"][row[1]]["data"] = row[3] + \
             "{ The vCard file cannot be displayed here, however it " \
             "should be located at " + file_path + "}"
-        data[row[2]]["messages"][row[1]]["mime"] = "x-vcard"
+        data[row[2]]["messages"][row[1]]["mime"] = "text/x-vcard"
         data[row[2]]["messages"][row[1]]["media"] = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 

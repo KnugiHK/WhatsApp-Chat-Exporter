@@ -249,7 +249,7 @@ def vcard(db, data):
         data[row[1]]["messages"][row[0]]["data"] = row[3] + \
             "{ The vCard file cannot be displayed here, however it " \
             "should be located at " + file_path + "}"
-        data[row[1]]["messages"][row[0]]["mime"] = "x-vcard"
+        data[row[1]]["messages"][row[0]]["mime"] = "text/x-vcard"
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
