@@ -4,7 +4,7 @@ A Whatsapp database parser that will give you the history of your Whatsapp conve
 # Usage
 First, clone this repo, and copy all py and html files to a working directory if you want to do so.
 ```shell
-git clone https://github.com/KnugiHK/Message-From-Whatsapp-DB.git
+git clone https://github.com/KnugiHK/Whatsapp-Chat-Exporter.git
 ```
 Then, ready your WhatsApp database, place them inthe root of working directory.
 * For Android, it is called msgstore.db. If you want name of your contacts, get the contact database, which is called wa.db.
