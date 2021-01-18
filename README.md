@@ -17,6 +17,7 @@ Next, ready your media folder, place it in the root of working directory.
 python extract_iphone_media.py C:\Users\[Username]\AppData\Apple Computer\AppData\Roaming\Apple Computer\MobileSync\Backup
 ```
 And now, you should have something like this:
+
 ![Folder structure](structure.png)
 
 Last, run the script regarding the type of phone.
