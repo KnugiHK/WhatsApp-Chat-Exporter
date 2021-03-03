@@ -6,7 +6,7 @@ First, clone this repo, and copy all py and html files to a working directory if
 ```shell
 git clone https://github.com/KnugiHK/Whatsapp-Chat-Exporter.git
 ```
-Then, ready your WhatsApp database, place them inthe root of working directory.
+Then, ready your WhatsApp database, place them in the root of working directory.
 * For Android, it is called msgstore.db. If you want name of your contacts, get the contact database, which is called wa.db.
 * For iPhone, it is called 7c7fba66680ef796b916b067077cc246adacf01d (YES, a hash).
 
