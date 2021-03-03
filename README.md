@@ -14,7 +14,7 @@ Next, ready your media folder, place it in the root of working directory.
 * For Android, copy the WhatsApp directory from your phone directly.
 * For iPhone, run the extract_iphone_media.py, and you will get a folder called Message. Please note that, this script does not support encrypted backup.
 ```
-python extract_iphone_media.py C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup
+python extract_iphone_media.py "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
 ```
 And now, you should have something like this:
 
