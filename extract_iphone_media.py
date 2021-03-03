@@ -47,3 +47,4 @@ if __name__ == "__main__":
     parser = OptionParser()
     (_, args) = parser.parse_args()
     base_dir = args[0]
+    extract_media(base_dir)
