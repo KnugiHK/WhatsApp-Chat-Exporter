@@ -13,9 +13,15 @@ Then, ready your WhatsApp database, place them in the root of working directory.
 
 Next, ready your media folder, place it in the root of working directory.
 * For Android, copy the WhatsApp directory from your phone directly.
-* For iPhone, run the extract_iphone_media.py, and you will get a folder called Message. Please note that, this script does not support encrypted backup.
+* For iPhone, run the extract_iphone_media.py, and you will get a folder called Message.
 ```
 python extract_iphone_media.py "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
+```
+**Encrypted iPhone Backup**  
+If you want to work on an encrypted iPhone Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
+```sh
+pip install biplist pycryptodome
+pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 And now, you should have something like this:
 
@@ -32,14 +38,6 @@ And you will get these:
 
 #### Group Message
 ![Group Message](group.png)
-
-# Encrypted iPhone Backup
-If you want to work on an encrypted iPhone Backup, you should do the following:
-1. Install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt)
-```sh
-pip install biplist pycryptodome
-pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
-```
 
 # To do
 1. Convert ```\r\n``` to ```<br>```
