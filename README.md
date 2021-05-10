@@ -25,7 +25,7 @@ pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 And now, you should have something like this:
 
-![Folder structure](structure.png)
+![Folder structure](imgs/structure.png)
 
 Last, run the script regarding the type of phone.
 ```
@@ -34,10 +34,10 @@ python extract_iphone.py & :: iPhone
 ```
 And you will get these:
 #### Private Message
-![Private Message](pm.png)
+![Private Message](imgs/pm.png)
 
 #### Group Message
-![Group Message](group.png)
+![Group Message](imgs/group.png)
 
 # To do
 1. Convert ```\r\n``` to ```<br>```
