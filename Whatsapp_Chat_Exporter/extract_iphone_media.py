@@ -73,11 +73,17 @@ def extract_media(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
             print("Read more about how to deal with encrypted backup:")
-            print("https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#encrypted-iphone-backup")
+            print("https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage")
             return False
         password = getpass.getpass("Enter the password:")
         extract_encrypted(base_dir, password)
     else:
+        wts_db = os.path.join(base_dir, "7c/7c7fba66680ef796b916b067077cc246adacf01d")
+        if not os.path.isfile(wts_db):
+            print("WhatsApp database not found.")
+            sys.exit(1)
+        else:
+            shutil.copyfile(wts_db, "7c7fba66680ef796b916b067077cc246adacf01d")
         with sqlite3.connect(f"{base_dir}/Manifest.db") as manifest:
             c = manifest.cursor()
             c.execute("""SELECT count()

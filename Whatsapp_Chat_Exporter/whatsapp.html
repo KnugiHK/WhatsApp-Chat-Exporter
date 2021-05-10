@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Whatsapp - {{ name }}</title> 
+		<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
+		<style>
+		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400&display=swap');
+		html {
+			font-family: 'Noto Sans HK', sans-serif;
+			font-size: 12px;
+			scroll-behavior: smooth;
+		}
+		header {
+			position: fixed;
+			z-index: 20;
+			border-bottom: 2px solid #e3e6e7;
+			font-size: 2em;
+			font-weight: bolder;
+			background-color: white;
+			padding: 20px 0 20px 0;
+		}
+		footer {
+			border-top: 2px solid #e3e6e7;
+			font-size: 2em;
+			padding: 20px 0 20px 0;
+		}
+		article {
+			width:500px;
+			margin:100px auto;
+			z-index:10;
+			font-size: 15px;
+			word-wrap: break-word;
+		}
+		img, video {
+			max-width:100%;
+		}
+		a.anchor {
+			display: block;
+			position: relative;
+			top: -100px;
+			visibility: hidden;
+		}
+		div.reply{
+			font-size: 13px;
+			text-decoration: none;
+		}
+		</style>
+	</head>
+	<body>
+		<header class="w3-center w3-top">Chat history with {{ name }}</header>
+		<article class="w3-container">
+			<div class="table" style="width:100%">
+			{% set last = {'last': 946688461.001} %}
+			{% for msg in msgs -%}
+				<div class="w3-row" style="padding-bottom: 10px">
+					<a class="anchor" id="{{ msg.key_id }}"></a>
+					{% if determine_day(last.last, msg.timestamp) is not none  %}
+					<div class="w3-center" style="color:#70777c;padding: 10px 0 10px 0;">{{ determine_day(last.last, msg.timestamp) }}</div>
+					{% if last.update({'last': msg.timestamp}) %}{% endif %}
+					{% endif %}
+					{% if msg.from_me == true %}
+					<div class="w3-row">
+						<div style="float: left; color:#70777c;">{{ msg.time }}</div>
+						<div style="padding-left: 10px; text-align: right; color: #3892da;">You</div>
+					</div>
+					<div class="w3-row">
+						<div class="w3-col m10 l10">
+							<div style="text-align: right;">
+							{% if msg.reply is not none %}
+								<div class="reply">
+									<span style="color: #70777a;">Replying to </span>
+									<a href="#{{msg.reply}}" style="color: #168acc;">"{{ msg.quoted_data or 'media' }}"</a>
+								</div>
+							{% endif %}
+							{% if msg.media == false %}
+								{% filter escape %}{{ msg.data or "{This message is not supported yet}" | replace('\n', '<br>') }}{% endfilter %}
+							{% else %}
+								{% if "image/" in msg.mime %}
+								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
+								{% elif "audio/" in msg.mime %}
+								<audio controls="controls" autobuffer="autobuffer">
+									<source src="{{ msg.data }}" />
+								</audio>
+								{% elif "video/" in msg.mime %}
+								<video controls="controls" autobuffer="autobuffer">
+									<source src="{{ msg.data }}" />
+								</video>
+								{% elif "/" in msg.mime %}
+									{The file cannot be displayed here, however it should be located at {{ msg.data }}}
+								{% else %}
+									{% filter escape %}{{ msg.data }}{% endfilter %}
+								{% endif %}
+								{% if msg.caption is not none %}
+								<br>
+								{{ msg.caption }}
+								{% endif %}
+							{% endif %}
+							</div>
+						</div>
+						<div class="w3-col m2 l2" style="padding-left: 10px"><img src="{{ my_avatar }}" onerror="this.style.display='none'"></div>
+					</div>
+					{% else %}
+					<div class="w3-row">
+						<div style="padding-right: 10px; float: left; color: #3892da;">
+							{% if msg.sender is not none %}
+							{{ msg.sender }}
+							{% else %}
+							{{ name }}
+							{% endif %}
+						</div>
+						<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
+					</div>
+					<div class="w3-row">
+						<div class="w3-col m2 l2"><img src="{{ their_avatar }}" onerror="this.style.display='none'"></div>
+						<div class="w3-col m10 l10">
+							<div style="text-align: left;">
+							{% if msg.reply is not none %}
+								<div class="reply">
+									<span style="color: #70777a;">Replying to </span>
+									<a href="#{{msg.reply}}" style="color: #168acc;">"{{ msg.quoted_data or 'media' }}"</a>
+								</div>
+							{% endif %}
+							{% if msg.media == false %}
+								{% filter escape %}{{ msg.data or "{This message is not supported yet}" }}{% endfilter %}
+							{% else %}
+								{% if "image/" in msg.mime %}
+								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
+								{% elif "audio/" in msg.mime %}
+								<audio controls="controls" autobuffer="autobuffer">
+									<source src="{{ msg.data }}" />
+								</audio>
+								{% elif "video/" in msg.mime %}
+								<video controls="controls" autobuffer="autobuffer">
+									<source src="{{ msg.data }}" />
+								</video>
+								{% elif "/" in msg.mime %}
+									{The file cannot be displayed here, however it should be located at {{ msg.data }}}
+								{% else %}
+									{% filter escape %}{{ msg.data }}{% endfilter %}
+								{% endif %}
+								{% if msg.caption is not none %}
+								<br>
+								{{ msg.caption }}
+								{% endif %}
+							{% endif %}
+							</div>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			{% endfor %}
+			</div>
+		</article>
+		<footer class="w3-center">
+			End of history
+		</footer>
+	</body>
+</html>

@@ -7,6 +7,7 @@ import os
 import requests
 import shutil
 import re
+import pkgutil
 from datetime import datetime
 from mimetypes import MimeTypes
 
@@ -254,7 +255,7 @@ def vcard(db, data):
 
 
 def create_html(data, output_folder):
-    templateLoader = jinja2.FileSystemLoader(searchpath="./")
+    templateLoader = jinja2.FileSystemLoader(searchpath=os.path.dirname(__file__))
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
     TEMPLATE_FILE = "whatsapp.html"
