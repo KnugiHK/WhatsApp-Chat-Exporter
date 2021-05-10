@@ -1,5 +1,6 @@
 # Whatsapp-Chat-Exporter
-A Whatsapp database parser that will give you the history of your Whatsapp conversation in HTML and JSON
+A Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON  
+**If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
 
 # Usage
 First, clone this repo, and copy all py and html files to a working directory if you want to do so.
@@ -33,7 +34,12 @@ And you will get these:
 ![Group Message](group.png)
 
 # Encrypted iPhone Backup
-To do
+If you want to work on an encrypted iPhone Backup, you should do the following:
+1. Install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt)
+```sh
+pip install biplist pycryptodome
+pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
+```
 
 # To do
 1. Convert ```\r\n``` to ```<br>```
