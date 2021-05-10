@@ -34,7 +34,12 @@ And you will get these:
 ![Group Message](group.png)
 
 # Encrypted iPhone Backup
-To do
+If you want to work on an encrypted iPhone Backup, you should do the following:
+1. Install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt)
+```sh
+pip install biplist pycryptodome
+pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
+```
 
 # To do
 1. Convert ```\r\n``` to ```<br>```
