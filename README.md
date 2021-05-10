@@ -20,7 +20,7 @@ python extract_iphone_media.py "C:\Users\[Username]\AppData\Roaming\Apple Comput
 **Encrypted iPhone Backup**  
 If you want to work on an encrypted iPhone Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
-pip install biplist pycryptodome
+pip install biplist pycryptodome & :: Optional, since the pip will install these dependencies automatically.
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 And now, you should have something like this:
