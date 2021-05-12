@@ -3,36 +3,51 @@ A Whatsapp database parser that will give you the history of your Whatsapp conve
 **If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
 
 # Usage
-First, clone this repo, and copy all py and html files to a working directory if you want to do so.
+**If you want to use the old release of the exporter, please follow the [old usage guide](old_README.md#usage)**
+
+First, clone this repo and install the exporter.
 ```shell
 git clone https://github.com/KnugiHK/Whatsapp-Chat-Exporter.git
+cd Whatsapp-Chat-Exporter
+python setup.py install
 ```
-Then, ready your WhatsApp database, place them in the root of working directory.
-* For Android, it is called msgstore.db. If you want name of your contacts, get the contact database, which is called wa.db.
-* For iPhone, it is called 7c7fba66680ef796b916b067077cc246adacf01d (YES, a hash).
+Then, create a working directory in somewhere you want
+```shell
+mkdir working_wts
+cd working_wts
+```
+## Working with Android
+Extract the WhatsApp database with whatever means, one possible means is to use the [WhatsApp-Key-DB-Extractor](https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor)
 
-Next, ready your media folder, place it in the root of working directory.
-* For Android, copy the WhatsApp directory from your phone directly.
-* For iPhone, run the extract_iphone_media.py, and you will get a folder called Message.
+After you obtain your WhatsApp databse, copy the WatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
+
+And now, you should have something like this in the working directory.
+
+![Android folder structure](imgs/android_structure.png)
+### Extracting
+Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
+```sh
+wtsexporter -a
 ```
-python extract_iphone_media.py "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
-```
-**Encrypted iPhone Backup**  
+
+## Working with iPhone
+Do an iPhone Backup with iTunes first.
+### Encrypted iPhone Backup
+**If you are working on unencrypted iPhone backup, skip this**
+
 If you want to work on an encrypted iPhone Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
 pip install biplist pycryptodome & :: Optional, since the pip will install these dependencies automatically.
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
-And now, you should have something like this:
-
-![Folder structure](imgs/structure.png)
-
-Last, run the script regarding the type of phone.
+### Extracting
+Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
+```sh
+wtsexporter -i -b "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
 ```
-python extract.py & :: Android
-python extract_iphone.py & :: iPhone
-```
-And you will get these:
+
+## Results
+After extracting, you will get these:
 #### Private Message
 ![Private Message](imgs/pm.png)
 
