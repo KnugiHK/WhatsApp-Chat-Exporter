@@ -3,7 +3,7 @@ A Whatsapp database parser that will give you the history of your Whatsapp conve
 **If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
 
 # Usage
-**If you want to use the old release of the exporter, please follow the [old usage guide](old_README.md#usage)**
+**If you want to use the old release (< 0.5) of the exporter, please follow the [old usage guide](old_README.md#usage)**
 
 First, clone this repo and install the exporter.
 ```shell
