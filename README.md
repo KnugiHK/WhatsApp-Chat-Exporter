@@ -80,7 +80,6 @@ Options:
 1. Convert ```\r\n``` to ```<br>```
 2. Reply in iPhone
 3. The CSS for metadata (e.g. {Message Deleted})
-4. Handle encrypted iPhone Backup
 
 # Copyright
 This is a MIT licensed project.
