@@ -54,6 +54,28 @@ After extracting, you will get these:
 #### Group Message
 ![Group Message](imgs/group.png)
 
+## More options
+Invoke the wtsexporter with --help option will show you all options available.
+```sh
+> wtsexporter --help
+Usage: wtsexporter [options]
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -a, --android         Define the target as Android
+  -i, --iphone          Define the target as iPhone
+  -w WA, --wa=WA        Path to contact database
+  -m MEDIA, --media=MEDIA
+                        Path to WhatsApp media folder
+  -b BACKUP, --backup=BACKUP
+                        Path to iPhone backup
+  -o OUTPUT, --output=OUTPUT
+                        Output to specific directory
+  -j, --json            Save the result to a single JSON file
+  -d DB, --db=DB        Path to database file
+```
+
 # To do
 1. Convert ```\r\n``` to ```<br>```
 2. Reply in iPhone
