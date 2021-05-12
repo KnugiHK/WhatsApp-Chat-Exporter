@@ -1,5 +1,5 @@
 # Whatsapp-Chat-Exporter
-A Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON  
+An Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON.  
 **If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
 
 # Usage
