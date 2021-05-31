@@ -29,7 +29,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Development Status :: Beta",
         "Environment :: Console",
-        "Intended Audience :: End Users/Desktop"
+        "Intended Audience :: End Users/Desktop",
         "Topic :: Communications :: Chat",
         "Topic :: Utilities",
         "Topic :: Database"
