@@ -8,7 +8,7 @@ import json
 
 
 def main():
-    parser = OptionParser(version=__version__)
+    parser = OptionParser(version=f"Whatsapp Chat Exporter: {__version__}")
     parser.add_option(
         '-a',
         '--android',
