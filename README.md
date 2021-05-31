@@ -5,11 +5,9 @@ An Android and iPhone Whatsapp database parser that will give you the history of
 # Usage
 **If you want to use the old release (< 0.5) of the exporter, please follow the [old usage guide](old_README.md#usage)**
 
-First, clone this repo and install the exporter.
+First, install the exporter by:
 ```shell
-git clone https://github.com/KnugiHK/Whatsapp-Chat-Exporter.git
-cd Whatsapp-Chat-Exporter
-python setup.py install
+pip install whatsapp-chat-exporter
 ```
 Then, create a working directory in somewhere you want
 ```shell
@@ -19,7 +17,7 @@ cd working_wts
 ## Working with Android
 Extract the WhatsApp database with whatever means, one possible means is to use the [WhatsApp-Key-DB-Extractor](https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor)
 
-After you obtain your WhatsApp databse, copy the WatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
+After you obtain your WhatsApp databse, copy the WhatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
 
 And now, you should have something like this in the working directory.
 
