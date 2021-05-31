@@ -72,7 +72,7 @@ def extract_media(base_dir):
     if is_encrypted(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
-            print("Read more about how to deal with encrypted backup:")
+            print("Read more on how to deal with encrypted backup:")
             print("https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage")
             return False
         password = getpass.getpass("Enter the password:")
