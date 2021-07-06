@@ -1,6 +1,7 @@
 # Whatsapp-Chat-Exporter
 [![Latest in Pypi](https://img.shields.io/pypi/v/whatsapp-chat-exporter?label=Latest%20in%20Pypi)](https://pypi.org/project/whatsapp-chat-exporter/)
 ![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter)
+[![Python](https://img.shields.io/pypi/pyversions/Whatsapp-Chat-Exporter)](https://pypi.org/project/Whatsapp-Chat-Exporter/)
 
 An Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON.  
 **If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
