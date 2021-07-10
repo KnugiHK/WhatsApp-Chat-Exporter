@@ -38,6 +38,9 @@ setuptools.setup(
     install_requires=[
        'jinja2'
     ],
+    extras_require = {
+        'android_backup':  ["pycryptodome"]
+    },
     entry_points={
         "console_scripts": [
             "wtsexporter = Whatsapp_Chat_Exporter.__main__:main"

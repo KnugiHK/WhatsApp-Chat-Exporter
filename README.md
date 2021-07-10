@@ -19,6 +19,7 @@ mkdir working_wts
 cd working_wts
 ```
 ## Working with Android
+### Unencrypted WhatsApp database
 Extract the WhatsApp database with whatever means, one possible means is to use the [WhatsApp-Key-DB-Extractor](https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor)
 
 After you obtain your WhatsApp databse, copy the WhatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
@@ -26,10 +27,26 @@ After you obtain your WhatsApp databse, copy the WhatsApp database and media fol
 And now, you should have something like this in the working directory.
 
 ![Android folder structure](imgs/android_structure.png)
-### Extracting
-Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
+#### Extracting
+Simply invoke the following command from shell.
 ```sh
 wtsexporter -a
+```
+
+### Encrypted Android WhatsApp Backup (crypt14)
+In order to support the decryption, install pycryptodome if it is not installed
+```sh
+pip install pycryptodome
+```
+Place the decryption key file (key) and the encrypted WhatsApp Backup (msgstore.db.crypt14) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
+
+And now, you should have something like this in the working directory.
+
+![Android folder structure with WhatsApp Backup](imgs/android_structure_backup.png)
+#### Extracting
+Simply invoke the following command from shell.
+```sh
+wtsexporter -a -k key -b msgstore.db.crypt14
 ```
 
 ## Working with iPhone
@@ -71,11 +88,13 @@ Options:
   -m MEDIA, --media=MEDIA
                         Path to WhatsApp media folder
   -b BACKUP, --backup=BACKUP
-                        Path to iPhone backup
+                        Path to iPhone/Android (must be used together with -k)
+                        WhatsApp backup
   -o OUTPUT, --output=OUTPUT
                         Output to specific directory
   -j, --json            Save the result to a single JSON file
   -d DB, --db=DB        Path to database file
+  -k KEY, --key=KEY     Path to key file
 ```
 
 # To do
