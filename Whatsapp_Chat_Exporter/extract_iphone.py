@@ -206,12 +206,17 @@ def vcard(db, data):
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def create_html(data, output_folder):
-    templateLoader = jinja2.FileSystemLoader(searchpath=os.path.dirname(__file__))
+def create_html(data, output_folder, template=None):
+    if template is None:
+        template_dir = os.path.dirname(__file__)
+        template_file = "whatsapp.html"
+    else:
+        template_dir = os.path.dirname(template)
+        template_file = os.path.basename(template)
+    templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
-    TEMPLATE_FILE = "whatsapp.html"
-    template = templateEnv.get_template(TEMPLATE_FILE)
+    template = templateEnv.get_template(template_file)
     
     total_row_number = len(data)
     print(f"\nCreating HTML...(0/{total_row_number})", end="\r")

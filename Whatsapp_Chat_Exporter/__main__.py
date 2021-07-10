@@ -67,6 +67,12 @@ def main():
         default=None,
         help="Path to key file"
     )
+    parser.add_option(
+        "-t",
+        "--template",
+        dest="template",
+        default=None,
+        help="Path to custom HTML template")
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
@@ -138,7 +144,7 @@ def main():
             messages(db, data)
             media(db, data, options.media)
             vcard(db, data)
-        create_html(data, options.output)
+        create_html(data, options.output, options.template)
 
     if not os.path.isdir(f"{options.output}/{options.media}"):
         shutil.move(options.media, f"{options.output}/")
