@@ -116,7 +116,7 @@ def messages(db, data):
         f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder):
+def media(db, data):
     c = db.cursor()
     # Get media
     c.execute("""SELECT count() FROM ZWAMEDIAITEM""")
@@ -217,7 +217,7 @@ def create_html(data, output_folder, template=None):
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
     template = templateEnv.get_template(template_file)
-    
+
     total_row_number = len(data)
     print(f"\nCreating HTML...(0/{total_row_number})", end="\r")
 

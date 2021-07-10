@@ -1,5 +1,6 @@
 from .__init__ import __version__
-from Whatsapp_Chat_Exporter import extract, extract_iphone, extract_iphone_media
+from Whatsapp_Chat_Exporter import extract, extract_iphone
+from Whatsapp_Chat_Exporter import extract_iphone_media
 from optparse import OptionParser
 import os
 import sqlite3
@@ -40,7 +41,8 @@ def main():
         "--backup",
         dest="backup",
         default=None,
-        help="Path to Android (must be used together with -k)/iPhone WhatsApp backup")
+        help="Path to Android (must be used together "
+             "with -k)/iPhone WhatsApp backup")
     parser.add_option(
         "-o",
         "--output",
@@ -102,7 +104,8 @@ def main():
             db = open(options.backup, "rb").read()
             is_crypt14 = False if "crypt12" in options.backup else True
             if not extract.decrypt_backup(db, key, msg_db, is_crypt14):
-                print("Dependencies of decrypt_backup are not present. For details, see README.md")
+                print("Dependencies of decrypt_backup are not "
+                      "present. For details, see README.md")
                 return False
         if options.wa is None:
             contact_db = "wa.db"
@@ -110,14 +113,14 @@ def main():
             contact_db = options.wa
         if options.media is None:
             options.media = "WhatsApp"
-        
+
         if len(args) == 1:
             msg_db = args[0]
 
         if os.path.isfile(contact_db):
             with sqlite3.connect(contact_db) as db:
                 contacts(db, data)
-        
+
     elif options.iphone:
         messages = extract_iphone.messages
         media = extract_iphone.media
