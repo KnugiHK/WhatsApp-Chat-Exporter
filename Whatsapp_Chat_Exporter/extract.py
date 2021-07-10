@@ -28,20 +28,27 @@ def determine_day(last, current):
         return current
 
 
-def decrypt_backup(database, key, output):
+def decrypt_backup(database, key, output, crypt14=True):
     if not support_backup:
         return False
     if len(key) != 158:
         raise ValueError("The key file must be 158 bytes")
-    if len(database) < 191:
-        raise ValueError("The database file must be at least 191 bytes")
     t1 = key[30:62]
-    t2 = database[15:47]
+    if crypt14:
+        if len(database) < 191:
+            raise ValueError("The crypt14 file must be at least 191 bytes")
+        t2 = database[15:47]
+        iv = database[67:83]
+        db_ciphertext = database[191:]
+    else:
+        if len(database) < 67:
+            raise ValueError("The crypt12 file must be at least 67 bytes")
+        t2 = database[3:35]
+        iv = database[51:67]
+        db_ciphertext = database[67:-20]
     if t1 != t2:
         raise ValueError("The signature of key file and backup file mismatch")
 
-    iv = database[67:83]
-    db_ciphertext = database[191:]
     main_key = key[126:]
     cipher = AES.new(main_key, AES.MODE_GCM, iv)
     db_compressed = cipher.decrypt(db_ciphertext)

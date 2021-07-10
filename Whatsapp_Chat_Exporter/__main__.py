@@ -94,7 +94,8 @@ def main():
             print("Decryption key specified, decrypting WhatsApp backup...")
             key = open(options.key, "rb").read()
             db = open(options.backup, "rb").read()
-            if not extract.decrypt_backup(db, key, msg_db):
+            is_crypt14 = False if "crypt12" in options.backup else True
+            if not extract.decrypt_backup(db, key, msg_db, is_crypt14):
                 print("Dependencies of decrypt_backup are not present. For details, see README.md")
                 return False
         if options.wa is None:
