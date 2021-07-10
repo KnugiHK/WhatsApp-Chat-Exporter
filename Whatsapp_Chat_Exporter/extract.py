@@ -10,6 +10,13 @@ import re
 import pkgutil
 from datetime import datetime
 from mimetypes import MimeTypes
+try:
+    import zlib
+    from Crypto.Cipher import AES
+except ModuleNotFoundError:
+    support_backup = False
+else:
+    support_backup = True
 
 
 def determine_day(last, current):
@@ -19,6 +26,32 @@ def determine_day(last, current):
         return None
     else:
         return current
+
+
+def decrypt_backup(database, key, output):
+    if not support_backup:
+        return False
+    if len(key) != 158:
+        raise ValueError("The key file must be 158 bytes")
+    if len(database) < 191:
+        raise ValueError("The database file must be at least 191 bytes")
+    t1 = key[30:62]
+    t2 = database[15:47]
+    if t1 != t2:
+        raise ValueError("The signature of key file and backup file mismatch")
+
+    iv = database[67:83]
+    db_ciphertext = database[191:]
+    main_key = key[126:]
+    cipher = AES.new(main_key, AES.MODE_GCM, iv)
+    db_compressed = cipher.decrypt(db_ciphertext)
+    db = zlib.decompress(db_compressed)
+    if db[0:6].upper() == b"SQLITE":
+        with open(output, "wb") as f:
+            f.write(db)
+        return True
+    else:
+        raise ValueError("The plaintext is not a SQLite database. Did you use the key to encrypt something...")
 
 
 def contacts(db, data):

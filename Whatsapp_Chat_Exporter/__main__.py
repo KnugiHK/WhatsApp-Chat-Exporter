@@ -40,7 +40,7 @@ def main():
         "--backup",
         dest="backup",
         default=None,
-        help="Path to iPhone backup")
+        help="Path to Android (must be used together with -k)/iPhone WhatsApp backup")
     parser.add_option(
         "-o",
         "--output",
@@ -60,6 +60,13 @@ def main():
         dest='db',
         default=None,
         help="Path to database file")
+    parser.add_option(
+        '-k',
+        '--key',
+        dest='key',
+        default=None,
+        help="Path to key file"
+    )
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
@@ -80,6 +87,16 @@ def main():
             msg_db = "msgstore.db"
         else:
             msg_db = options.db
+        if options.key is not None:
+            if options.backup is None:
+                print("You must specify the backup file with -b")
+                return False
+            print("Decryption key specified, decrypting WhatsApp backup...")
+            key = open(options.key, "rb").read()
+            db = open(options.backup, "rb").read()
+            if not extract.decrypt_backup(db, key, msg_db):
+                print("Dependencies of decrypt_backup are not present. For details, see README.md")
+                return False
         if options.wa is None:
             contact_db = "wa.db"
         else:
