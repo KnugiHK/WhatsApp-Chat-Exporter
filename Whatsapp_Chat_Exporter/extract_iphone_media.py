@@ -81,7 +81,7 @@ def extract_media(base_dir):
         wts_db = os.path.join(base_dir, "7c/7c7fba66680ef796b916b067077cc246adacf01d")
         if not os.path.isfile(wts_db):
             print("WhatsApp database not found.")
-            sys.exit(1)
+            exit()
         else:
             shutil.copyfile(wts_db, "7c7fba66680ef796b916b067077cc246adacf01d")
         with sqlite3.connect(f"{base_dir}/Manifest.db") as manifest:
