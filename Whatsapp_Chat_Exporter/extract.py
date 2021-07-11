@@ -8,6 +8,8 @@ import requests
 import shutil
 import re
 import pkgutil
+from bleach import clean as sanitize
+from markupsafe import Markup
 from datetime import datetime
 from mimetypes import MimeTypes
 try:
@@ -17,6 +19,10 @@ except ModuleNotFoundError:
     support_backup = False
 else:
     support_backup = True
+
+
+def sanitize_except(html):
+    return Markup(sanitize(html, tags=["br"]))
 
 
 def determine_day(last, current):
@@ -193,6 +199,11 @@ def messages(db, data):
                         msg = "{ Location shared: "f"{content[10], content[11]}"" }"
                     else:
                         msg = content[4]
+                        if msg is not None:
+                            if "\r\n" in msg:
+                                msg = msg.replace("\r\n", "<br>")
+                            if "\n" in msg:
+                                msg = msg.replace("\n", "<br>")
             else:
                 if content[5] == 0 and content[6] == 7:
                     msg = "{Message deleted}"
@@ -201,6 +212,11 @@ def messages(db, data):
                         msg = "{ Location shared: "f"{content[10], content[11]}"" }"
                     else:
                         msg = content[4]
+                        if msg is not None:
+                            if "\r\n" in msg:
+                                msg = msg.replace("\r\n", "<br>")
+                            if "\n" in msg:
+                                msg = msg.replace("\n", "<br>")
 
             data[content[0]]["messages"][content[1]]["data"] = msg
 
@@ -208,8 +224,7 @@ def messages(db, data):
         if i % 1000 == 0:
             print(f"Gathering messages...({i}/{total_row_number})", end="\r")
         content = c.fetchone()
-    print(
-        f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
+    print(f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
 
 
 def media(db, data, media_folder):
@@ -304,6 +319,7 @@ def create_html(data, output_folder, template=None):
     templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
+    templateEnv.filters['sanitize_except'] = sanitize_except
     template = templateEnv.get_template(template_file)
 
     total_row_number = len(data)

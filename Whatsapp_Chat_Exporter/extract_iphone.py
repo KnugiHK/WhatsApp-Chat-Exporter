@@ -7,10 +7,16 @@ import os
 import requests
 import shutil
 import pkgutil
+from bleach import clean as sanitize
+from markupsafe import Markup
 from datetime import datetime
 from mimetypes import MimeTypes
 
 APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
+
+
+def sanitize_except(html):
+    return Markup(sanitize(html, tags=["br"]))
 
 
 def determine_day(last, current):
@@ -102,11 +108,21 @@ def messages(db, data):
                     msg = "{Message deleted}"
                 else:
                     msg = content[4]
+                    if msg is not None:
+                        if "\r\n" in msg:
+                            msg = msg.replace("\r\n", "<br>")
+                        if "\n" in msg:
+                            msg = msg.replace("\n", "<br>")
             else:
                 if content[5] == 14:
                     msg = "{Message deleted}"
                 else:
                     msg = content[4]
+                    if msg is not None:
+                        if "\r\n" in msg:
+                            msg = msg.replace("\r\n", "<br>")
+                        if "\n" in msg:
+                            msg = msg.replace("\n", "<br>")
             data[content[0]]["messages"][content[1]]["data"] = msg
         i += 1
         if i % 1000 == 0:
@@ -216,6 +232,7 @@ def create_html(data, output_folder, template=None):
     templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
+    templateEnv.filters['sanitize_except'] = sanitize_except
     template = templateEnv.get_template(template_file)
 
     total_row_number = len(data)

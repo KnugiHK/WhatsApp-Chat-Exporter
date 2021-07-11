@@ -37,7 +37,8 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-       'jinja2'
+       'jinja2',
+       'bleach'
     ],
     extras_require={
         'android_backup':  ["pycryptodome"]

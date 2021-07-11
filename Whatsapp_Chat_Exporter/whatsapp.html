@@ -73,7 +73,7 @@
 								</div>
 							{% endif %}
 							{% if msg.media == false %}
-								{% filter escape %}{{ msg.data or "{This message is not supported yet}" | replace('\n', '<br>') }}{% endfilter %}
+								{{ msg.data or "{This message is not supported yet}" | sanitize_except() }}
 							{% else %}
 								{% if "image/" in msg.mime %}
 								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
@@ -121,7 +121,7 @@
 								</div>
 							{% endif %}
 							{% if msg.media == false %}
-								{% filter escape %}{{ msg.data or "{This message is not supported yet}" }}{% endfilter %}
+							{{ msg.data or "{This message is not supported yet}" | sanitize_except() }}
 							{% else %}
 								{% if "image/" in msg.mime %}
 								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
