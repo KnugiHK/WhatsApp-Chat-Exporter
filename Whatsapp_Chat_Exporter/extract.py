@@ -8,6 +8,7 @@ import requests
 import shutil
 import re
 import pkgutil
+from pathlib import Path
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
@@ -294,9 +295,9 @@ def vcard(db, data):
     total_row_number = len(rows)
     print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
     base = "WhatsApp/vCards"
+    if not os.path.isdir(base):
+        Path(base).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
-        if not os.path.isdir(base):
-            os.mkdir(base)
         file_name = "".join(x for x in row[3] if x.isalnum())
         file_path = f"{base}/{file_name}.vcf"
         if not os.path.isfile(file_path):
