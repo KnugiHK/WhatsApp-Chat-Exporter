@@ -69,7 +69,9 @@ def messages(db, data):
             "time": datetime.fromtimestamp(ts).strftime("%H:%M"),
             "media": False,
             "reply": None,
-            "caption": None
+            "caption": None,
+            "meta": False,
+            "data": None
         }
         if "-" in content[0] and content[2] == 0:
             name = None
@@ -94,8 +96,9 @@ def messages(db, data):
                     try:
                         int(content[4])
                     except ValueError:
-                        msg = "{The group name changed to "f"{content[4]}"" }"
+                        msg = f"The group name changed to {content[4]}"
                         data[content[0]]["messages"][content[1]]["data"] = msg
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         del data[content[0]]["messages"][content[1]]
                 else:
@@ -106,7 +109,8 @@ def messages(db, data):
             # real message
             if content[2] == 1:
                 if content[5] == 14:
-                    msg = "{Message deleted}"
+                    msg = "Message deleted"
+                    data[content[0]]["messages"][content[1]]["meta"] = True
                 else:
                     msg = content[4]
                     if msg is not None:
@@ -116,7 +120,8 @@ def messages(db, data):
                             msg = msg.replace("\n", "<br>")
             else:
                 if content[5] == 14:
-                    msg = "{Message deleted}"
+                    msg = "Message deleted"
+                    data[content[0]]["messages"][content[1]]["meta"] = True
                 else:
                     msg = content[4]
                     if msg is not None:
@@ -133,7 +138,7 @@ def messages(db, data):
         f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data):
+def media(db, data, media_folder):
     c = db.cursor()
     # Get media
     c.execute("""SELECT count() FROM ZWAMEDIAITEM""")
@@ -155,7 +160,7 @@ def media(db, data):
     content = c.fetchone()
     mime = MimeTypes()
     while content is not None:
-        file_path = f"Message/{content[2]}"
+        file_path = f"{media_folder}/{content[2]}"
         data[content[0]]["messages"][content[1]]["media"] = True
 
         if os.path.isfile(file_path):
@@ -178,8 +183,9 @@ def media(db, data):
             # data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
             # data[content[0]]["messages"][content[1]]["mime"] = "media"
             # else:
-            data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+            data[content[0]]["messages"][content[1]]["data"] = "The media is missing"
             data[content[0]]["messages"][content[1]]["mime"] = "media"
+            data[content[0]]["messages"][content[1]]["meta"] = True
         if content[6] is not None:
             data[content[0]]["messages"][content[1]]["caption"] = content[6]
         i += 1
@@ -216,10 +222,11 @@ def vcard(db, data):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row[4])
         data[row[2]]["messages"][row[1]]["data"] = row[3] + \
-            "{ The vCard file cannot be displayed here, however it " \
-            "should be located at " + file_path + "}"
+            "The vCard file cannot be displayed here, " \
+            f"however it should be located at {file_path}"
         data[row[2]]["messages"][row[1]]["mime"] = "text/x-vcard"
         data[row[2]]["messages"][row[1]]["media"] = True
+        data[row[2]]["messages"][row[1]]["meta"] = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 

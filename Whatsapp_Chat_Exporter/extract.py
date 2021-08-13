@@ -119,7 +119,9 @@ def messages(db, data):
             "timestamp": content[3]/1000,
             "time": datetime.fromtimestamp(content[3]/1000).strftime("%H:%M"),
             "media": False,
-            "key_id": content[13]
+            "key_id": content[13],
+            "meta": False,
+            "data": None
         }
         if "-" in content[0] and content[2] == 0:
             name = None
@@ -154,8 +156,9 @@ def messages(db, data):
                     try:
                         int(content[4])
                     except ValueError:
-                        msg = "{The group name changed to "f"{content[4]}"" }"
+                        msg = f"The group name changed to {content[4]}"
                         data[content[0]]["messages"][content[1]]["data"] = msg
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         del data[content[0]]["messages"][content[1]]
                 else:
@@ -174,15 +177,16 @@ def messages(db, data):
                                     name_left = data[content[8]]["name"]
                                 else:
                                     name_left = content[8].split('@')[0]
-                                msg = "{"f"{name_left}"f" added {name_right or 'You'}""}"
+                                msg = f"{name_left} added {name_right or 'You'}"
                             else:
-                                msg = "{"f"Added {name_right or 'You'}""}"
+                                msg = f"Added {name_right or 'You'}"
                         elif b"\xac\xed\x00\x05\x74\x00" in thumb_image:
                             # Changed number
                             original = content[8].split('@')[0]
                             changed = thumb_image[7:].decode().split('@')[0]
-                            msg = "{"f"{original} changed to {changed}""}"
+                            msg = f"{original} changed to {changed}"
                         data[content[0]]["messages"][content[1]]["data"] = msg
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         if content[4] is None:
                             del data[content[0]]["messages"][content[1]]
@@ -194,10 +198,12 @@ def messages(db, data):
         else:
             if content[2] == 1:
                 if content[5] == 5 and content[6] == 7:
-                    msg = "{Message deleted}"
+                    msg = "Message deleted"
+                    data[content[0]]["messages"][content[1]]["meta"] = True
                 else:
                     if content[9] == "5":
-                        msg = "{ Location shared: "f"{content[10], content[11]}"" }"
+                        msg = f"Location shared: {content[10], content[11]}"
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         msg = content[4]
                         if msg is not None:
@@ -207,10 +213,12 @@ def messages(db, data):
                                 msg = msg.replace("\n", "<br>")
             else:
                 if content[5] == 0 and content[6] == 7:
-                    msg = "{Message deleted}"
+                    msg = "Message deleted"
+                    data[content[0]]["messages"][content[1]]["meta"] = True
                 else:
                     if content[9] == "5":
-                        msg = "{ Location shared: "f"{content[10], content[11]}"" }"
+                        msg = f"Location shared: {content[10], content[11]}"
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         msg = content[4]
                         if msg is not None:
@@ -271,8 +279,9 @@ def media(db, data, media_folder):
             # data[content[0]]["messages"][content[1]]["media"] = True
             # data[content[0]]["messages"][content[1]]["mime"] = "media"
             # else:
-            data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+            data[content[0]]["messages"][content[1]]["data"] = "The media is missing"
             data[content[0]]["messages"][content[1]]["mime"] = "media"
+            data[content[0]]["messages"][content[1]]["meta"] = True
         i += 1
         if i % 100 == 0:
             print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -304,9 +313,10 @@ def vcard(db, data):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row[2])
         data[row[1]]["messages"][row[0]]["data"] = row[3] + \
-            "{ The vCard file cannot be displayed here, however it " \
-            "should be located at " + file_path + "}"
+            "The vCard file cannot be displayed here, " \
+            f"however it should be located at {file_path}"
         data[row[1]]["messages"][row[0]]["mime"] = "text/x-vcard"
+        data[row[1]]["messages"][row[0]]["meta"] = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
