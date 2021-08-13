@@ -34,7 +34,7 @@ Simply invoke the following command from shell.
 wtsexporter -a
 ```
 
-### Encrypted Android WhatsApp Backup (crypt14)
+### Encrypted Android WhatsApp Backup (crypt14, not supported until release 0.7)
 In order to support the decryption, install pycryptodome if it is not installed
 ```sh
 pip install pycryptodome
