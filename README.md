@@ -34,7 +34,7 @@ Simply invoke the following command from shell.
 wtsexporter -a
 ```
 
-### Encrypted Android WhatsApp Backup (crypt14, not supported until release 0.7)
+### Encrypted Android WhatsApp Backup
 In order to support the decryption, install pycryptodome if it is not installed
 ```sh
 pip install pycryptodome
@@ -100,9 +100,7 @@ Options:
 ```
 
 # To do
-1. Convert ```\r\n``` to ```<br>```
-2. Reply in iPhone
-3. The CSS for metadata (e.g. {Message Deleted})
+1. Reply in iPhone
 
 # Copyright
 This is a MIT licensed project.
