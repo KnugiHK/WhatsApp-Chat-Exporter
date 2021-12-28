@@ -12,12 +12,13 @@ setuptools.setup(
     version=version,
     author="KnugiHK",
     author_email="info@knugi.com",
-    description="A Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON.",
+    description="A Whatsapp database parser that will give you the "
+                "history of your Whatsapp conversations in HTML and JSON.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/KnugiHK/Whatsapp-Chat-Exporter",
     packages=setuptools.find_packages(),
-    package_data = {
+    package_data={
         '': ['whatsapp.html']
     },
     classifiers=[
@@ -36,9 +37,10 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-       'jinja2'
+       'jinja2',
+       'bleach'
     ],
-    extras_require = {
+    extras_require={
         'android_backup':  ["pycryptodome"]
     },
     entry_points={

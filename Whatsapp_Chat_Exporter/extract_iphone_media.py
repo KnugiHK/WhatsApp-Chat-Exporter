@@ -6,21 +6,24 @@ import os
 import getpass
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
-except:
+except ModuleNotFoundError:
     support_encrypted = False
 else:
     support_encrypted = True
 
+
 def extract_encrypted(base_dir, password):
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password)
     print("Decrypting WhatsApp database...")
-    backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES, output_filename="7c7fba66680ef796b916b067077cc246adacf01d")
-    backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS, output_filename="ContactsV2.sqlite")
+    backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
+                        output_filename="7c7fba66680ef796b916b067077cc246adacf01d")
+    backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
+                        output_filename="ContactsV2.sqlite")
     data = backup.execute_sql("""SELECT count()
                                 FROM Files
                                 WHERE relativePath
                                     LIKE 'Message/Media/%'"""
-    )
+                              )
     total_row_number = data[0][0]
     print(f"Gathering media...(0/{total_row_number})", end="\r")
     data = backup.execute_sql("""SELECT fileID,
@@ -30,7 +33,7 @@ def extract_encrypted(base_dir, password):
                                 FROM Files
                                 WHERE relativePath
                                     LIKE 'Message/Media/%'"""
-    )
+                              )
     if not os.path.isdir("Message"):
         os.mkdir("Message")
     if not os.path.isdir("Message/Media"):
@@ -43,7 +46,7 @@ def extract_encrypted(base_dir, password):
         flags = row[2]
         file = row[3]
         if flags == 2:
-            try: 
+            try:
                 os.mkdir(destination)
             except FileExistsError:
                 pass
@@ -56,6 +59,7 @@ def extract_encrypted(base_dir, password):
             print(f"Gathering media...({i}/{total_row_number})", end="\r")
     print(f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
 
+
 def is_encrypted(base_dir):
     with sqlite3.connect(f"{base_dir}/Manifest.db") as f:
         c = f.cursor()
@@ -67,6 +71,7 @@ def is_encrypted(base_dir):
             return True
         else:
             return False
+
 
 def extract_media(base_dir):
     if is_encrypted(base_dir):
@@ -81,7 +86,7 @@ def extract_media(base_dir):
         wts_db = os.path.join(base_dir, "7c/7c7fba66680ef796b916b067077cc246adacf01d")
         if not os.path.isfile(wts_db):
             print("WhatsApp database not found.")
-            sys.exit(1)
+            exit()
         else:
             shutil.copyfile(wts_db, "7c7fba66680ef796b916b067077cc246adacf01d")
         with sqlite3.connect(f"{base_dir}/Manifest.db") as manifest:

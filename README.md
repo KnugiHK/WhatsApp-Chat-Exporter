@@ -12,6 +12,7 @@ A customizable Android and iPhone Whatsapp database parser that will give you th
 First, install the exporter by:
 ```shell
 pip install whatsapp-chat-exporter
+pip install whatsapp-chat-exporter[android_backup]  & :: Optional, if you want it to support decrypting Android WhatsApp backup.
 ```
 Then, create a working directory in somewhere you want
 ```shell
@@ -56,7 +57,6 @@ Do an iPhone Backup with iTunes first.
 
 If you want to work on an encrypted iPhone Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
-pip install biplist pycryptodome & :: Optional, since the pip will install these dependencies automatically.
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 ### Extracting
@@ -88,13 +88,15 @@ Options:
   -m MEDIA, --media=MEDIA
                         Path to WhatsApp media folder
   -b BACKUP, --backup=BACKUP
-                        Path to iPhone/Android (must be used together with -k)
+                        Path to Android (must be used together with -k)/iPhone
                         WhatsApp backup
   -o OUTPUT, --output=OUTPUT
                         Output to specific directory
   -j, --json            Save the result to a single JSON file
   -d DB, --db=DB        Path to database file
   -k KEY, --key=KEY     Path to key file
+  -t TEMPLATE, --template=TEMPLATE
+                        Path to custom HTML template
 ```
 
 # To do

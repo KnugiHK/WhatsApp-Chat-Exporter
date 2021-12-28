@@ -72,29 +72,37 @@
 									<a href="#{{msg.reply}}" style="color: #168acc;">"{{ msg.quoted_data or 'media' }}"</a>
 								</div>
 							{% endif %}
-							{% if msg.media == false %}
-								{% filter escape %}{{ msg.data or "{This message is not supported yet}" | replace('\n', '<br>') }}{% endfilter %}
+							{% if msg.meta == true or msg.media == false and msg.data is none %}
+								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+								 	<p>{{ msg.data or 'This message is not supported' }}</p>
+							    </div>
 							{% else %}
-								{% if "image/" in msg.mime %}
-								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
-								{% elif "audio/" in msg.mime %}
-								<audio controls="controls" autobuffer="autobuffer">
-									<source src="{{ msg.data }}" />
-								</audio>
-								{% elif "video/" in msg.mime %}
-								<video controls="controls" autobuffer="autobuffer">
-									<source src="{{ msg.data }}" />
-								</video>
-								{% elif "/" in msg.mime %}
-									{The file cannot be displayed here, however it should be located at {{ msg.data }}}
+								{% if msg.media == false %}
+								{{ msg.data | sanitize_except() }}
 								{% else %}
-									{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% if "image/" in msg.mime %}
+									<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
+									{% elif "audio/" in msg.mime %}
+									<audio controls="controls" autobuffer="autobuffer">
+										<source src="{{ msg.data }}" />
+									</audio>
+									{% elif "video/" in msg.mime %}
+									<video controls="controls" autobuffer="autobuffer">
+										<source src="{{ msg.data }}" />
+									</video>
+									{% elif "/" in msg.mime %}
+										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+											<p>The file cannot be displayed here, however it should be located at {{ msg.data }}</p>
+										</div>
+									{% else %}
+										{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% endif %}
+									{% if msg.caption is not none %}
+									<br>
+									{{ msg.caption }}
+									{% endif %}
 								{% endif %}
-								{% if msg.caption is not none %}
-								<br>
-								{{ msg.caption }}
 								{% endif %}
-							{% endif %}
 							</div>
 						</div>
 						<div class="w3-col m2 l2" style="padding-left: 10px"><img src="{{ my_avatar }}" onerror="this.style.display='none'"></div>
@@ -120,27 +128,35 @@
 									<a href="#{{msg.reply}}" style="color: #168acc;">"{{ msg.quoted_data or 'media' }}"</a>
 								</div>
 							{% endif %}
-							{% if msg.media == false %}
-								{% filter escape %}{{ msg.data or "{This message is not supported yet}" }}{% endfilter %}
+							{% if msg.meta == true or msg.media == false and msg.data is none %}
+								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+									<p>{{ msg.data or 'This message is not supported' }}</p>
+								</div>
 							{% else %}
-								{% if "image/" in msg.mime %}
-								<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
-								{% elif "audio/" in msg.mime %}
-								<audio controls="controls" autobuffer="autobuffer">
-									<source src="{{ msg.data }}" />
-								</audio>
-								{% elif "video/" in msg.mime %}
-								<video controls="controls" autobuffer="autobuffer">
-									<source src="{{ msg.data }}" />
-								</video>
-								{% elif "/" in msg.mime %}
-									{The file cannot be displayed here, however it should be located at {{ msg.data }}}
+								{% if msg.media == false %}
+								{{ msg.data | sanitize_except() }}
 								{% else %}
-									{% filter escape %}{{ msg.data }}{% endfilter %}
-								{% endif %}
-								{% if msg.caption is not none %}
-								<br>
-								{{ msg.caption }}
+									{% if "image/" in msg.mime %}
+									<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
+									{% elif "audio/" in msg.mime %}
+									<audio controls="controls" autobuffer="autobuffer">
+										<source src="{{ msg.data }}" />
+									</audio>
+									{% elif "video/" in msg.mime %}
+									<video controls="controls" autobuffer="autobuffer">
+										<source src="{{ msg.data }}" />
+									</video>
+									{% elif "/" in msg.mime %}
+										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+											<p>The file cannot be displayed here, however it should be located at {{ msg.data }}</p>
+										</div>
+									{% else %}
+										{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% endif %}
+									{% if msg.caption is not none %}
+									<br>
+									{{ msg.caption }}
+									{% endif %}
 								{% endif %}
 							{% endif %}
 							</div>

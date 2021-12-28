@@ -8,6 +8,9 @@ import requests
 import shutil
 import re
 import pkgutil
+from pathlib import Path
+from bleach import clean as sanitize
+from markupsafe import Markup
 from datetime import datetime
 from mimetypes import MimeTypes
 try:
@@ -19,6 +22,10 @@ else:
     support_backup = True
 
 
+def sanitize_except(html):
+    return Markup(sanitize(html, tags=["br"]))
+
+
 def determine_day(last, current):
     last = datetime.fromtimestamp(last).date()
     current = datetime.fromtimestamp(current).date()
@@ -28,20 +35,27 @@ def determine_day(last, current):
         return current
 
 
-def decrypt_backup(database, key, output):
+def decrypt_backup(database, key, output, crypt14=True):
     if not support_backup:
         return False
     if len(key) != 158:
         raise ValueError("The key file must be 158 bytes")
-    if len(database) < 191:
-        raise ValueError("The database file must be at least 191 bytes")
     t1 = key[30:62]
-    t2 = database[15:47]
+    if crypt14:
+        if len(database) < 191:
+            raise ValueError("The crypt14 file must be at least 191 bytes")
+        t2 = database[15:47]
+        iv = database[67:83]
+        db_ciphertext = database[191:]
+    else:
+        if len(database) < 67:
+            raise ValueError("The crypt12 file must be at least 67 bytes")
+        t2 = database[3:35]
+        iv = database[51:67]
+        db_ciphertext = database[67:-20]
     if t1 != t2:
         raise ValueError("The signature of key file and backup file mismatch")
 
-    iv = database[67:83]
-    db_ciphertext = database[191:]
     main_key = key[126:]
     cipher = AES.new(main_key, AES.MODE_GCM, iv)
     db_compressed = cipher.decrypt(db_ciphertext)
@@ -105,7 +119,9 @@ def messages(db, data):
             "timestamp": content[3]/1000,
             "time": datetime.fromtimestamp(content[3]/1000).strftime("%H:%M"),
             "media": False,
-            "key_id": content[13]
+            "key_id": content[13],
+            "meta": False,
+            "data": None
         }
         if "-" in content[0] and content[2] == 0:
             name = None
@@ -140,8 +156,9 @@ def messages(db, data):
                     try:
                         int(content[4])
                     except ValueError:
-                        msg = "{The group name changed to "f"{content[4]}"" }"
+                        msg = f"The group name changed to {content[4]}"
                         data[content[0]]["messages"][content[1]]["data"] = msg
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         del data[content[0]]["messages"][content[1]]
                 else:
@@ -160,15 +177,16 @@ def messages(db, data):
                                     name_left = data[content[8]]["name"]
                                 else:
                                     name_left = content[8].split('@')[0]
-                                msg = "{"f"{name_left}"f" added {name_right or 'You'}""}"
+                                msg = f"{name_left} added {name_right or 'You'}"
                             else:
-                                msg = "{"f"Added {name_right or 'You'}""}"
+                                msg = f"Added {name_right or 'You'}"
                         elif b"\xac\xed\x00\x05\x74\x00" in thumb_image:
                             # Changed number
                             original = content[8].split('@')[0]
                             changed = thumb_image[7:].decode().split('@')[0]
-                            msg = "{"f"{original} changed to {changed}""}"
+                            msg = f"{original} changed to {changed}"
                         data[content[0]]["messages"][content[1]]["data"] = msg
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         if content[4] is None:
                             del data[content[0]]["messages"][content[1]]
@@ -180,20 +198,34 @@ def messages(db, data):
         else:
             if content[2] == 1:
                 if content[5] == 5 and content[6] == 7:
-                    msg = "{Message deleted}"
+                    msg = "Message deleted"
+                    data[content[0]]["messages"][content[1]]["meta"] = True
                 else:
                     if content[9] == "5":
-                        msg = "{ Location shared: "f"{content[10], content[11]}"" }"
+                        msg = f"Location shared: {content[10], content[11]}"
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         msg = content[4]
+                        if msg is not None:
+                            if "\r\n" in msg:
+                                msg = msg.replace("\r\n", "<br>")
+                            if "\n" in msg:
+                                msg = msg.replace("\n", "<br>")
             else:
                 if content[5] == 0 and content[6] == 7:
-                    msg = "{Message deleted}"
+                    msg = "Message deleted"
+                    data[content[0]]["messages"][content[1]]["meta"] = True
                 else:
                     if content[9] == "5":
-                        msg = "{ Location shared: "f"{content[10], content[11]}"" }"
+                        msg = f"Location shared: {content[10], content[11]}"
+                        data[content[0]]["messages"][content[1]]["meta"] = True
                     else:
                         msg = content[4]
+                        if msg is not None:
+                            if "\r\n" in msg:
+                                msg = msg.replace("\r\n", "<br>")
+                            if "\n" in msg:
+                                msg = msg.replace("\n", "<br>")
 
             data[content[0]]["messages"][content[1]]["data"] = msg
 
@@ -201,8 +233,7 @@ def messages(db, data):
         if i % 1000 == 0:
             print(f"Gathering messages...({i}/{total_row_number})", end="\r")
         content = c.fetchone()
-    print(
-        f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
+    print(f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
 
 
 def media(db, data, media_folder):
@@ -248,8 +279,9 @@ def media(db, data, media_folder):
             # data[content[0]]["messages"][content[1]]["media"] = True
             # data[content[0]]["messages"][content[1]]["mime"] = "media"
             # else:
-            data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
+            data[content[0]]["messages"][content[1]]["data"] = "The media is missing"
             data[content[0]]["messages"][content[1]]["mime"] = "media"
+            data[content[0]]["messages"][content[1]]["meta"] = True
         i += 1
         if i % 100 == 0:
             print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -272,27 +304,34 @@ def vcard(db, data):
     total_row_number = len(rows)
     print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
     base = "WhatsApp/vCards"
+    if not os.path.isdir(base):
+        Path(base).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
-        if not os.path.isdir(base):
-            os.mkdir(base)
         file_name = "".join(x for x in row[3] if x.isalnum())
         file_path = f"{base}/{file_name}.vcf"
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row[2])
         data[row[1]]["messages"][row[0]]["data"] = row[3] + \
-            "{ The vCard file cannot be displayed here, however it " \
-            "should be located at " + file_path + "}"
+            "The vCard file cannot be displayed here, " \
+            f"however it should be located at {file_path}"
         data[row[1]]["messages"][row[0]]["mime"] = "text/x-vcard"
+        data[row[1]]["messages"][row[0]]["meta"] = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def create_html(data, output_folder):
-    templateLoader = jinja2.FileSystemLoader(searchpath=os.path.dirname(__file__))
+def create_html(data, output_folder, template=None):
+    if template is None:
+        template_dir = os.path.dirname(__file__)
+        template_file = "whatsapp.html"
+    else:
+        template_dir = os.path.dirname(template)
+        template_file = os.path.basename(template)
+    templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
-    TEMPLATE_FILE = "whatsapp.html"
-    template = templateEnv.get_template(TEMPLATE_FILE)
+    templateEnv.filters['sanitize_except'] = sanitize_except
+    template = templateEnv.get_template(template_file)
 
     total_row_number = len(data)
     print(f"\nCreating HTML...(0/{total_row_number})", end="\r")
