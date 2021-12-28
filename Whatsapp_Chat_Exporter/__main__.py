@@ -150,7 +150,10 @@ def main():
         create_html(data, options.output, options.template)
 
     if not os.path.isdir(f"{options.output}/{options.media}"):
-        shutil.move(options.media, f"{options.output}/")
+        try:
+            shutil.move(options.media, f"{options.output}/")
+        except PermissionError:
+            print(f"Cannot remove original WhatsApp directory. Perhaps the directory is opened?")
 
     if options.json:
         with open("result.json", "w") as f:
