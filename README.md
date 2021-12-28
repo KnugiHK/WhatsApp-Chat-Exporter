@@ -100,9 +100,7 @@ Options:
 ```
 
 # To do
-1. Convert ```\r\n``` to ```<br>```
-2. Reply in iPhone
-3. The CSS for metadata (e.g. {Message Deleted})
+1. Reply in iPhone
 
 # Copyright
 This is a MIT licensed project.
