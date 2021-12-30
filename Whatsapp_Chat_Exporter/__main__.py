@@ -6,6 +6,7 @@ import os
 import sqlite3
 import shutil
 import json
+from sys import exit
 
 
 def main():
@@ -79,10 +80,10 @@ def main():
 
     if options.android and options.iphone:
         print("You must define only one device type.")
-        exit()
+        exit(1)
     if not options.android and not options.iphone:
         print("You must define the device type.")
-        exit()
+        exit(1)
     data = {}
 
     if options.android:
@@ -98,7 +99,7 @@ def main():
         if options.key is not None:
             if options.backup is None:
                 print("You must specify the backup file with -b")
-                return False
+                exit(1)
             print("Decryption key specified, decrypting WhatsApp backup...")
             key = open(options.key, "rb").read()
             db = open(options.backup, "rb").read()
@@ -106,7 +107,7 @@ def main():
             if not extract.decrypt_backup(db, key, msg_db, is_crypt14):
                 print("Dependencies of decrypt_backup are not "
                       "present. For details, see README.md")
-                return False
+                exit(3)
         if options.wa is None:
             contact_db = "wa.db"
         else:
@@ -148,12 +149,19 @@ def main():
             media(db, data, options.media)
             vcard(db, data)
         create_html(data, options.output, options.template)
+    else:
+        print(
+            "The message database does not exist. You may specify the path "
+            "to database file with option -d or check your provided path.",
+            end="\r"
+        )
+        exit(2)
 
-    if not os.path.isdir(f"{options.output}/{options.media}"):
+    if os.path.isdir(options.media) and not os.path.isdir(f"{options.output}/{options.media}"):
         try:
             shutil.move(options.media, f"{options.output}/")
         except PermissionError:
-            print(f"Cannot remove original WhatsApp directory. Perhaps the directory is opened?")
+            print("Cannot remove original WhatsApp directory. Perhaps the directory is opened?")
 
     if options.json:
         with open("result.json", "w") as f:
