@@ -166,11 +166,13 @@ def main():
         )
         exit(2)
 
-    if os.path.isdir(options.media) and not os.path.isdir(f"{options.output}/{options.media}"):
+    if os.path.isdir(options.media) and \
+            not os.path.isdir(f"{options.output}/{options.media}"):
         try:
             shutil.move(options.media, f"{options.output}/")
         except PermissionError:
-            print("Cannot remove original WhatsApp directory. Perhaps the directory is opened?")
+            print("Cannot remove original WhatsApp directory. "
+                  "Perhaps the directory is opened?")
 
     if options.json:
         with open("result.json", "w") as f:
