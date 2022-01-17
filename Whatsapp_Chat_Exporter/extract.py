@@ -37,7 +37,7 @@ def determine_day(last, current):
 
 def decrypt_backup(database, key, output, crypt14=True):
     if not support_backup:
-        return False
+        return 1
     if len(key) != 158:
         raise ValueError("The key file must be 158 bytes")
     t1 = key[30:62]
@@ -62,11 +62,11 @@ def decrypt_backup(database, key, output, crypt14=True):
     try:
         db = zlib.decompress(db_compressed)
     except zlib.error:
-        print("Decompressing failed. Possibly incorrect offsets used in decryption.")
+        return 2
     if db[0:6].upper() == b"SQLITE":
         with open(output, "wb") as f:
             f.write(db)
-        return True
+        return 0
     else:
         raise ValueError("The plaintext is not a SQLite database. Did you use the key to encrypt something...")
 

@@ -104,10 +104,19 @@ def main():
             key = open(options.key, "rb").read()
             db = open(options.backup, "rb").read()
             is_crypt14 = False if "crypt12" in options.backup else True
-            if not extract.decrypt_backup(db, key, msg_db, is_crypt14):
-                print("Dependencies of decrypt_backup are not "
-                      "present. For details, see README.md")
-                exit(3)
+            error = extract.decrypt_backup(db, key, msg_db, is_crypt14)
+            if error != 0:
+                if error == 1:
+                    print("Dependencies of decrypt_backup are not "
+                          "present. For details, see README.md.")
+                    exit(3)
+                elif error == 2:
+                    print("Failed when decompressing the decrypted backup."
+                          "Possibly incorrect offsets used in decryption.")
+                    exit(4)
+                else:
+                    print("Unknown error occurred.")
+                    exit(5)
         if options.wa is None:
             contact_db = "wa.db"
         else:
