@@ -59,7 +59,10 @@ def decrypt_backup(database, key, output, crypt14=True):
     main_key = key[126:]
     cipher = AES.new(main_key, AES.MODE_GCM, iv)
     db_compressed = cipher.decrypt(db_ciphertext)
-    db = zlib.decompress(db_compressed)
+    try:
+        db = zlib.decompress(db_compressed)
+    except zlib.error:
+        print("Decompressing failed. Possibly incorrect offsets used in decryption.")
     if db[0:6].upper() == b"SQLITE":
         with open(output, "wb") as f:
             f.write(db)
