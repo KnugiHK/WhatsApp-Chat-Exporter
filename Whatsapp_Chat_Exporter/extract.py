@@ -34,6 +34,15 @@ def determine_day(last, current):
     else:
         return current
 
+CRYPT14_OFFSETS = [
+    {"iv": 67, "db": 191},
+    {"iv": 66, "db": 99}
+]
+
+def brute_force_offset():
+    for iv in range(60, 80):
+        for db in range(80, 130):
+            yield iv, iv + 16, db
 
 def decrypt_backup(database, key, output, crypt14=True):
     if not support_backup:
@@ -44,9 +53,11 @@ def decrypt_backup(database, key, output, crypt14=True):
     if crypt14:
         if len(database) < 191:
             raise ValueError("The crypt14 file must be at least 191 bytes")
+        current_try = 0
+        offsets = CRYPT14_OFFSETS[current_try]
         t2 = database[15:47]
-        iv = database[67:83]
-        db_ciphertext = database[191:]
+        iv = database[offsets["iv"]:offsets["iv"] + 16]
+        db_ciphertext = database[offsets["db"]:]
     else:
         if len(database) < 67:
             raise ValueError("The crypt12 file must be at least 67 bytes")
@@ -57,18 +68,52 @@ def decrypt_backup(database, key, output, crypt14=True):
         raise ValueError("The signature of key file and backup file mismatch")
 
     main_key = key[126:]
-    cipher = AES.new(main_key, AES.MODE_GCM, iv)
-    db_compressed = cipher.decrypt(db_ciphertext)
-    try:
-        db = zlib.decompress(db_compressed)
-    except zlib.error:
-        return 2
-    if db[0:6].upper() == b"SQLITE":
-        with open(output, "wb") as f:
-            f.write(db)
-        return 0
-    else:
-        raise ValueError("The plaintext is not a SQLite database. Did you use the key to encrypt something...")
+    decompressed = False
+    while not decompressed:
+        cipher = AES.new(main_key, AES.MODE_GCM, iv)
+        db_compressed = cipher.decrypt(db_ciphertext)
+        try:
+            db = zlib.decompress(db_compressed)
+        except zlib.error:
+            if crypt14:
+                current_try += 1
+                if current_try < len(CRYPT14_OFFSETS):
+                    offsets = CRYPT14_OFFSETS[current_try]
+                    t2 = database[offsets["t2"]:offsets["t2"] + 32]
+                    iv = database[offsets["iv"]:offsets["iv"] + 16]
+                    db_ciphertext = database[offsets["db"]:]
+                    continue
+                else:
+                    for start_iv, end_iv, start_db in brute_force_offset():
+                        iv = database[start_iv:end_iv]
+                        db_ciphertext = database[start_db:]
+                        cipher = AES.new(main_key, AES.MODE_GCM, iv)
+                        db_compressed = cipher.decrypt(db_ciphertext)
+                        try:
+                            db = zlib.decompress(db_compressed)
+                        except zlib.error:
+                            continue
+                        else:
+                            decompressed = True
+                            print(
+                                f"The offsets of your IV and database are {start_iv} and "
+                                f"{start_db}, respectively. To include your offsets in the "
+                                "program, please report it by creating an issue on GitHub: "
+                                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues/new"
+                            )
+                            break
+                    if not decompressed:
+                        return 2
+            else:
+                return 3
+        else:
+            decompressed = True
+        if db[0:6].upper() == b"SQLITE":
+            with open(output, "wb") as f:
+                f.write(db)
+            return 0
+        else:
+            raise ValueError("The plaintext is not a SQLite database. Did you use the key to encrypt something...")
 
 
 def contacts(db, data):
