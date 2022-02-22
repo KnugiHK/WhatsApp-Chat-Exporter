@@ -57,8 +57,8 @@ class Crypt(Enum):
 
 
 def brute_force_offset():
-    for iv in range(60, 80):
-        for db in range(80, 130):
+    for iv in range(0, 200):
+        for db in range(0, 200):
             yield iv, iv + 16, db
 
 
@@ -136,11 +136,12 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14):
                 current_try += 1
                 if current_try < len(CRYPT14_OFFSETS):
                     offsets = CRYPT14_OFFSETS[current_try]
-                    t2 = database[offsets["t2"]:offsets["t2"] + 32]
                     iv = database[offsets["iv"]:offsets["iv"] + 16]
                     db_ciphertext = database[offsets["db"]:]
                     continue
                 else:
+                    print("Common offsets are not applicable to "
+                          "your backup. Trying to brute force it...")
                     for start_iv, end_iv, start_db in brute_force_offset():
                         iv = database[start_iv:end_iv]
                         db_ciphertext = database[start_db:]

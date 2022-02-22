@@ -121,7 +121,7 @@ def main():
                           " are not present. For details, see README.md.")
                     exit(3)
                 elif error == 2:
-                    print("Failed when decompressing the decrypted backup."
+                    print("Failed when decompressing the decrypted backup. "
                           "Possibly incorrect offsets used in decryption.")
                     exit(4)
                 else:
