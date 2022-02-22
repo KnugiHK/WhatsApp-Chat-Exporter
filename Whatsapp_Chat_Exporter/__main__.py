@@ -110,7 +110,7 @@ def main():
             elif "crypt15" in options.backup:
                 crypt = Crypt.CRYPT15
             if os.path.isfile(options.key):
-                key = open(options.key, "rb").read()
+                key = open(options.key, "rb")
             elif all(char in string.hexdigits for char in options.key):
                 key = bytes.fromhex(options.key)
             db = open(options.backup, "rb").read()

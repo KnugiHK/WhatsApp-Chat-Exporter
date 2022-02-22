@@ -8,12 +8,16 @@ import requests
 import shutil
 import re
 import pkgutil
+import io
+import hmac
 from pathlib import Path
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
 from enum import Enum
 from mimetypes import MimeTypes
+from hashlib import sha256
+
 try:
     import zlib
     from Crypto.Cipher import AES
@@ -58,25 +62,36 @@ def brute_force_offset():
             yield iv, iv + 16, db
 
 
-def extract_encrypted_key(keyfile):
-    from hashlib import sha256
-    import hmac
-    key_stream = b""
-    for byte in javaobj.loads(keyfile):
-        key_stream += byte.to_bytes(1, "big", signed=True)
+def _generate_hmac_of_hmac(key_stream):
     key = hmac.new(
-        hmac.new(b'\x00' * 32, key_stream, sha256).digest(),
+        hmac.new(
+            b'\x00' * 32,
+            key_stream,
+            sha256
+        ).digest(),
         b"backup encryption\x01",
         sha256
     )
     return key.digest()
 
+
+def _extract_encrypted_key(keyfile):
+    key_stream = b""
+    for byte in javaobj.loads(keyfile):
+        key_stream += byte.to_bytes(1, "big", signed=True)
+
+    return _generate_hmac_of_hmac(key_stream)
+    
+
 def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14):
     if not support_backup:
         return 1
+    if isinstance(key, io.IOBase):
+        key = key.read()
+        if crypt is not Crypt.CRYPT15:
+            t1 = key[30:62]
     if crypt is not Crypt.CRYPT15 and len(key) != 158:
         raise ValueError("The key file must be 158 bytes")
-    t1 = key[30:62]
     if crypt == Crypt.CRYPT14:
         if len(database) < 191:
             raise ValueError("The crypt14 file must be at least 191 bytes")
@@ -99,11 +114,15 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14):
         t1 = t2 = None
         iv = database[8:24]
         db_ciphertext = database[131:]
+
     if t1 != t2:
         raise ValueError("The signature of key file and backup file mismatch")
 
     if crypt == Crypt.CRYPT15:
-        main_key = extract_encrypted_key(key)
+        if len(key) == 32:
+            main_key = _generate_hmac_of_hmac(key)
+        else:
+            main_key = _extract_encrypted_key(key)
     else:
         main_key = key[126:]
     decompressed = False
