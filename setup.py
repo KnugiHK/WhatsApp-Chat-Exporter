@@ -42,6 +42,8 @@ setuptools.setup(
     ],
     extras_require={
         'android_backup':  ["pycryptodome"],
+        'crypt12':  ["pycryptodome"],
+        'crypt12':  ["pycryptodome"],
         'crypt15':  ["pycryptodome", "javaobj-py3"]
     },
     entry_points={
