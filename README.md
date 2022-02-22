@@ -58,15 +58,20 @@ To support Crypt15 backup, install javaobj-py3 if it is not installed
 pip install javaobj-py3 # Or 
 pip install whatsapp-chat-exporter["crypt15"] # install along with this software
 ```
-Place the decryption key file (encrypted_backup.key) and the encrypted WhatsApp Backup (msgstore.db.crypt15) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
+Place the encrypted WhatsApp Backup (msgstore.db.crypt15) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.  
+If you do not have the 32 bytes hex key (64 hexdigits), place the decryption key file (encrypted_backup.key) extracted from Android. If you gave the 32 bytes hex key, simply put the key in the shell.
 
-And now, you should have something like this in the working directory.
+Now, you should have something like this in the working directory (if you do not have 32 bytes hex key).
 
 ![Android folder structure with WhatsApp Crypt15 Backup](imgs/android_structure_backup_crypt15.png)
-#### Extracting
-Simply invoke the following command from shell.
+##### Extracting
+If you do not have 32 bytes hex key but have the key file available, simply invoke the following command from shell.
 ```sh
 wtsexporter -a -k encrypted_backup.key -b msgstore.db.crypt15
+```
+If you have the 32 bytes hex key, simply put the hex key in the -k option and invoke the command from shell like this:
+```sh
+wtsexporter -a -k 432435053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cdaa5a8 -b msgstore.db.crypt15
 ```
 
 ## Working with iPhone
