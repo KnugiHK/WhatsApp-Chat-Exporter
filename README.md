@@ -37,8 +37,10 @@ wtsexporter -a
 ### Encrypted Android WhatsApp Backup
 In order to support the decryption, install pycryptodome if it is not installed
 ```sh
-pip install pycryptodome
+pip install pycryptodome # Or 
+pip install whatsapp-chat-exporter["android_backup"] # install along with this software
 ```
+#### Crypt12 or Crypt14
 Place the decryption key file (key) and the encrypted WhatsApp Backup (msgstore.db.crypt14) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
 
 And now, you should have something like this in the working directory.
@@ -48,6 +50,23 @@ And now, you should have something like this in the working directory.
 Simply invoke the following command from shell.
 ```sh
 wtsexporter -a -k key -b msgstore.db.crypt14
+```
+
+#### Crypt15 (End-to-End Encrypted Backup)
+To support Crypt15 backup, install javaobj-py3 if it is not installed
+```sh
+pip install javaobj-py3 # Or 
+pip install whatsapp-chat-exporter["crypt15"] # install along with this software
+```
+Place the decryption key file (encrypted_backup.key) and the encrypted WhatsApp Backup (msgstore.db.crypt15) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
+
+And now, you should have something like this in the working directory.
+
+![Android folder structure with WhatsApp Crypt15 Backup](imgs/android_structure_backup_crypt15.png)
+#### Extracting
+Simply invoke the following command from shell.
+```sh
+wtsexporter -a -k encrypted_backup.key -b msgstore.db.crypt15
 ```
 
 ## Working with iPhone
