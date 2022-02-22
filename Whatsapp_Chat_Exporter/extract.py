@@ -12,6 +12,7 @@ from pathlib import Path
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
+from enum import Enum
 from mimetypes import MimeTypes
 try:
     import zlib
@@ -20,7 +21,12 @@ except ModuleNotFoundError:
     support_backup = False
 else:
     support_backup = True
-
+try:
+    import javaobj
+except ModuleNotFoundError:
+    support_crypt15 = False
+else:
+    support_crypt15 = True
 
 def sanitize_except(html):
     return Markup(sanitize(html, tags=["br"]))
@@ -39,18 +45,39 @@ CRYPT14_OFFSETS = [
     {"iv": 66, "db": 99}
 ]
 
+
+class Crypt(Enum):
+    CRYPT15 = 15
+    CRYPT14 = 14
+    CRYPT12 = 12
+
+
 def brute_force_offset():
     for iv in range(60, 80):
         for db in range(80, 130):
             yield iv, iv + 16, db
 
-def decrypt_backup(database, key, output, crypt14=True):
+
+def extract_encrypted_key(keyfile):
+    from hashlib import sha256
+    import hmac
+    key_stream = b""
+    for byte in javaobj.loads(keyfile):
+        key_stream += byte.to_bytes(1, "big", signed=True)
+    key = hmac.new(
+        hmac.new(b'\x00' * 32, key_stream, sha256).digest(),
+        b"backup encryption\x01",
+        sha256
+    )
+    return key.digest()
+
+def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14):
     if not support_backup:
         return 1
-    if len(key) != 158:
+    if crypt is not Crypt.CRYPT15 and len(key) != 158:
         raise ValueError("The key file must be 158 bytes")
     t1 = key[30:62]
-    if crypt14:
+    if crypt == Crypt.CRYPT14:
         if len(database) < 191:
             raise ValueError("The crypt14 file must be at least 191 bytes")
         current_try = 0
@@ -58,16 +85,27 @@ def decrypt_backup(database, key, output, crypt14=True):
         t2 = database[15:47]
         iv = database[offsets["iv"]:offsets["iv"] + 16]
         db_ciphertext = database[offsets["db"]:]
-    else:
+    elif crypt == Crypt.CRYPT12:
         if len(database) < 67:
             raise ValueError("The crypt12 file must be at least 67 bytes")
         t2 = database[3:35]
         iv = database[51:67]
         db_ciphertext = database[67:-20]
+    elif crypt == Crypt.CRYPT15:
+        if not support_crypt15:
+            return 1
+        if len(database) < 131:
+            raise ValueError("The crypt15 file must be at least 131 bytes")
+        t1 = t2 = None
+        iv = database[8:24]
+        db_ciphertext = database[131:]
     if t1 != t2:
         raise ValueError("The signature of key file and backup file mismatch")
 
-    main_key = key[126:]
+    if crypt == Crypt.CRYPT15:
+        main_key = extract_encrypted_key(key)
+    else:
+        main_key = key[126:]
     decompressed = False
     while not decompressed:
         cipher = AES.new(main_key, AES.MODE_GCM, iv)
@@ -75,7 +113,7 @@ def decrypt_backup(database, key, output, crypt14=True):
         try:
             db = zlib.decompress(db_compressed)
         except zlib.error:
-            if crypt14:
+            if crypt == Crypt.CRYPT14:
                 current_try += 1
                 if current_try < len(CRYPT14_OFFSETS):
                     offsets = CRYPT14_OFFSETS[current_try]

@@ -1,11 +1,13 @@
 from .__init__ import __version__
 from Whatsapp_Chat_Exporter import extract, extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
+from Whatsapp_Chat_Exporter.extract import Crypt
 from optparse import OptionParser
 import os
 import sqlite3
 import shutil
 import json
+import string
 from sys import exit
 
 
@@ -101,14 +103,22 @@ def main():
                 print("You must specify the backup file with -b")
                 exit(1)
             print("Decryption key specified, decrypting WhatsApp backup...")
-            key = open(options.key, "rb").read()
+            if "crypt12" in options.backup:
+                crypt = Crypt.CRYPT12
+            elif "crypt14" in options.backup:
+                crypt = Crypt.CRYPT14
+            elif "crypt15" in options.backup:
+                crypt = Crypt.CRYPT15
+            if os.path.isfile(options.key):
+                key = open(options.key, "rb").read()
+            elif all(char in string.hexdigits for char in options.key):
+                key = bytes.fromhex(options.key)
             db = open(options.backup, "rb").read()
-            is_crypt14 = False if "crypt12" in options.backup else True
-            error = extract.decrypt_backup(db, key, msg_db, is_crypt14)
+            error = extract.decrypt_backup(db, key, msg_db, crypt)
             if error != 0:
                 if error == 1:
-                    print("Dependencies of decrypt_backup are not "
-                          "present. For details, see README.md.")
+                    print("Dependencies of decrypt_backup and/or extract_encrypted_key"
+                          " are not present. For details, see README.md.")
                     exit(3)
                 elif error == 2:
                     print("Failed when decompressing the decrypted backup."

@@ -41,7 +41,8 @@ setuptools.setup(
        'bleach'
     ],
     extras_require={
-        'android_backup':  ["pycryptodome"]
+        'android_backup':  ["pycryptodome"],
+        'crypt15':  ["pycryptodome", "javaobj-py3"]
     },
     entry_points={
         "console_scripts": [
