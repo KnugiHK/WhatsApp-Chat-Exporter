@@ -46,6 +46,7 @@ def determine_day(last, current):
 
 CRYPT14_OFFSETS = [
     {"iv": 67, "db": 191},
+    {"iv": 67, "db": 190},
     {"iv": 66, "db": 99}
 ]
 
