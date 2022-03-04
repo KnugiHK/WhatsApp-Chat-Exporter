@@ -78,6 +78,13 @@ def main():
         dest="template",
         default=None,
         help="Path to custom HTML template")
+    parser.add_option(
+        "-e",
+        "--embedded",
+        dest="embedded",
+        default=False,
+        action='store_true',
+        help="Embed media into HTML file")
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
