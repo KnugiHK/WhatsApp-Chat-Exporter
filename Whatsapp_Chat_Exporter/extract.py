@@ -215,7 +215,8 @@ def messages(db, data):
                         messages.media_caption
                  FROM messages
                     LEFT JOIN messages_quotes
-                        ON messages.quoted_row_id = messages_quotes._id;""")
+                        ON messages.quoted_row_id = messages_quotes._id
+                 WHERE messages.key_remote_jid <> '-1';""")
     i = 0
     content = c.fetchone()
     while content is not None:
