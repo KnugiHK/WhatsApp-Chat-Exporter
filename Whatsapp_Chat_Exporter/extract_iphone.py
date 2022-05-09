@@ -230,7 +230,7 @@ def vcard(db, data):
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def create_html(data, output_folder, template=None):
+def create_html(data, output_folder, template=None, embedded=False):
     if template is None:
         template_dir = os.path.dirname(__file__)
         template_file = "whatsapp.html"

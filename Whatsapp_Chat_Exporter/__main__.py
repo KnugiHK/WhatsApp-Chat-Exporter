@@ -78,6 +78,13 @@ def main():
         dest="template",
         default=None,
         help="Path to custom HTML template")
+    parser.add_option(
+        "-e",
+        "--embedded",
+        dest="embedded",
+        default=False,
+        action='store_true',
+        help="Embed media into HTML file")
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
@@ -167,7 +174,7 @@ def main():
             messages(db, data)
             media(db, data, options.media)
             vcard(db, data)
-        create_html(data, options.output, options.template)
+        create_html(data, options.output, options.template, options.embedded)
     else:
         print(
             "The message database does not exist. You may specify the path "
