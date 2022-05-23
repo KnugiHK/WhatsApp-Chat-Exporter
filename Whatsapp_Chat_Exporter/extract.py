@@ -4,10 +4,8 @@ import sqlite3
 import json
 import jinja2
 import os
-import requests
 import shutil
 import re
-import pkgutil
 import io
 import hmac
 from pathlib import Path
