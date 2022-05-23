@@ -4,9 +4,7 @@ import sqlite3
 import json
 import jinja2
 import os
-import requests
 import shutil
-import pkgutil
 from pathlib import Path
 from bleach import clean as sanitize
 from markupsafe import Markup
