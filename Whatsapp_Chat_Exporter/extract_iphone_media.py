@@ -115,7 +115,10 @@ def extract_media(base_dir):
                 folder = hashes[:2]
                 flags = row[2]
                 if flags == 2:
-                    os.mkdir(destination)
+                    try:
+                        os.mkdir(destination)
+                    except FileExistsError:
+                        pass
                 elif flags == 1:
                     shutil.copyfile(f"{base_dir}/{folder}/{hashes}", destination)
                 i += 1
