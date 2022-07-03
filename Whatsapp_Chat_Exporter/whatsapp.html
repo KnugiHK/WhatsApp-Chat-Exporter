@@ -92,7 +92,7 @@
 									</video>
 									{% elif "/" in msg.mime %}
 										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
-											<p>The file cannot be displayed here, however it should be located at {{ msg.data }}</p>
+											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
 										</div>
 									{% else %}
 										{% filter escape %}{{ msg.data }}{% endfilter %}
@@ -148,7 +148,7 @@
 									</video>
 									{% elif "/" in msg.mime %}
 										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
-											<p>The file cannot be displayed here, however it should be located at {{ msg.data }}</p>
+											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
 										</div>
 									{% else %}
 										{% filter escape %}{{ msg.data }}{% endfilter %}
