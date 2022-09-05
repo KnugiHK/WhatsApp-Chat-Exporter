@@ -113,7 +113,7 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
         t1 = t2 = None
         iv = database[8:24]
         db_offset = database[0] + 2 # Skip protobuf + protobuf size and backup type
-        db_ciphertext = database[proto_len:]
+        db_ciphertext = database[db_offset:]
 
     if t1 != t2:
         raise ValueError("The signature of key file and backup file mismatch")
