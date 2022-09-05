@@ -71,7 +71,7 @@ def _generate_hmac_of_hmac(key_stream):
         b"backup encryption\x01",
         sha256
     )
-    return key.digest()
+    return key.digest(), key_stream
 
 
 def _extract_encrypted_key(keyfile):
@@ -82,7 +82,7 @@ def _extract_encrypted_key(keyfile):
     return _generate_hmac_of_hmac(key_stream)
     
 
-def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14):
+def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=False):
     if not support_backup:
         return 1
     if isinstance(key, io.IOBase):
@@ -119,9 +119,12 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14):
 
     if crypt == Crypt.CRYPT15:
         if len(key) == 32:
-            main_key = _generate_hmac_of_hmac(key)
+            main_key, hex_key = _generate_hmac_of_hmac(key)
         else:
-            main_key = _extract_encrypted_key(key)
+            main_key, hex_key = _extract_encrypted_key(key)
+        if show_crypt15:
+            hex_key = [hex_key.hex()[c:c+4] for c in range(0, len(hex_key.hex()), 4)]
+            print("The HEX key of the crypt15 backup is: " + ' '.join(hex_key))
     else:
         main_key = key[126:]
     decompressed = False

@@ -85,6 +85,13 @@ def main():
         default=False,
         action='store_true',
         help="Embed media into HTML file")
+    parser.add_option(
+        "-s",
+        "--showkey",
+        dest="showkey",
+        default=False,
+        action='store_true',
+        help="Show the HEX key used to decrypt the database")
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
@@ -121,7 +128,7 @@ def main():
             elif all(char in string.hexdigits for char in options.key):
                 key = bytes.fromhex(options.key)
             db = open(options.backup, "rb").read()
-            error = extract.decrypt_backup(db, key, msg_db, crypt)
+            error = extract.decrypt_backup(db, key, msg_db, crypt, options.showkey)
             if error != 0:
                 if error == 1:
                     print("Dependencies of decrypt_backup and/or extract_encrypted_key"
