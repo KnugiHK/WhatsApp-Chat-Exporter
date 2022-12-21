@@ -315,7 +315,7 @@ def messages(db, data):
                         data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                     else:
                         if content["data"] is None:
-                            del data[content["key_remote_jid"]].messages[content["_id"]]
+                            data[content["key_remote_jid"]].delete_message(content["_id"])
             else:
                 # Private chat
                 if content["data"] is None and content["thumb_image"] is None:
@@ -382,8 +382,7 @@ def media(db, data, media_folder):
                         ON chat._id = message.chat_row_id
                     INNER JOIN jid
                         ON jid._id = chat.jid_row_id
-                    
-                ORDER BY jid.raw_string ASC""")
+                 ORDER BY jid.raw_string ASC""")
     content = c.fetchone()
     mime = MimeTypes()
     while content is not None:
@@ -479,7 +478,6 @@ def create_html(data, output_folder, template=None, embedded=False):
         if len(data[contact].messages) == 0:
             continue
         phone_number = contact.split('@')[0]
-        file_name = phone_number
         if "-" in contact:
             file_name = ""
         else:
