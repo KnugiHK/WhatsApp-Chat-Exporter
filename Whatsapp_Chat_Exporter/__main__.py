@@ -1,7 +1,7 @@
 from .__init__ import __version__
 from Whatsapp_Chat_Exporter import extract, extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
-from Whatsapp_Chat_Exporter.extract import Crypt
+from Whatsapp_Chat_Exporter.extract_new import Crypt
 from optparse import OptionParser
 import os
 import sqlite3
