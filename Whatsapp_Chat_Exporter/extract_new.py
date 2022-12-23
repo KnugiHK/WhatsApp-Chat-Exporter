@@ -218,7 +218,7 @@ def messages(db, data):
                         message_quoted.key_id as quoted,
                         message.key_id,
                         message_quoted.text_data as quoted_data,
-                        message_media.media_caption,
+                        message.message_type,
                         chat.subject as chat_subject
                  FROM message
                     LEFT JOIN message_quoted
@@ -270,8 +270,8 @@ def messages(db, data):
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].reply = None
 
-        if content["key_id"] is not None:
-            data[content["key_remote_jid"]].messages[content["_id"]].caption = content["key_id"]
+        if content["message_type"] == 1:
+            data[content["key_remote_jid"]].messages[content["_id"]].caption = content["data"]
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].caption = None
 
