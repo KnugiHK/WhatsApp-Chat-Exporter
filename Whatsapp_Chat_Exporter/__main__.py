@@ -184,7 +184,7 @@ def main():
             messages(db, data)
             media(db, data, options.media)
             vcard(db, data)
-        create_html(data, options.output, options.template, options.embedded)
+        # create_html(data, options.output, options.template, options.embedded)
     else:
         print(
             "The message database does not exist. You may specify the path "
@@ -202,6 +202,7 @@ def main():
                   "Perhaps the directory is opened?")
 
     if options.json:
+        data = {jik : chat.to_json() for jik,chat in data.items()}
         with open("result.json", "w") as f:
             data = json.dumps(data)
             print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
