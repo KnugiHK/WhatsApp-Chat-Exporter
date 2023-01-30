@@ -37,13 +37,13 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-       'jinja2',
-       'bleach'
+        'jinja2',
+        'bleach'
     ],
     extras_require={
         'android_backup':  ["pycryptodome", "javaobj-py3"],
         'crypt12':  ["pycryptodome"],
-        'crypt12':  ["pycryptodome"],
+        'crypt14':  ["pycryptodome"],
         'crypt15':  ["pycryptodome", "javaobj-py3"]
     },
     entry_points={
