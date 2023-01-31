@@ -205,6 +205,7 @@ def main():
             print("Media directory already exists in output directory. Skipping...")
         else:
             if options.copy_media:
+                print("Copying media directory...")
                 shutil.copytree(options.media, f"{options.output}/WhatsApp")
             else:
                 try:
