@@ -93,6 +93,13 @@ def main():
         default=False,
         action='store_true',
         help="Show the HEX key used to decrypt the database")
+    parser.add_option(
+        "-c",
+        "--copy-media",
+        dest="copy_media",
+        default=True,
+        action='store_true',
+        help="Copy media directory to output directory, otherwise move the media directory to output directory")
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
@@ -193,13 +200,18 @@ def main():
         )
         exit(2)
 
-    if os.path.isdir(options.media) and \
-            not os.path.isdir(f"{options.output}/{options.media}"):
-        try:
-            shutil.move(options.media, f"{options.output}/")
-        except PermissionError:
-            print("Cannot remove original WhatsApp directory. "
-                  "Perhaps the directory is opened?")
+    if os.path.isdir(options.media):
+        if os.path.isdir(f"{options.output}/{options.media}"):
+            print("Media directory already exists in output directory. Skipping...")
+        else:
+            if options.copy_media:
+                shutil.copytree(options.media, f"{options.output}/WhatsApp")
+            else:
+                try:
+                    shutil.move(options.media, f"{options.output}/")
+                except PermissionError:
+                    print("Cannot remove original WhatsApp directory. "
+                        "Perhaps the directory is opened?")
 
     if options.json:
         with open("result.json", "w") as f:
