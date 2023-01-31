@@ -95,11 +95,11 @@ def main():
         help="Show the HEX key used to decrypt the database")
     parser.add_option(
         "-c",
-        "--copy-media",
-        dest="copy_media",
-        default=True,
+        "--move-media",
+        dest="move_media",
+        default=False,
         action='store_true',
-        help="Copy media directory to output directory, otherwise move the media directory to output directory")
+        help="Move the media directory to output directory if the flag is set, otherwise copy it")
     (options, args) = parser.parse_args()
 
     if options.android and options.iphone:
@@ -204,7 +204,7 @@ def main():
         if os.path.isdir(f"{options.output}/{options.media}"):
             print("Media directory already exists in output directory. Skipping...")
         else:
-            if options.copy_media:
+            if not options.move_media:
                 print("Copying media directory...")
                 shutil.copytree(options.media, f"{options.output}/WhatsApp")
             else:
