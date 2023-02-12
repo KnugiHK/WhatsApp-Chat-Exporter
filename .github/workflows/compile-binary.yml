@@ -1,4 +1,4 @@
-name: Compile the program into binary
+name: Compile standalone binary
 
 on:
   workflow_dispatch:
