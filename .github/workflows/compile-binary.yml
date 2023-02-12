@@ -1,0 +1,77 @@
+name: Compile the program into binary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka
+        pip install .
+    - name: Build binary with Nuitka
+      run: |
+        python -m nuitka --onefile --follow-imports Whatsapp_Chat_Exporter/__main__.py 
+        cp __main__.bin wtsexporter_linux_x64
+    - uses: actions/upload-artifact@v3
+      with:
+        name: binary-linux
+        path: |
+          ./wtsexporter_linux_x64
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka
+        pip install .
+    - name: Build binary with Nuitka
+      run: |
+        python -m nuitka --onefile --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter\__main__.py 
+        copy __main__.exe wtsexporter_x64.exe
+    - uses: actions/upload-artifact@v3
+      with:
+        name: binary-windows
+        path: |
+          .\wtsexporter_x64.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka
+        pip install .
+    - name: Build binary with Nuitka
+      run: |
+        python -m nuitka --onefile --follow-imports Whatsapp_Chat_Exporter/__main__.py 
+        cp __main__.bin wtsexporter_macos_x64
+    - uses: actions/upload-artifact@v3
+      with:
+        name: binary-macos
+        path: |
+          ./wtsexporter_macos_x64
