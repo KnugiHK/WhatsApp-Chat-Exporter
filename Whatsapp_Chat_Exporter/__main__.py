@@ -226,3 +226,7 @@ def main():
         print()
 
     print("Everything is done!")
+
+
+if __name__ == "__main__":
+    main()
