@@ -203,7 +203,7 @@ def messages(db, data):
     print(f"Gathering messages...(0/{total_row_number})", end="\r")
 
     phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
-    c.execute("""SELECT jid.raw_string as key_remote_jid,
+    c.execute("""SELECT jid_global.raw_string as key_remote_jid,
                         message._id,
                         message.from_me as key_from_me,
                         message.timestamp,
@@ -219,6 +219,7 @@ def messages(db, data):
                         message.key_id,
                         message_quoted.text_data as quoted_data,
                         message.message_type,
+                        jid_group.raw_string as group_sender_jid,
                         chat.subject as chat_subject
                  FROM message
                     LEFT JOIN message_quoted
@@ -233,8 +234,10 @@ def messages(db, data):
                         ON message_future.message_row_id = message._id
                     LEFT JOIN chat
                         ON chat._id = message.chat_row_id
-                    INNER JOIN jid
-                        ON jid._id = chat.jid_row_id
+                    INNER JOIN jid jid_global
+                        ON jid_global._id = chat.jid_row_id
+                    LEFT JOIN jid jid_group
+                        ON jid_group._id = message.sender_jid_row_id
                     WHERE key_remote_jid <> '-1';""")
     i = 0
     content = c.fetchone()
@@ -252,14 +255,15 @@ def messages(db, data):
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = None
             if content["remote_resource"] in data:
-                name = data[content["remote_resource"]]["name"]
-                if "@" in content["remote_resource"]:
-                    fallback = content["remote_resource"].split('@')["key_remote_jid"]
-                else:
-                    fallback = None
+            if content["chat_subject"] is not None:
+                _jid = content["group_sender_jid"]
+            else:
+                _jid = content["key_remote_jid"]
+            if _jid in data:
+                name = data[_jid].name
+                fallback = _jid.split('@')[0] if "@" in _jid else None
             else:
                 fallback = None
-
             data[content["key_remote_jid"]].messages[content["_id"]].sender = name or fallback
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].sender = None
