@@ -254,7 +254,6 @@ def messages(db, data):
         ))
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = None
-            if content["remote_resource"] in data:
             if content["chat_subject"] is not None:
                 _jid = content["group_sender_jid"]
             else:
