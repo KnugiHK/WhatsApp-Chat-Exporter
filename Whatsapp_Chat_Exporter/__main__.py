@@ -32,6 +32,7 @@ def main():
     parser.add_argument(
         '-i',
         '--iphone',
+        '--ios',
         dest='iphone',
         default=False,
         action='store_true',
@@ -187,6 +188,9 @@ def main():
                 contacts(db, data)
 
     elif args.iphone:
+        import sys
+        if "--iphone" in sys.argv:
+            print("WARNING: The --iphone flag is deprecated and will be removed in the future. Use --ios instead.")
         messages = extract_iphone.messages
         media = extract_iphone.media
         vcard = extract_iphone.vcard
