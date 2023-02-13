@@ -86,34 +86,45 @@ def main():
         "--template",
         dest="template",
         default=None,
-        help="Path to custom HTML template")
+        help="Path to custom HTML template"
+    )
     parser.add_argument(
         "-e",
         "--embedded",
         dest="embedded",
         default=False,
         action='store_true',
-        help="Embed media into HTML file")
+        help="Embed media into HTML file (not yet implemented)"
+    )
     parser.add_argument(
         "-s",
         "--showkey",
         dest="showkey",
         default=False,
         action='store_true',
-        help="Show the HEX key used to decrypt the database")
+        help="Show the HEX key used to decrypt the database"
+    )
     parser.add_argument(
         "-c",
         "--move-media",
         dest="move_media",
         default=False,
         action='store_true',
-        help="Move the media directory to output directory if the flag is set, otherwise copy it")
+        help="Move the media directory to output directory if the flag is set, otherwise copy it"
+    )
     parser.add_argument(
         "--offline",
         dest="offline",
-
         default=None,
-        help="Relative path to offline static files")
+        help="Relative path to offline static files"
+    )
+    parser.add_argument(
+        "--size",
+        "--output-size",
+        dest="size",
+        default=None,
+        help="Maximum size of a single output file in bytes (not yet implemented)"
+    )
     args = parser.parse_args()
 
     if args.android and args.iphone:
@@ -199,7 +210,14 @@ def main():
             messages(db, data)
             media(db, data, args.media)
             vcard(db, data)
-        create_html(data, args.output, args.template, args.embedded, args.offline)
+        create_html(
+            data,
+            args.output,
+            args.template,
+            args.embedded,
+            args.offline,
+            args.size
+        )
     else:
         print(
             "The message database does not exist. You may specify the path "
