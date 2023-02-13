@@ -42,13 +42,13 @@ def main():
         "--wa",
         dest="wa",
         default=None,
-        help="Path to contact database")
+        help="Path to contact database (default: wa.db/ContactsV2.sqlite)")
     parser.add_argument(
         "-m",
         "--media",
         dest="media",
         default=None,
-        help="Path to WhatsApp media folder")
+        help="Path to WhatsApp media folder (default: WhatsApp)")
     parser.add_argument(
         "-b",
         "--backup",
@@ -61,20 +61,22 @@ def main():
         "--output",
         dest="output",
         default="result",
-        help="Output to specific directory")
+        help="Output to specific directory (default: result)")
     parser.add_argument(
         '-j',
         '--json',
         dest='json',
-        default=False,
-        action='store_true',
-        help="Save the result to a single JSON file")
+        nargs='?',
+        default=None,
+        type=str, const="result.json",
+        help="Save the result to a single JSON file (default if present: result.json)")
     parser.add_argument(
         '-d',
         '--db',
         dest='db',
         default=None,
-        help="Path to database file")
+        help="Path to database file (default: msgstore.db/"
+             "7c7fba66680ef796b916b067077cc246adacf01d)")
     parser.add_argument(
         '-k',
         '--key',
@@ -124,7 +126,7 @@ def main():
         "--output-size",
         dest="size",
         default=None,
-        help="Maximum size of a single output file in bytes (not yet implemented)"
+        help="Maximum size of a single output file in bytes, 0 for auto (not yet implemented)"
     )
     args = parser.parse_args()
 
@@ -244,7 +246,7 @@ def main():
                         "Perhaps the directory is opened?")
 
     if args.json:
-        with open("result.json", "w") as f:
+        with open(args.json, "w") as f:
             data = json.dumps(data)
             print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
             f.write(data)
