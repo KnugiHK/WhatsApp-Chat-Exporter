@@ -6,7 +6,7 @@ from Whatsapp_Chat_Exporter import extract_new as extract
 from Whatsapp_Chat_Exporter import extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
 from Whatsapp_Chat_Exporter.extract_new import Crypt
-from optparse import OptionParser
+from argparse import ArgumentParser
 import os
 import sqlite3
 import shutil
@@ -16,135 +16,141 @@ from sys import exit
 
 
 def main():
-    parser = OptionParser(version=f"Whatsapp Chat Exporter: {__version__}")
-    parser.add_option(
+    parser = ArgumentParser(
+        description = 'A customizable Android and iPhone WhatsApp database parser that '
+                      'will give you the history of your WhatsApp conversations inHTML '
+                      'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
+        epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT'
+    )
+    parser.add_argument(
         '-a',
         '--android',
         dest='android',
         default=False,
         action='store_true',
         help="Define the target as Android")
-    parser.add_option(
+    parser.add_argument(
         '-i',
         '--iphone',
         dest='iphone',
         default=False,
         action='store_true',
         help="Define the target as iPhone")
-    parser.add_option(
+    parser.add_argument(
         "-w",
         "--wa",
         dest="wa",
         default=None,
         help="Path to contact database")
-    parser.add_option(
+    parser.add_argument(
         "-m",
         "--media",
         dest="media",
         default=None,
         help="Path to WhatsApp media folder")
-    parser.add_option(
+    parser.add_argument(
         "-b",
         "--backup",
         dest="backup",
         default=None,
         help="Path to Android (must be used together "
              "with -k)/iPhone WhatsApp backup")
-    parser.add_option(
+    parser.add_argument(
         "-o",
         "--output",
         dest="output",
         default="result",
         help="Output to specific directory")
-    parser.add_option(
+    parser.add_argument(
         '-j',
         '--json',
         dest='json',
         default=False,
         action='store_true',
         help="Save the result to a single JSON file")
-    parser.add_option(
+    parser.add_argument(
         '-d',
         '--db',
         dest='db',
         default=None,
         help="Path to database file")
-    parser.add_option(
+    parser.add_argument(
         '-k',
         '--key',
         dest='key',
         default=None,
         help="Path to key file"
     )
-    parser.add_option(
+    parser.add_argument(
         "-t",
         "--template",
         dest="template",
         default=None,
         help="Path to custom HTML template")
-    parser.add_option(
+    parser.add_argument(
         "-e",
         "--embedded",
         dest="embedded",
         default=False,
         action='store_true',
         help="Embed media into HTML file")
-    parser.add_option(
+    parser.add_argument(
         "-s",
         "--showkey",
         dest="showkey",
         default=False,
         action='store_true',
         help="Show the HEX key used to decrypt the database")
-    parser.add_option(
+    parser.add_argument(
         "-c",
         "--move-media",
         dest="move_media",
         default=False,
         action='store_true',
         help="Move the media directory to output directory if the flag is set, otherwise copy it")
-    parser.add_option(
+    parser.add_argument(
         "--offline",
         dest="offline",
+
         default=None,
         help="Relative path to offline static files")
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.android and options.iphone:
+    if args.android and args.iphone:
         print("You must define only one device type.")
         exit(1)
-    if not options.android and not options.iphone:
+    if not args.android and not args.iphone:
         print("You must define the device type.")
         exit(1)
     data = {}
 
-    if options.android:
+    if args.android:
         contacts = extract.contacts
         messages = extract.messages
         media = extract.media
         vcard = extract.vcard
         create_html = extract.create_html
-        if options.db is None:
+        if args.db is None:
             msg_db = "msgstore.db"
         else:
-            msg_db = options.db
-        if options.key is not None:
-            if options.backup is None:
+            msg_db = args.db
+        if args.key is not None:
+            if args.backup is None:
                 print("You must specify the backup file with -b")
                 exit(1)
             print("Decryption key specified, decrypting WhatsApp backup...")
-            if "crypt12" in options.backup:
+            if "crypt12" in args.backup:
                 crypt = Crypt.CRYPT12
-            elif "crypt14" in options.backup:
+            elif "crypt14" in args.backup:
                 crypt = Crypt.CRYPT14
-            elif "crypt15" in options.backup:
+            elif "crypt15" in args.backup:
                 crypt = Crypt.CRYPT15
-            if os.path.isfile(options.key):
-                key = open(options.key, "rb")
-            elif all(char in string.hexdigits for char in options.key):
-                key = bytes.fromhex(options.key)
-            db = open(options.backup, "rb").read()
-            error = extract.decrypt_backup(db, key, msg_db, crypt, options.showkey)
+            if os.path.isfile(args.key):
+                key = open(args.key, "rb")
+            elif all(char in string.hexdigits for char in args.key):
+                key = bytes.fromhex(args.key)
+            db = open(args.backup, "rb").read()
+            error = extract.decrypt_backup(db, key, msg_db, crypt, args.showkey)
             if error != 0:
                 if error == 1:
                     print("Dependencies of decrypt_backup and/or extract_encrypted_key"
@@ -157,72 +163,65 @@ def main():
                 else:
                     print("Unknown error occurred.", error)
                     exit(5)
-        if options.wa is None:
+        if args.wa is None:
             contact_db = "wa.db"
         else:
-            contact_db = options.wa
-        if options.media is None:
-            options.media = "WhatsApp"
-
-        if len(args) == 1:
-            msg_db = args[0]
+            contact_db = args.wa
+        if args.media is None:
+            args.media = "WhatsApp"
 
         if os.path.isfile(contact_db):
             with sqlite3.connect(contact_db) as db:
                 db.row_factory = sqlite3.Row
                 contacts(db, data)
 
-    elif options.iphone:
+    elif args.iphone:
         messages = extract_iphone.messages
         media = extract_iphone.media
         vcard = extract_iphone.vcard
         create_html = extract_iphone.create_html
-        if options.backup is not None:
-            extract_iphone_media.extract_media(options.backup)
-        if options.db is None:
+        if args.backup is not None:
+            extract_iphone_media.extract_media(args.backup)
+        if args.db is None:
             msg_db = "7c7fba66680ef796b916b067077cc246adacf01d"
         else:
-            msg_db = options.db
-        if options.wa is None:
+            msg_db = args.db
+        if args.wa is None:
             contact_db = "ContactsV2.sqlite"
         else:
-            contact_db = options.wa
-        if options.media is None:
-            options.media = "Message"
-
-        if len(args) == 1:
-            msg_db = args[0]
+            contact_db = args.wa
+        if args.media is None:
+            args.media = "Message"
 
     if os.path.isfile(msg_db):
         with sqlite3.connect(msg_db) as db:
             db.row_factory = sqlite3.Row
             messages(db, data)
-            media(db, data, options.media)
+            media(db, data, args.media)
             vcard(db, data)
-        create_html(data, options.output, options.template, options.embedded, options.offline)
+        create_html(data, args.output, args.template, args.embedded, args.offline)
     else:
         print(
             "The message database does not exist. You may specify the path "
-            "to database file with option -d or check your provided path.",
-            end="\r"
+            "to database file with option -d or check your provided path."
         )
         exit(2)
 
-    if os.path.isdir(options.media):
-        if os.path.isdir(f"{options.output}/{options.media}"):
+    if os.path.isdir(args.media):
+        if os.path.isdir(f"{args.output}/{args.media}"):
             print("Media directory already exists in output directory. Skipping...")
         else:
-            if not options.move_media:
+            if not args.move_media:
                 print("Copying media directory...")
-                shutil.copytree(options.media, f"{options.output}/WhatsApp")
+                shutil.copytree(args.media, f"{args.output}/WhatsApp")
             else:
                 try:
-                    shutil.move(options.media, f"{options.output}/")
+                    shutil.move(args.media, f"{args.output}/")
                 except PermissionError:
                     print("Cannot remove original WhatsApp directory. "
                         "Perhaps the directory is opened?")
 
-    if options.json:
+    if args.json:
         with open("result.json", "w") as f:
             data = json.dumps(data)
             print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
