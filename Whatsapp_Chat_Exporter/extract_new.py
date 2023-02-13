@@ -458,7 +458,7 @@ def vcard(db, data):
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def create_html(data, output_folder, template=None, embedded=False):
+def create_html(data, output_folder, template=None, embedded=False, offline_static=False):
     if template is None:
         template_dir = os.path.dirname(__file__)
         template_file = "whatsapp.html"
@@ -476,6 +476,18 @@ def create_html(data, output_folder, template=None, embedded=False):
 
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
+
+    w3css = "https://www.w3schools.com/w3css/4/w3.css"
+    if offline_static:
+        import urllib.request
+        static_folder = os.path.join(output_folder, offline_static)
+        if not os.path.isdir(static_folder):
+            os.mkdir(static_folder)
+        w3css_path = os.path.join(static_folder, "w3.css")
+        if not os.path.isfile(w3css_path):
+            with urllib.request.urlopen(w3css) as resp:
+                with open(w3css_path, "wb") as f: f.write(resp.read())
+        w3css = os.path.join(offline_static, "w3.css")
 
     for current, contact in enumerate(data):
         if len(data[contact].messages) == 0:
@@ -501,7 +513,8 @@ def create_html(data, output_folder, template=None, embedded=False):
                     name=name,
                     msgs=data[contact].messages.values(),
                     my_avatar=None,
-                    their_avatar=f"WhatsApp/Avatars/{contact}.j"
+                    their_avatar=f"WhatsApp/Avatars/{contact}.j",
+                    w3css=w3css
                 )
             )
         if current % 10 == 0:
