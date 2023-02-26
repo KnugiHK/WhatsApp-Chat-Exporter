@@ -46,11 +46,12 @@ def determine_day(last, current):
         return current
 
 
-CRYPT14_OFFSETS = [
+CRYPT14_OFFSETS = (
     {"iv": 67, "db": 191},
     {"iv": 67, "db": 190},
-    {"iv": 66, "db": 99}
-]
+    {"iv": 66, "db": 99},
+    {"iv": 67, "db": 193}
+)
 
 
 class Crypt(Enum):
