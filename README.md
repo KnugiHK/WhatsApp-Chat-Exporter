@@ -42,7 +42,10 @@ In order to support the decryption, install pycryptodome if it is not installed
 pip install pycryptodome # Or 
 pip install whatsapp-chat-exporter["android_backup"] # install along with this software
 ```
+
 #### Crypt12 or Crypt14
+You will need the decryption key file. You can find it on your phone in the WhatsApp backup directory as `WhatsApp/Databases/.nomedia`, or, if you have root access, `/data/data/com.whatsapp/files/key`.
+
 Place the decryption key file (key) and the encrypted WhatsApp Backup (msgstore.db.crypt14) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
 
 And now, you should have something like this in the working directory.
