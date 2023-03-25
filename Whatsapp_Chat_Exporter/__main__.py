@@ -5,6 +5,7 @@ except ImportError:
 from Whatsapp_Chat_Exporter import extract_new as extract
 from Whatsapp_Chat_Exporter import extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
+from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.extract_new import Crypt
 from argparse import ArgumentParser
 import os
@@ -246,6 +247,8 @@ def main():
                         "Perhaps the directory is opened?")
 
     if args.json:
+        if isinstance(data[next(iter(data))], ChatStore):
+            data = {jik: chat.to_json() for jik, chat in data.items()}
         with open(args.json, "w") as f:
             data = json.dumps(data)
             print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")

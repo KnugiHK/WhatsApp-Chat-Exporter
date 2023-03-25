@@ -18,6 +18,10 @@ class ChatStore():
         if id in self.messages:
             del self.messages[id]
 
+    def to_json(self):
+        serialized_msgs = {id : msg.to_json() for id,msg in self.messages.items()}
+        return {'name' : self.name, 'messages' : serialized_msgs}
+
 class Message():
     def __init__(self, from_me: Union[bool,int], timestamp: int, time: str, key_id: int):
         self.from_me = bool(from_me)
@@ -32,4 +36,18 @@ class Message():
         self.reply = None
         self.quoted_data = None
         self.caption = None
-
+    
+    def to_json(self):
+        return {
+            'from_me'     : self.from_me,
+            'timestamp'   : self.timestamp,
+            'time'        : self.time,
+            'media'       : self.media,
+            'key_id'      : self.key_id,
+            'meta'        : self.meta,
+            'data'        : self.data,
+            'sender'      : self.sender,
+            'reply'       : self.reply,
+            'quoted_data' : self.quoted_data,
+            'caption'     : self.caption
+        }
