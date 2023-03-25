@@ -138,11 +138,11 @@
 									{% if "image/" in msg.mime %}
 									<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
 									{% elif "audio/" in msg.mime %}
-									<audio controls="controls" autobuffer="autobuffer">
+									<audio controls preload="auto">
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls="controls" autobuffer="autobuffer">
+									<video controls preload="auto">
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
