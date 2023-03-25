@@ -6,7 +6,7 @@ from Whatsapp_Chat_Exporter import extract
 from Whatsapp_Chat_Exporter import extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.extract import Crypt
+from Whatsapp_Chat_Exporter.utility import Crypt
 from argparse import ArgumentParser
 import os
 import sqlite3
@@ -69,7 +69,8 @@ def main():
         dest='json',
         nargs='?',
         default=None,
-        type=str, const="result.json",
+        type=str,
+        const="result.json",
         help="Save the result to a single JSON file (default if present: result.json)")
     parser.add_argument(
         '-d',
@@ -129,6 +130,13 @@ def main():
         default=None,
         help="Maximum size of a single output file in bytes, 0 for auto (not yet implemented)"
     )
+    parser.add_argument(
+        "--no-html",
+        dest="no_html",
+        default=False,
+        action='store_true',
+        help="Do not output html files"
+    )
     args = parser.parse_args()
 
     if args.android and args.iphone:
@@ -137,6 +145,10 @@ def main():
     if not args.android and not args.iphone:
         print("You must define the device type.")
         exit(1)
+    if args.no_html and not args.json:
+        print("You must either specify a JSON output file or enable HTML output.")
+        exit(1)
+
     data = {}
 
     if args.android:
@@ -217,14 +229,15 @@ def main():
             messages(db, data)
             media(db, data, args.media)
             vcard(db, data)
-        create_html(
-            data,
-            args.output,
-            args.template,
-            args.embedded,
-            args.offline,
-            args.size
-        )
+        if not args.no_html:
+            create_html(
+                data,
+                args.output,
+                args.template,
+                args.embedded,
+                args.offline,
+                args.size
+            )
     else:
         print(
             "The message database does not exist. You may specify the path "
