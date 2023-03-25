@@ -9,13 +9,11 @@ import re
 import io
 import hmac
 from pathlib import Path
-from bleach import clean as sanitize
-from markupsafe import Markup
-from datetime import datetime
-from enum import Enum
 from mimetypes import MimeTypes
 from hashlib import sha256
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
+from Whatsapp_Chat_Exporter.utility import sanitize_except, determine_day, Crypt
+from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
     import zlib
@@ -30,37 +28,6 @@ except ModuleNotFoundError:
     support_crypt15 = False
 else:
     support_crypt15 = True
-
-def sanitize_except(html):
-    return Markup(sanitize(html, tags=["br"]))
-
-
-def determine_day(last, current):
-    last = datetime.fromtimestamp(last).date()
-    current = datetime.fromtimestamp(current).date()
-    if last == current:
-        return None
-    else:
-        return current
-
-CRYPT14_OFFSETS = (
-    {"iv": 67, "db": 191},
-    {"iv": 67, "db": 190},
-    {"iv": 66, "db": 99},
-    {"iv": 67, "db": 193}
-)
-
-
-class Crypt(Enum):
-    CRYPT15 = 15
-    CRYPT14 = 14
-    CRYPT12 = 12
-
-
-def brute_force_offset():
-    for iv in range(0, 200):
-        for db in range(0, 200):
-            yield iv, iv + 16, db
 
 
 def _generate_hmac_of_hmac(key_stream):

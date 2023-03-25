@@ -6,25 +6,9 @@ import jinja2
 import os
 import shutil
 from pathlib import Path
-from bleach import clean as sanitize
-from markupsafe import Markup
 from datetime import datetime
 from mimetypes import MimeTypes
-
-APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
-
-
-def sanitize_except(html):
-    return Markup(sanitize(html, tags=["br"]))
-
-
-def determine_day(last, current):
-    last = datetime.fromtimestamp(last).date()
-    current = datetime.fromtimestamp(current).date()
-    if last == current:
-        return None
-    else:
-        return current
+from Whatsapp_Chat_Exporter.utility import sanitize_except, determine_day, APPLE_TIME
 
 
 def messages(db, data):
