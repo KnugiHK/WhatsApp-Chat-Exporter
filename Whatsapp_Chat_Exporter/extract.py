@@ -266,8 +266,8 @@ def messages(db, data):
                             ON jid_group._id = message.sender_jid_row_id
                         WHERE key_remote_jid <> '-1';"""
             )
-        except:
-            ...
+        except Exception as e:
+            raise e
         else:
             table_message = True
     else:
