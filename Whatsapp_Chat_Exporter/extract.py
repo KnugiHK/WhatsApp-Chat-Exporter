@@ -536,9 +536,10 @@ def create_html(
         w3css_path = os.path.join(static_folder, "w3.css")
         if not os.path.isfile(w3css_path):
             with urllib.request.urlopen(w3css) as resp:
-                with open(w3css_path, "wb") as f: f.write(resp.read())
+                with open(w3css_path, "wb") as f:
+                    f.write(resp.read())
         w3css = os.path.join(offline_static, "w3.css")
- 
+
     for current, contact in enumerate(data):
         if len(data[contact].messages) == 0:
             continue
