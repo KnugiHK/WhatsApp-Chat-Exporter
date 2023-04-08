@@ -157,7 +157,7 @@ def contacts(db, data):
     c.execute("""SELECT jid, display_name FROM wa_contacts; """)
     row = c.fetchone()
     while row is not None:
-        data[row[0]] = {"name": row[1], "messages": {}}
+        data[row["jid"]] = ChatStore(row["display_name"])
         row = c.fetchone()
 
 
