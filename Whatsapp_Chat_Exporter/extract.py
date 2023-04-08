@@ -488,7 +488,7 @@ def vcard(db, data):
         Path(base).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
         media_name = row["media_name"]
-        file_name = "".join(x for x in media_name if x.isalnum()) if media_name is not None else ""
+        file_name = "".join(x for x in media_name if x.isalnum())
         file_path = f"{base}/{file_name}.vcf"
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
