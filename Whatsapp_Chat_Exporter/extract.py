@@ -487,12 +487,12 @@ def vcard(db, data):
     if not os.path.isdir(base):
         Path(base).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
-        media_name = row["media_name"]
+        media_name = row["media_name"] if row["media_name"] is not None else ""
         file_name = "".join(x for x in media_name if x.isalnum())
         file_path = f"{base}/{file_name}.vcf"
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
-                f.write(row[2])
+                f.write(row["vcard"])
         data[row["key_remote_jid"]].messages[row["message_row_id"]].data = media_name + \
             "The vCard file cannot be displayed here, " \
             f"however it should be located at {file_path}"
