@@ -14,7 +14,7 @@ A customizable Android and iPhone Whatsapp database parser that will give you th
 First, install the exporter by:
 ```shell
 pip install whatsapp-chat-exporter
-pip install whatsapp-chat-exporter[android_backup]  & :: Optional, if you want it to support decrypting Android WhatsApp backup.
+pip install whatsapp-chat-exporter[android_backup]  :; # Optional, if you want it to support decrypting Android WhatsApp backup.
 ```
 Then, create a working directory in somewhere you want
 ```shell
