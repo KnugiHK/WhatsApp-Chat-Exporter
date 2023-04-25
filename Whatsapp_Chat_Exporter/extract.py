@@ -293,7 +293,7 @@ def messages(db, data):
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].caption = None
 
-        if content["status"] == 6:
+        if content["status"] == 6:  # 6 = Metadata, otherwise it's a message
             if (not table_message and "-" in content["key_remote_jid"]) or \
                (table_message and content["chat_subject"] is not None):
                 # Is Group
@@ -342,7 +342,7 @@ def messages(db, data):
 
         else:
             if content["key_from_me"] == 1:
-                if content["status"] == 5 and content["edit_version"] == 7:
+                if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
                     msg = "Message deleted"
                     data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                 else:
@@ -357,7 +357,7 @@ def messages(db, data):
                             if "\n" in msg:
                                 msg = msg.replace("\n", "<br>")
             else:
-                if content["status"] == 0 and content["edit_version"] == 7:
+                if content["status"] == 0 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
                     msg = "Message deleted"
                     data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                 else:
