@@ -6,7 +6,7 @@ from Whatsapp_Chat_Exporter import extract
 from Whatsapp_Chat_Exporter import extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import Crypt
+from Whatsapp_Chat_Exporter.utility import Crypt, check_update
 from argparse import ArgumentParser
 import os
 import sqlite3
@@ -137,8 +137,20 @@ def main():
         action='store_true',
         help="Do not output html files"
     )
+    parser.add_argument(
+        "--check-update",
+        dest="check_update",
+        default=False,
+        action='store_true',
+        help="Check for updates"
+    )
     args = parser.parse_args()
 
+    # Check for updates
+    if args.check_update:
+        exit(check_update())
+
+    # Sanity checks
     if args.android and args.iphone:
         print("You must define only one device type.")
         exit(1)
