@@ -18,10 +18,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="MIT",
     keywords=[
-        "android", "ios", "parsing", "history","iphone", "whatsapp"
+        "android", "ios", "parsing", "history","iphone", "whatsapp", "message"
         "customizable", "android-backup", "crypt12", "whatsapp-chat-exporter",
         "whatsapp-export", "whatsapp-database", "whatsapp-database-parser",
-        "whatsapp-conversations", "iphone-backup", "crypt14", "crypt15"
+        "whatsapp-conversations", "iphone-backup", "crypt14", "crypt15", "messages"
     ],
     platforms=["any"],
     url="https://github.com/KnugiHK/Whatsapp-Chat-Exporter",
