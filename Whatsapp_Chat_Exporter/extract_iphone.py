@@ -199,7 +199,8 @@ def vcard(db, data):
         Path(base).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
         file_name = "".join(x for x in row[3] if x.isalnum())
-        file_path = f"{base}/{file_name[:200]}.vcf"
+        file_name = file_name.encode('utf-8')[:251].decode('utf-8', 'ignore')
+        file_path = os.path.join(base, f"{file_name}.vcf")
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row[4])

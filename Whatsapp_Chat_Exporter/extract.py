@@ -489,7 +489,8 @@ def vcard(db, data):
     for index, row in enumerate(rows):
         media_name = row["media_name"] if row["media_name"] is not None else ""
         file_name = "".join(x for x in media_name if x.isalnum())
-        file_path = f"{base}/{file_name}.vcf"
+        file_name = file_name.encode('utf-8')[:251].decode('utf-8', 'ignore')
+        file_path = os.path.join(base, f"{file_name}.vcf")
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
