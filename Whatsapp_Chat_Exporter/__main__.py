@@ -261,8 +261,11 @@ def main():
             print("Media directory already exists in output directory. Skipping...")
         else:
             if not args.move_media:
-                print("Copying media directory...")
-                shutil.copytree(args.media, f"{args.output}/WhatsApp")
+                if os.path.isdir(f"{args.output}/WhatsApp"):
+                    print("WhatsApp directory already exists in output directory. Skipping...")
+                else:
+                    print("Copying media directory...")
+                    shutil.copytree(args.media, f"{args.output}/WhatsApp")
             else:
                 try:
                     shutil.move(args.media, f"{args.output}/")
