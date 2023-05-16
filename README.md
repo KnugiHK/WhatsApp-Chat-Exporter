@@ -104,26 +104,33 @@ After extracting, you will get these:
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-Usage: wtsexporter [options]
+usage: wtsexporter [options]
 
-Options:
-  --version             show program's version number and exit
+options:
   -h, --help            show this help message and exit
   -a, --android         Define the target as Android
-  -i, --iphone          Define the target as iPhone
-  -w WA, --wa=WA        Path to contact database
-  -m MEDIA, --media=MEDIA
-                        Path to WhatsApp media folder
-  -b BACKUP, --backup=BACKUP
-                        Path to Android (must be used together with -k)/iPhone
-                        WhatsApp backup
-  -o OUTPUT, --output=OUTPUT
-                        Output to specific directory
-  -j, --json            Save the result to a single JSON file
-  -d DB, --db=DB        Path to database file
-  -k KEY, --key=KEY     Path to key file
-  -t TEMPLATE, --template=TEMPLATE
+  -i, --iphone, --ios   Define the target as iPhone
+  -w WA, --wa WA        Path to contact database (default: wa.db/ContactsV2.sqlite)
+  -m MEDIA, --media MEDIA
+                        Path to WhatsApp media folder (default: WhatsApp)
+  -b BACKUP, --backup BACKUP
+                        Path to Android (must be used together with -k)/iPhone WhatsApp backup
+  -o OUTPUT, --output OUTPUT
+                        Output to specific directory (default: result)
+  -j [JSON], --json [JSON]
+                        Save the result to a single JSON file (default if present: result.json)
+  -d DB, --db DB        Path to database file (default: msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
+  -k KEY, --key KEY     Path to key file
+  -t TEMPLATE, --template TEMPLATE
                         Path to custom HTML template
+  -e, --embedded        Embed media into HTML file (not yet implemented)
+  -s, --showkey         Show the HEX key used to decrypt the database
+  -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
+  --offline OFFLINE     Relative path to offline static files
+  --size SIZE, --output-size SIZE
+                        Maximum size of a single output file in bytes, 0 for auto (not yet implemented)
+  --no-html             Do not output html files
+  --check-update        Check for updates
 ```
 
 # To do
