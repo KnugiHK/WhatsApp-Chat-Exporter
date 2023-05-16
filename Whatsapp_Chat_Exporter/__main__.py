@@ -36,7 +36,7 @@ def main():
         dest='iphone',
         default=False,
         action='store_true',
-        help="Define the target as iPhone")
+        help="Define the target as iPhone/iPad")
     parser.add_argument(
         "-w",
         "--wa",
