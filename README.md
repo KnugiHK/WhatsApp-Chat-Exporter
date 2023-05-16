@@ -134,7 +134,7 @@ options:
 ```
 
 # To do
-1. Reply in iPhone
+See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
 
 # Copyright
 This is a MIT licensed project.
