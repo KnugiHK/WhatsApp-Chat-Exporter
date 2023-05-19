@@ -240,7 +240,15 @@ def messages(db, data):
     else:
         table_message = False
     i = 0
-    content = c.fetchone()
+    while True:
+        try:
+            content = c.fetchone()
+        except sqlite3.OperationalError:
+            continue
+        else:
+            if content is not None and isinstance(content["data"], bytes):
+                continue
+            break
     while content is not None:
         if content["key_remote_jid"] not in data:
             data[content["key_remote_jid"]] = ChatStore()
@@ -377,7 +385,15 @@ def messages(db, data):
         i += 1
         if i % 1000 == 0:
             print(f"Gathering messages...({i}/{total_row_number})", end="\r")
-        content = c.fetchone()
+        while True:
+            try:
+                content = c.fetchone()
+            except sqlite3.OperationalError:
+                continue
+            else:
+                if content is not None and isinstance(content["data"], bytes):
+                    continue
+                break
     print(f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
 
 
