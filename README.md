@@ -100,6 +100,8 @@ After extracting, you will get these:
 #### Group Message
 ![Group Message](imgs/group.png)
 
+*The above screenshots were taken longgggggggggggggg ago. I am going to update them when possible.*
+
 ## More options
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
