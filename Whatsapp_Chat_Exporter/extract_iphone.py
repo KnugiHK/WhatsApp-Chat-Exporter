@@ -2,6 +2,7 @@
 
 import sqlite3
 import json
+import string
 import jinja2
 import os
 import shutil
@@ -35,10 +36,14 @@ def messages(db, data):
                         ZMESSAGEDATE,
                         ZTEXT,
                         ZMESSAGETYPE,
-                        ZWAGROUPMEMBER.ZMEMBERJID
-                 FROM main.ZWAMESSAGE
-                    LEFT JOIN main.ZWAGROUPMEMBER
-                        ON main.ZWAMESSAGE.ZGROUPMEMBER = main.ZWAGROUPMEMBER.Z_PK;""")
+                        ZWAGROUPMEMBER.ZMEMBERJID,
+						ZMETADATA,
+                        ZSTANZAID
+                 FROM ZWAMESSAGE
+                    LEFT JOIN ZWAGROUPMEMBER
+                        ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
+					LEFT JOIN ZWAMEDIAITEM
+						ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE;""")
     i = 0
     content = c.fetchone()
     while content is not None:
@@ -53,7 +58,8 @@ def messages(db, data):
             "reply": None,
             "caption": None,
             "meta": False,
-            "data": None
+            "data": None,
+            "key_id": content["ZSTANZAID"][:17]
         }
         if "-" in content[0] and content[2] == 0:
             name = None
@@ -89,6 +95,11 @@ def messages(db, data):
                 data[content[0]]["messages"][content[1]]["data"] = None
         else:
             # real message
+            if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14"):
+                quoted = content["ZMETADATA"][2:19]
+                data[content[0]]["messages"][content[1]]["reply"] = quoted.decode()
+                data[content[0]]["messages"][content[1]]["quoted_data"] = None # TODO
+
             if content[2] == 1:
                 if content[5] == 14:
                     msg = "Message deleted"

@@ -68,7 +68,13 @@
 							{% if msg.reply is not none %}
 								<div class="reply">
 									<span style="color: #70777a;">Replying to </span>
-									<a href="#{{msg.reply}}" style="color: #168acc;">"{{ msg.quoted_data or 'media' }}"</a>
+									<a href="#{{msg.reply}}" style="color: #168acc;">
+										{% if msg.quoted_data is not none %}
+											"{{msg.quoted_data}}"
+										{% else %}
+											this message
+										{% endif %}
+									</a>
 								</div>
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
@@ -124,7 +130,13 @@
 							{% if msg.reply is not none %}
 								<div class="reply">
 									<span style="color: #70777a;">Replying to </span>
-									<a href="#{{msg.reply}}" style="color: #168acc;">"{{ msg.quoted_data or 'media' }}"</a>
+									<a href="#{{msg.reply}}" style="color: #168acc;">
+										{% if msg.quoted_data is not none %}
+											"{{msg.quoted_data}}"
+										{% else %}
+											this message
+										{% endif %}
+									</a>
 								</div>
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
