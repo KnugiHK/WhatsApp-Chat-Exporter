@@ -33,15 +33,30 @@
 		img, video {
 			max-width:100%;
 		}
-		a.anchor {
-			display: block;
-			position: relative;
-			top: -100px;
-			visibility: hidden;
-		}
 		div.reply{
 			font-size: 13px;
 			text-decoration: none;
+		}
+		div:target::before {
+			content: '';
+			display: block;
+			height: 100px;
+			margin-top: -100px;
+			visibility: hidden;
+		}
+		div:target {
+			border-style: solid;
+			border-width: 2px;
+			animation: border-blink 0.5s steps(1) 5;
+			border-color: rgba(0,0,0,0)
+		}
+		@keyframes border-blink {
+			0% {
+				border-color: #2196F3;	
+			}
+			50% {
+				border-color: rgba(0,0,0,0);
+			}
 		}
 		</style>
 	</head>
@@ -51,8 +66,7 @@
 			<div class="table" style="width:100%">
 			{% set last = {'last': 946688461.001} %}
 			{% for msg in msgs -%}
-				<div class="w3-row" style="padding-bottom: 10px">
-					<a class="anchor" id="{{ msg.key_id }}"></a>
+				<div class="w3-row" style="padding-bottom: 10px" id="{{ msg.key_id }}">
 					{% if determine_day(last.last, msg.timestamp) is not none  %}
 					<div class="w3-center" style="color:#70777c;padding: 10px 0 10px 0;">{{ determine_day(last.last, msg.timestamp) }}</div>
 					{% if last.update({'last': msg.timestamp}) %}{% endif %}
