@@ -141,7 +141,7 @@ def main():
         dest="check_update",
         default=False,
         action='store_true',
-        help="Check for updates"
+        help="Check for updates (require Internet access)"
     )
     args = parser.parse_args()
 
