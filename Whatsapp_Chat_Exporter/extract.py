@@ -130,7 +130,7 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
                                 f"The offsets of your IV and database are {start_iv} and "
                                 f"{start_db}, respectively. To include your offsets in the "
                                 "program, please report it by creating an issue on GitHub: "
-                                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues/new"
+                                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47"
                             )
                             break
                     if not decompressed:
