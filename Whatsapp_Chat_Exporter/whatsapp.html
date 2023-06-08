@@ -93,7 +93,7 @@
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
 								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
-								 	<p>{{ msg.data or 'This message is not supported' }}</p>
+								 	<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 							    </div>
 							{% else %}
 								{% if msg.media == false %}
@@ -155,7 +155,7 @@
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
 								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
-									<p>{{ msg.data or 'This message is not supported' }}</p>
+									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 								</div>
 							{% else %}
 								{% if msg.media == false %}
