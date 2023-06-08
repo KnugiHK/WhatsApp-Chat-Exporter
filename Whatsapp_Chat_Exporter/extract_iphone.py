@@ -2,15 +2,13 @@
 
 import sqlite3
 import json
-import string
 import jinja2
 import os
 import shutil
 from pathlib import Path
-from datetime import datetime
 from mimetypes import MimeTypes
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import sanitize_except, determine_day, APPLE_TIME
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, rendering, sanitize_except, determine_day, APPLE_TIME
 
 
 def messages(db, data):
@@ -56,7 +54,7 @@ def messages(db, data):
         data[_id].add_message(Z_PK, Message(
             from_me=content["ZISFROMME"],
             timestamp=ts,
-            time=ts, # Could be bug
+            time=ts, # TODO: Could be bug
             key_id=content["ZSTANZAID"][:17],
         ))
         if "-" in _id and content["ZISFROMME"] == 0:
@@ -226,7 +224,14 @@ def vcard(db, data):
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def create_html(data, output_folder, template=None, embedded=False, offline_static=False, maximum_size=None):
+def create_html(
+        data,
+        output_folder,
+        template=None,
+        embedded=False,
+        offline_static=False,
+        maximum_size=None
+    ):
     if template is None:
         template_dir = os.path.dirname(__file__)
         template_file = "whatsapp.html"
@@ -258,7 +263,8 @@ def create_html(data, output_folder, template=None, embedded=False, offline_stat
         w3css = os.path.join(offline_static, "w3.css")
 
     for current, contact in enumerate(data):
-        if len(data[contact].messages) == 0:
+        chat = data[contact]
+        if len(chat.messages) == 0:
             continue
         phone_number = contact.split('@')[0]
         if "-" in contact:
@@ -266,26 +272,62 @@ def create_html(data, output_folder, template=None, embedded=False, offline_stat
         else:
             file_name = phone_number
 
-        if data[contact].name is not None:
+        if chat.name is not None:
             if file_name != "":
                 file_name += "-"
-            file_name += data[contact].name.replace("/", "-")
-            name = data[contact].name
+            file_name += chat.name.replace("/", "-")
+            name = chat.name
         else:
             name = phone_number
 
-        safe_file_name = ''
         safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
-        with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
-            f.write(
-                template.render(
-                    name=name,
-                    msgs=data[contact].messages.values(),
-                    my_avatar=None,
-                    their_avatar=f"WhatsApp/Avatars/{contact}.j",
-                    w3css=w3css
-                )
-            )
+
+        if maximum_size is not None:
+            current_size = 0
+            current_page = 1
+            render_box = []
+            if maximum_size == 0:
+                maximum_size = MAX_SIZE
+            last_msg = chat.get_last_message().key_id
+            for message in chat.get_messages():
+                if message.data is not None and not message.meta and not message.media:
+                    current_size += len(message.data) + ROW_SIZE
+                else:
+                    current_size += ROW_SIZE + 100 # Assume media and meta HTML are 100 bytes
+                if current_size > maximum_size:
+                    output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
+                    rendering(
+                        output_file_name,
+                        template,
+                        name,
+                        render_box,
+                        contact,
+                        w3css,
+                        f"{safe_file_name}-{current_page + 1}.html"
+                    )
+                    render_box = [message]
+                    current_size = 0
+                    current_page += 1
+                else:
+                    if message.key_id == last_msg:
+                        if current_page == 1:
+                            output_file_name = f"{output_folder}/{safe_file_name}.html"
+                        else:
+                            output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
+                        rendering(
+                            output_file_name,
+                            template,
+                            name,
+                            render_box,
+                            contact,
+                            w3css,
+                            False
+                        )
+                    else:
+                        render_box.append(message)
+        else:
+            output_file_name = f"{output_folder}/{safe_file_name}.html"
+            rendering(output_file_name, template, name, chat.get_messages(), contact, w3css, False)
         if current % 10 == 0:
             print(f"Creating HTML...({current}/{total_row_number})", end="\r")
 

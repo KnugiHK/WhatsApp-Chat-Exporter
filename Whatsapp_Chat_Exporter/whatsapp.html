@@ -193,7 +193,11 @@
 			</div>
 		</article>
 		<footer class="w3-center">
+			{% if next %}
+			<a href="./{{ next }}">Next</a>
+			{% else %}
 			End of history
+			{% endif %}
 		</footer>
 	</body>
 </html>

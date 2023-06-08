@@ -19,8 +19,15 @@ class ChatStore():
             del self.messages[id]
 
     def to_json(self):
-        serialized_msgs = {id : msg.to_json() for id,msg in self.messages.items()}
+        serialized_msgs = {id: msg.to_json() for id, msg in self.messages.items()}
         return {'name' : self.name, 'messages' : serialized_msgs}
+
+    def get_last_message(self):
+        return tuple(self.messages.values())[-1]
+
+    def get_messages(self):
+        return self.messages.values()
+
 
 class Message():
     def __init__(self, from_me: Union[bool,int], timestamp: int, time: str, key_id: int):

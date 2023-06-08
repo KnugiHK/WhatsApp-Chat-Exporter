@@ -125,9 +125,13 @@ def main():
     parser.add_argument(
         "--size",
         "--output-size",
+        "--split",
         dest="size",
+        nargs='?',
+        type=int,
+        const=0,
         default=None,
-        help="Maximum size of a single output file in bytes, 0 for auto (not yet implemented)"
+        help="Maximum (Rough) size of a single output file in bytes, 0 for auto"
     )
     parser.add_argument(
         "--no-html",
@@ -216,7 +220,10 @@ def main():
     elif args.iphone:
         import sys
         if "--iphone" in sys.argv:
-            print("WARNING: The --iphone flag is deprecated and will be removed in the future. Use --ios instead.")
+            print(
+                "WARNING: The --iphone flag is deprecated and will"
+                "be removed in the future. Use --ios instead."
+            )
         messages = extract_iphone.messages
         media = extract_iphone.media
         vcard = extract_iphone.vcard
@@ -271,7 +278,7 @@ def main():
                     shutil.move(args.media, f"{args.output}/")
                 except PermissionError:
                     print("Cannot remove original WhatsApp directory. "
-                        "Perhaps the directory is opened?")
+                          "Perhaps the directory is opened?")
 
     if args.json:
         if isinstance(data[next(iter(data))], ChatStore):

@@ -12,7 +12,7 @@ from pathlib import Path
 from mimetypes import MimeTypes
 from hashlib import sha256
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import sanitize_except, determine_day, Crypt
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, rendering, sanitize_except, determine_day, Crypt
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
@@ -49,7 +49,7 @@ def _extract_encrypted_key(keyfile):
         key_stream += byte.to_bytes(1, "big", signed=True)
 
     return _generate_hmac_of_hmac(key_stream)
-    
+
 
 def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=False):
     if not support_backup:
@@ -82,7 +82,7 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
             raise ValueError("The crypt15 file must be at least 131 bytes")
         t1 = t2 = None
         iv = database[8:24]
-        db_offset = database[0] + 2 # Skip protobuf + protobuf size and backup type
+        db_offset = database[0] + 2  # Skip protobuf + protobuf size and backup type
         db_ciphertext = database[db_offset:]
 
     if t1 != t2:
@@ -253,13 +253,13 @@ def messages(db, data):
         if content["key_remote_jid"] not in data:
             data[content["key_remote_jid"]] = ChatStore()
         if content["key_remote_jid"] is None:
-            continue # Not sure
+            continue  # Not sure
         data[content["key_remote_jid"]].add_message(content["_id"], Message(
             from_me=content["key_from_me"],
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
-        ))    
+        ))
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = None
             if table_message:
@@ -495,7 +495,7 @@ def vcard(db, data):
                         ON jid._id = chat.jid_row_id
                  ORDER BY message.chat_row_id ASC;"""
         )
-    
+
     rows = c.fetchall()
     total_row_number = len(rows)
     print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
@@ -558,7 +558,8 @@ def create_html(
         w3css = os.path.join(offline_static, "w3.css")
 
     for current, contact in enumerate(data):
-        if len(data[contact].messages) == 0:
+        chat = data[contact]
+        if len(chat.messages) == 0:
             continue
         phone_number = contact.split('@')[0]
         if "-" in contact:
@@ -566,25 +567,62 @@ def create_html(
         else:
             file_name = phone_number
 
-        if data[contact].name is not None:
+        if chat.name is not None:
             if file_name != "":
                 file_name += "-"
-            file_name += data[contact].name.replace("/", "-")
-            name = data[contact].name
+            file_name += chat.name.replace("/", "-")
+            name = chat.name
         else:
             name = phone_number
-        safe_file_name = ''
+
         safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
-        with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
-            f.write(
-                template.render(
-                    name=name,
-                    msgs=data[contact].messages.values(),
-                    my_avatar=None,
-                    their_avatar=f"WhatsApp/Avatars/{contact}.j",
-                    w3css=w3css
-                )
-            )
+
+        if maximum_size is not None:
+            current_size = 0
+            current_page = 1
+            render_box = []
+            if maximum_size == 0:
+                maximum_size = MAX_SIZE
+            last_msg = chat.get_last_message().key_id
+            for message in chat.get_messages():
+                if message.data is not None and not message.meta and not message.media:
+                    current_size += len(message.data) + ROW_SIZE
+                else:
+                    current_size += ROW_SIZE + 100  # Assume media and meta HTML are 100 bytes
+                if current_size > maximum_size:
+                    output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
+                    rendering(
+                        output_file_name,
+                        template,
+                        name,
+                        render_box,
+                        contact,
+                        w3css,
+                        f"{safe_file_name}-{current_page + 1}.html"
+                    )
+                    render_box = [message]
+                    current_size = 0
+                    current_page += 1
+                else:
+                    if message.key_id == last_msg:
+                        if current_page == 1:
+                            output_file_name = f"{output_folder}/{safe_file_name}.html"
+                        else:
+                            output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
+                        rendering(
+                            output_file_name,
+                            template,
+                            name,
+                            render_box,
+                            contact,
+                            w3css,
+                            False
+                        )
+                    else:
+                        render_box.append(message)
+        else:
+            output_file_name = f"{output_folder}/{safe_file_name}.html"
+            rendering(output_file_name, template, name, chat.get_messages(), contact, w3css, False)
         if current % 10 == 0:
             print(f"Creating HTML...({current}/{total_row_number})", end="\r")
 
