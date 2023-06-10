@@ -10,7 +10,6 @@ def messages(path, data, assume_first_as_me=False):
         you = ""
         data["chat"] = ChatStore()
         total_row_number = len(file.readlines())
-        i = 0
         file.seek(0)
         for index, line in enumerate(file):
             if len(line.split(" - ")) > 1:
@@ -48,7 +47,7 @@ def messages(path, data, assume_first_as_me=False):
                         index
                     )
                     if "<Media omitted>" in message:
-                        msg.data = "The media is missing"
+                        msg.data = "The media is omitted in the chat"
                         msg.mime = "media"
                         msg.meta = True
                     elif "(file attached)" in message:
@@ -62,6 +61,10 @@ def messages(path, data, assume_first_as_me=False):
                                 msg.mime = guess
                             else:
                                 msg.mime = "application/octet-stream"
+                        else:
+                            msg.data = "The media is missing"
+                            msg.mime = "media"
+                            msg.meta = True
                     else:
                         msg.data = message
                 data["chat"].add_message(index, msg)
