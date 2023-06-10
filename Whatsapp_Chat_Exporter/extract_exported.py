@@ -8,7 +8,8 @@ def messages(path, data, assume_first_as_me=False):
     """Extracts messages from the exported file"""
     with open(path, "r", encoding="utf8") as file:
         you = ""
-        data["chat"] = ChatStore()
+        data["ExportedChat"] = ChatStore()
+        chat = data["ExportedChat"]
         total_row_number = len(file.readlines())
         file.seek(0)
         for index, line in enumerate(file):
@@ -22,7 +23,7 @@ def messages(path, data, assume_first_as_me=False):
                     message = line.split(time)[1].split(name + ":")[1].strip()
                     name = name[3:]
                     if you == "":
-                        if data["chat"].name is None:
+                        if chat.name is None:
                             if not assume_first_as_me:
                                 while True:
                                     ans = input(f"Is '{name}' you? (Y/N)").lower()
@@ -30,16 +31,16 @@ def messages(path, data, assume_first_as_me=False):
                                         you = name
                                         break
                                     elif ans == "n":
-                                        data["chat"].name = name
+                                        chat.name = name
                                         break
                             else:
                                 you = name
                         else:
-                            if name != data["chat"].name:
+                            if name != chat.name:
                                 you = name
-                    if data["chat"].name is None and you != "":
+                    elif chat.name is None:
                         if name != you:
-                            data["chat"].name = name
+                            chat.name = name
                     msg = Message(
                         you == name,
                         datetime.strptime(time, "%d/%m/%Y, %H:%M").timestamp(),
@@ -71,12 +72,12 @@ def messages(path, data, assume_first_as_me=False):
                             msg.data = message.replace("\r\n", "<br>")
                         if "\n" in message:
                             msg.data = message.replace("\n", "<br>")
-                data["chat"].add_message(index, msg)
+                chat.add_message(index, msg)
             else:
                 lookback = index - 1
-                while lookback not in data["chat"].messages:
+                while lookback not in chat.messages:
                     lookback -= 1
-                msg = data["chat"].messages[lookback]
+                msg = chat.messages[lookback]
                 if msg.media:
                     msg.caption = line.strip()
                 else:
