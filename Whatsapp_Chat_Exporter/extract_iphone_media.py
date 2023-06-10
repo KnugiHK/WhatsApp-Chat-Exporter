@@ -25,7 +25,7 @@ def extract_encrypted(base_dir, password):
                                     LIKE 'Message/Media/%'"""
                               )
     total_row_number = data[0][0]
-    print(f"Gathering media...(0/{total_row_number})", end="\r")
+    print(f"Extracting media...(0/{total_row_number})", end="\r")
     data = backup.execute_sql("""SELECT fileID,
                                         relativePath,
                                         flags,
@@ -56,8 +56,8 @@ def extract_encrypted(base_dir, password):
                 f.write(decrypted)
         i += 1
         if i % 100 == 0:
-            print(f"Gathering media...({i}/{total_row_number})", end="\r")
-    print(f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
+            print(f"Extracting media...({i}/{total_row_number})", end="\r")
+    print(f"Extracting media...({total_row_number}/{total_row_number})", end="\n")
 
 
 def is_encrypted(base_dir):
@@ -90,13 +90,14 @@ def extract_media(base_dir):
         else:
             shutil.copyfile(wts_db, "7c7fba66680ef796b916b067077cc246adacf01d")
         with sqlite3.connect(f"{base_dir}/Manifest.db") as manifest:
+            manifest.row_factory = sqlite3.Row
             c = manifest.cursor()
             c.execute("""SELECT count()
                         FROM Files
                         WHERE relativePath
                             LIKE 'Message/Media/%'""")
             total_row_number = c.fetchone()[0]
-            print(f"Gathering media...(0/{total_row_number})", end="\r")
+            print(f"Extracting media...(0/{total_row_number})", end="\r")
             c.execute("""SELECT fileID,
                                 relativePath,
                                 flags
@@ -110,10 +111,10 @@ def extract_media(base_dir):
                 os.mkdir("Message/Media")
             i = 0
             while row is not None:
-                destination = row[1]
-                hashes = row[0]
+                destination = row["relativePath"]
+                hashes = row["fileID"]
                 folder = hashes[:2]
-                flags = row[2]
+                flags = row["flags"]
                 if flags == 2:
                     try:
                         os.mkdir(destination)
@@ -123,9 +124,9 @@ def extract_media(base_dir):
                     shutil.copyfile(f"{base_dir}/{folder}/{hashes}", destination)
                 i += 1
                 if i % 100 == 0:
-                    print(f"Gathering media...({i}/{total_row_number})", end="\r")
+                    print(f"Extracting media...({i}/{total_row_number})", end="\r")
                 row = c.fetchone()
-            print(f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
+            print(f"Extracting media...({total_row_number}/{total_row_number})", end="\n")
 
 
 if __name__ == "__main__":
