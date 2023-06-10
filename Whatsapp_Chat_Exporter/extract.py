@@ -152,7 +152,7 @@ def contacts(db, data):
     c = db.cursor()
     c.execute("""SELECT count() FROM wa_contacts""")
     total_row_number = c.fetchone()[0]
-    print(f"Gathering contacts...({total_row_number})")
+    print(f"Processing contacts...({total_row_number})")
 
     c.execute("""SELECT jid, display_name FROM wa_contacts; """)
     row = c.fetchone()
@@ -169,7 +169,7 @@ def messages(db, data):
     except sqlite3.OperationalError:
         c.execute("""SELECT count() FROM message""")
     total_row_number = c.fetchone()[0]
-    print(f"Gathering messages...(0/{total_row_number})", end="\r")
+    print(f"Processing messages...(0/{total_row_number})", end="\r")
 
     phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
     try:
@@ -386,7 +386,7 @@ def messages(db, data):
             data[content["key_remote_jid"]].add_message(content["_id"], message)
         i += 1
         if i % 1000 == 0:
-            print(f"Gathering messages...({i}/{total_row_number})", end="\r")
+            print(f"Processing messages...({i}/{total_row_number})", end="\r")
         while True:
             try:
                 content = c.fetchone()
@@ -396,7 +396,7 @@ def messages(db, data):
                 if content is not None and isinstance(content["data"], bytes):
                     continue
                 break
-    print(f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
+    print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
 def media(db, data, media_folder):
@@ -404,7 +404,7 @@ def media(db, data, media_folder):
     c = db.cursor()
     c.execute("""SELECT count() FROM message_media""")
     total_row_number = c.fetchone()[0]
-    print(f"\nGathering media...(0/{total_row_number})", end="\r")
+    print(f"\nProcessing media...(0/{total_row_number})", end="\r")
     i = 0
     try:
         c.execute("""SELECT messages.key_remote_jid,
@@ -466,10 +466,10 @@ def media(db, data, media_folder):
             message.meta = True
         i += 1
         if i % 100 == 0:
-            print(f"Gathering media...({i}/{total_row_number})", end="\r")
+            print(f"Processing media...({i}/{total_row_number})", end="\r")
         content = c.fetchone()
     print(
-        f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
+        f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
 def vcard(db, data):
@@ -501,7 +501,7 @@ def vcard(db, data):
 
     rows = c.fetchall()
     total_row_number = len(rows)
-    print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
+    print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
     base = "WhatsApp/vCards"
     if not os.path.isdir(base):
         Path(base).mkdir(parents=True, exist_ok=True)
@@ -519,7 +519,7 @@ def vcard(db, data):
             f"however it should be located at {file_path}"
         message.mime = "text/x-vcard"
         message.meta = True
-        print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
+        print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
 
 
 def create_html(

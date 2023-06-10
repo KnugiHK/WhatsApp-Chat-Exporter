@@ -84,6 +84,6 @@ def messages(path, data, assume_first_as_me=False):
                     msg.data += "<br>" + line.strip()
             
             if index % 1000 == 0:
-                print(f"Gathering messages & media...({index}/{total_row_number})", end="\r")
-    print(f"Gathering messages & media...({total_row_number}/{total_row_number})", end="\r")
+                print(f"Processing messages & media...({index}/{total_row_number})", end="\r")
+    print(f"Processing messages & media...({total_row_number}/{total_row_number})", end="\r")
     return data

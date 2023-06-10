@@ -16,7 +16,7 @@ def messages(db, data):
     # Get contacts
     c.execute("""SELECT count() FROM ZWACHATSESSION""")
     total_row_number = c.fetchone()[0]
-    print(f"Gathering contacts...({total_row_number})")
+    print(f"Processing contacts...({total_row_number})")
 
     c.execute("""SELECT ZCONTACTJID, ZPARTNERNAME FROM ZWACHATSESSION; """)
     content = c.fetchone()
@@ -27,7 +27,7 @@ def messages(db, data):
     # Get message history
     c.execute("""SELECT count() FROM ZWAMESSAGE""")
     total_row_number = c.fetchone()[0]
-    print(f"Gathering messages...(0/{total_row_number})", end="\r")
+    print(f"Processing messages...(0/{total_row_number})", end="\r")
 
     c.execute("""SELECT COALESCE(ZFROMJID, ZTOJID) as _id,
                         ZWAMESSAGE.Z_PK,
@@ -124,10 +124,10 @@ def messages(db, data):
             data[_id].add_message(Z_PK, message)
         i += 1
         if i % 1000 == 0:
-            print(f"Gathering messages...({i}/{total_row_number})", end="\r")
+            print(f"Processing messages...({i}/{total_row_number})", end="\r")
         content = c.fetchone()
     print(
-        f"Gathering messages...({total_row_number}/{total_row_number})", end="\r")
+        f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
 def media(db, data, media_folder):
@@ -135,7 +135,7 @@ def media(db, data, media_folder):
     # Get media
     c.execute("""SELECT count() FROM ZWAMEDIAITEM""")
     total_row_number = c.fetchone()[0]
-    print(f"\nGathering media...(0/{total_row_number})", end="\r")
+    print(f"\nProcessing media...(0/{total_row_number})", end="\r")
     i = 0
     c.execute("""SELECT COALESCE(ZWAMESSAGE.ZFROMJID, ZWAMESSAGE.ZTOJID) as _id,
                         ZMESSAGE,
@@ -185,10 +185,10 @@ def media(db, data, media_folder):
             message.caption = content["ZTITLE"]
         i += 1
         if i % 100 == 0:
-            print(f"Gathering media...({i}/{total_row_number})", end="\r")
+            print(f"Processing media...({i}/{total_row_number})", end="\r")
         content = c.fetchone()
     print(
-        f"Gathering media...({total_row_number}/{total_row_number})", end="\r")
+        f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
 def vcard(db, data):
@@ -206,7 +206,7 @@ def vcard(db, data):
                         ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK""")
     contents = c.fetchall()
     total_row_number = len(contents)
-    print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
+    print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
     base = "Message/vCards"
     if not os.path.isdir(base):
         Path(base).mkdir(parents=True, exist_ok=True)
@@ -224,7 +224,7 @@ def vcard(db, data):
         message.mime = "text/x-vcard"
         message.media = True
         message.meta = True
-        print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
+        print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
 
 
 def create_html(
