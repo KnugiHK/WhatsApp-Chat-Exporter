@@ -241,8 +241,13 @@ def main():
         media = extract_iphone.media
         vcard = extract_iphone.vcard
         create_html = extract_iphone.create_html
+        if args.media is None:
+            args.media = "Message"
         if args.backup is not None:
-            extract_iphone_media.extract_media(args.backup)
+            if not os.path.isdir(args.media):
+                extract_iphone_media.extract_media(args.backup)
+            else:
+                print("Media directory already exists, skipping media extraction.")
         if args.db is None:
             msg_db = "7c7fba66680ef796b916b067077cc246adacf01d"
         else:
@@ -251,8 +256,6 @@ def main():
             contact_db = "ContactsV2.sqlite"
         else:
             contact_db = args.wa
-        if args.media is None:
-            args.media = "Message"
 
     if not args.exported:
         if os.path.isfile(msg_db):
@@ -278,15 +281,16 @@ def main():
             exit(2)
 
         if os.path.isdir(args.media):
-            if os.path.isdir(f"{args.output}/{args.media}"):
+            media_path = os.path.join(args.output, args.media)
+            if os.path.isdir(media_path):
                 print("Media directory already exists in output directory. Skipping...")
             else:
                 if not args.move_media:
-                    if os.path.isdir(f"{args.output}/WhatsApp"):
+                    if os.path.isdir(media_path):
                         print("WhatsApp directory already exists in output directory. Skipping...")
                     else:
                         print("Copying media directory...")
-                        shutil.copytree(args.media, f"{args.output}/WhatsApp")
+                        shutil.copytree(args.media, media_path)
                 else:
                     try:
                         shutil.move(args.media, f"{args.output}/")
