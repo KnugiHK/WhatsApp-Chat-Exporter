@@ -254,12 +254,13 @@ def messages(db, data):
             data[content["key_remote_jid"]] = ChatStore()
         if content["key_remote_jid"] is None:
             continue  # Not sure
-        data[content["key_remote_jid"]].add_message(content["_id"], Message(
+        message = Message(
             from_me=content["key_from_me"],
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
-        ))
+        )
+        invalid = False
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = None
             if table_message:
@@ -282,24 +283,24 @@ def messages(db, data):
                 else:
                     fallback = None
 
-            data[content["key_remote_jid"]].messages[content["_id"]].sender = name or fallback
+            message.sender = name or fallback
         else:
-            data[content["key_remote_jid"]].messages[content["_id"]].sender = None
+            message.sender = None
 
         if content["quoted"] is not None:
-            data[content["key_remote_jid"]].messages[content["_id"]].reply = content["quoted"]
-            data[content["key_remote_jid"]].messages[content["_id"]].quoted_data = content["quoted_data"]
+            message.reply = content["quoted"]
+            message.quoted_data = content["quoted_data"]
         else:
-            data[content["key_remote_jid"]].messages[content["_id"]].reply = None
+            message.reply = None
 
         if not table_message and content["media_caption"] is not None:
             # Old schema
-            data[content["key_remote_jid"]].messages[content["_id"]].caption = content["media_caption"]
+            message.caption = content["media_caption"]
         elif table_message and content["message_type"] == 1 and content["data"] is not None:
             # New schema
-            data[content["key_remote_jid"]].messages[content["_id"]].caption = content["data"]
+            message.caption = content["data"]
         else:
-            data[content["key_remote_jid"]].messages[content["_id"]].caption = None
+            message.caption = None
 
         if content["status"] == 6:  # 6 = Metadata, otherwise it's a message
             if (not table_message and "-" in content["key_remote_jid"]) or \
@@ -310,10 +311,10 @@ def messages(db, data):
                         int(content["data"])
                     except ValueError:
                         msg = f"The group name changed to {content['data']}"
-                        data[content["key_remote_jid"]].messages[content["_id"]].data = msg
-                        data[content["key_remote_jid"]].messages[content["_id"]].meta = True
+                        message.data = msg
+                        message.meta = True
                     else:
-                        data[content["key_remote_jid"]].delete_message(content["_id"])
+                        invalid = True
                 else:
                     thumb_image = content["thumb_image"]
                     if thumb_image is not None:
@@ -338,25 +339,25 @@ def messages(db, data):
                             original = content["remote_resource"].split('@')[0]
                             changed = thumb_image[7:].decode().split('@')[0]
                             msg = f"{original} changed to {changed}"
-                        data[content["key_remote_jid"]].messages[content["_id"]].data = msg
-                        data[content["key_remote_jid"]].messages[content["_id"]].meta = True
+                        message.data = msg
+                        message.meta = True
                     else:
                         if content["data"] is None:
-                            data[content["key_remote_jid"]].delete_message(content["_id"])
+                            invalid = True
             else:
                 # Private chat
                 if content["data"] is None and content["thumb_image"] is None:
-                    data[content["key_remote_jid"]].delete_message(content["_id"])
+                    invalid = True
 
         else:
             if content["key_from_me"] == 1:
                 if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
                     msg = "Message deleted"
-                    data[content["key_remote_jid"]].messages[content["_id"]].meta = True
+                    message.meta = True
                 else:
                     if content["media_wa_type"] == "5":
                         msg = f"Location shared: {content['latitude'], content['longitude']}"
-                        data[content["key_remote_jid"]].messages[content["_id"]].meta = True
+                        message.meta = True
                     else:
                         msg = content["data"]
                         if msg is not None:
@@ -367,11 +368,11 @@ def messages(db, data):
             else:
                 if content["status"] == 0 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
                     msg = "Message deleted"
-                    data[content["key_remote_jid"]].messages[content["_id"]].meta = True
+                    message.meta = True
                 else:
                     if content["media_wa_type"] == "5":
                         msg = f"Location shared: {content['latitude'], content['longitude']}"
-                        data[content["key_remote_jid"]].messages[content["_id"]].meta = True
+                        message.meta = True
                     else:
                         msg = content["data"]
                         if msg is not None:
@@ -379,9 +380,10 @@ def messages(db, data):
                                 msg = msg.replace("\r\n", "<br>")
                             if "\n" in msg:
                                 msg = msg.replace("\n", "<br>")
+            message.data = msg
 
-            data[content["key_remote_jid"]].messages[content["_id"]].data = msg
-
+        if not invalid:
+            data[content["key_remote_jid"]].add_message(content["_id"], message)
         i += 1
         if i % 1000 == 0:
             print(f"Gathering messages...({i}/{total_row_number})", end="\r")
@@ -436,17 +438,18 @@ def media(db, data, media_folder):
     mime = MimeTypes()
     while content is not None:
         file_path = f"{media_folder}/{content['file_path']}"
-        data[content["key_remote_jid"]].messages[content["message_row_id"]].media = True
+        message = data[content["key_remote_jid"]].messages[content["message_row_id"]]
+        message.media = True
         if os.path.isfile(file_path):
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].data = file_path
+            message.data = file_path
             if content["mime_type"] is None:
                 guess = mime.guess_type(file_path)[0]
                 if guess is not None:
-                    data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = guess
+                    message.mime = guess
                 else:
-                    data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = "data/data"
+                    message.mime = "application/octet-stream"
             else:
-                data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = content["mime_type"]
+                message.mime = content["mime_type"]
         else:
             # if "https://mmg" in content[4]:
             # try:
@@ -458,9 +461,9 @@ def media(db, data, media_folder):
             # data[content[0]]["messages"][content[1]]["media"] = True
             # data[content[0]]["messages"][content[1]]["mime"] = "media"
             # else:
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].data = "The media is missing"
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = "media"
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].meta = True
+            message.data = "The media is missing"
+            message.mime = "media"
+            message.meta = True
         i += 1
         if i % 100 == 0:
             print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -510,11 +513,12 @@ def vcard(db, data):
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
-        data[row["key_remote_jid"]].messages[row["message_row_id"]].data = media_name + \
+        message = data[row["key_remote_jid"]].messages[row["message_row_id"]]
+        message.data = media_name + \
             "The vCard file cannot be displayed here, " \
             f"however it should be located at {file_path}"
-        data[row["key_remote_jid"]].messages[row["message_row_id"]].mime = "text/x-vcard"
-        data[row["key_remote_jid"]].messages[row["message_row_id"]].meta = True
+        message.mime = "text/x-vcard"
+        message.meta = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 

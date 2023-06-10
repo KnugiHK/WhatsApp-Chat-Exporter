@@ -51,12 +51,13 @@ def messages(db, data):
         if _id not in data:
             data[_id] = ChatStore()
         ts = APPLE_TIME + content["ZMESSAGEDATE"]
-        data[_id].add_message(Z_PK, Message(
+        message = Message(
             from_me=content["ZISFROMME"],
             timestamp=ts,
             time=ts, # TODO: Could be bug
             key_id=content["ZSTANZAID"][:17],
-        ))
+        )
+        invalid = False
         if "-" in _id and content["ZISFROMME"] == 0:
             name = None
             if content["ZMEMBERJID"] is not None:
@@ -68,9 +69,9 @@ def messages(db, data):
                     fallback = None
             else:
                 fallback = None
-            data[_id].messages[Z_PK].sender = name or fallback
+            message.sender = name or fallback
         else:
-            data[_id].messages[Z_PK].sender = None
+            message.sender = None
         if content["ZMESSAGETYPE"] == 6:
             # Metadata
             if "-" in _id:
@@ -81,25 +82,25 @@ def messages(db, data):
                         int(content["ZTEXT"])
                     except ValueError:
                         msg = f"The group name changed to {content['ZTEXT']}"
-                        data[_id].messages[Z_PK].data = msg
-                        data[_id].messages[Z_PK].meta = True
+                        message.data = msg
+                        message.meta = True
                     else:
-                        del data[_id].messages[Z_PK]
+                        invalid = True
                 else:
-                    data[_id].messages[Z_PK].data = None
+                    message.data = None
             else:
-                data[_id].messages[Z_PK].data = None
+                message.data = None
         else:
             # real message
             if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14"):
                 quoted = content["ZMETADATA"][2:19]
-                data[_id].messages[Z_PK].reply = quoted.decode()
-                data[_id].messages[Z_PK].quoted_data = None # TODO
+                message.reply = quoted.decode()
+                message.quoted_data = None # TODO
 
             if content["ZISFROMME"] == 1:
                 if content["ZMESSAGETYPE"] == 14:
                     msg = "Message deleted"
-                    data[_id].messages[Z_PK].meta = True
+                    message.meta = True
                 else:
                     msg = content["ZTEXT"]
                     if msg is not None:
@@ -110,7 +111,7 @@ def messages(db, data):
             else:
                 if content["ZMESSAGETYPE"] == 14:
                     msg = "Message deleted"
-                    data[_id].messages[Z_PK].meta = True
+                    message.meta = True
                 else:
                     msg = content["ZTEXT"]
                     if msg is not None:
@@ -118,7 +119,9 @@ def messages(db, data):
                             msg = msg.replace("\r\n", "<br>")
                         if "\n" in msg:
                             msg = msg.replace("\n", "<br>")
-            data[_id].messages[Z_PK].data = msg
+            message.data = msg
+        if not invalid:
+            data[_id].add_message(Z_PK, message)
         i += 1
         if i % 1000 == 0:
             print(f"Gathering messages...({i}/{total_row_number})", end="\r")
@@ -152,18 +155,19 @@ def media(db, data, media_folder):
         file_path = f"{media_folder}/{content['ZMEDIALOCALPATH']}"
         _id = content["_id"]
         ZMESSAGE = content["ZMESSAGE"]
-        data[_id].messages[ZMESSAGE].media = True
+        message = data[_id].messages[ZMESSAGE]
+        message.media = True
 
         if os.path.isfile(file_path):
-            data[_id].messages[ZMESSAGE].data = file_path
+            message.data = file_path
             if content["ZVCARDSTRING"] is None:
                 guess = mime.guess_type(file_path)[0]
                 if guess is not None:
-                    data[_id].messages[ZMESSAGE].mime = guess
+                    message.mime = guess
                 else:
-                    data[_id].messages[ZMESSAGE].mime = "data/data"
+                    message.mime = "application/octet-stream"
             else:
-                data[_id].messages[ZMESSAGE].mime = content["ZVCARDSTRING"]
+                message.mime = content["ZVCARDSTRING"]
         else:
             # if "https://mmg" in content["ZVCARDSTRING"]:
             # try:
@@ -171,14 +175,14 @@ def media(db, data, media_folder):
             # if r.status_code != 200:
             # raise RuntimeError()
             # except:
-            # data[_id].messages[ZMESSAGE].data"] = "{The media is missing}"
-            # data[_id].messages[ZMESSAGE].mime"] = "media"
+            # message.data"] = "{The media is missing}"
+            # message.mime"] = "media"
             # else:
-            data[_id].messages[ZMESSAGE].data = "The media is missing"
-            data[_id].messages[ZMESSAGE].mime = "media"
-            data[_id].messages[ZMESSAGE].meta = True
+            message.data = "The media is missing"
+            message.mime = "media"
+            message.meta = True
         if content["ZTITLE"] is not None:
-            data[_id].messages[ZMESSAGE].caption = content["ZTITLE"]
+            message.caption = content["ZTITLE"]
         i += 1
         if i % 100 == 0:
             print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -213,14 +217,13 @@ def vcard(db, data):
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content["ZVCARDSTRING"])
-        _id = content["_id"]
-        ZMESSAGE = content["ZMESSAGE"]
-        data[_id].messages[ZMESSAGE].data = content["ZVCARDNAME"] + \
+        message = data[content["_id"]].messages[content["ZMESSAGE"]]
+        message.data = content["ZVCARDNAME"] + \
             "The vCard file cannot be displayed here, " \
             f"however it should be located at {file_path}"
-        data[_id].messages[ZMESSAGE].mime = "text/x-vcard"
-        data[_id].messages[ZMESSAGE].media = True
-        data[_id].messages[ZMESSAGE].meta = True
+        message.mime = "text/x-vcard"
+        message.media = True
+        message.meta = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
