@@ -2,7 +2,8 @@ try:
     from .__init__ import __version__
 except ImportError:
     from Whatsapp_Chat_Exporter.__init__ import __version__
-from Whatsapp_Chat_Exporter import extract, extract_iphone
+import glob
+from Whatsapp_Chat_Exporter import extract, extract_exported, extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Crypt, check_update
@@ -93,7 +94,6 @@ def main():
         help="Path to custom HTML template"
     )
     parser.add_argument(
-        "-e",
         "--embedded",
         dest="embedded",
         default=False,
@@ -147,6 +147,20 @@ def main():
         action='store_true',
         help="Check for updates (require Internet access)"
     )
+    parser.add_argument(
+        "-e",
+        "--exported",
+        dest="exported",
+        default=None,
+        help="Path to exported chat file"
+    )
+    parser.add_argument(
+        "--assume-first-as-me",
+        dest="assume_first_as_me",
+        default=False,
+        action='store_true',
+        help="Assume the first message in a chat as sent by me (must be used together with -e)"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -154,10 +168,10 @@ def main():
         exit(check_update())
 
     # Sanity checks
-    if args.android and args.iphone:
+    if args.android and args.iphone and args.exported:
         print("You must define only one device type.")
         exit(1)
-    if not args.android and not args.iphone:
+    if not args.android and not args.iphone and not args.exported:
         print("You must define the device type.")
         exit(1)
     if args.no_html and not args.json:
@@ -216,7 +230,6 @@ def main():
             with sqlite3.connect(contact_db) as db:
                 db.row_factory = sqlite3.Row
                 contacts(db, data)
-
     elif args.iphone:
         import sys
         if "--iphone" in sys.argv:
@@ -241,14 +254,49 @@ def main():
         if args.media is None:
             args.media = "Message"
 
-    if os.path.isfile(msg_db):
-        with sqlite3.connect(msg_db) as db:
-            db.row_factory = sqlite3.Row
-            messages(db, data)
-            media(db, data, args.media)
-            vcard(db, data)
+    if not args.exported:
+        if os.path.isfile(msg_db):
+            with sqlite3.connect(msg_db) as db:
+                db.row_factory = sqlite3.Row
+                messages(db, data)
+                media(db, data, args.media)
+                vcard(db, data)
+            if not args.no_html:
+                create_html(
+                    data,
+                    args.output,
+                    args.template,
+                    args.embedded,
+                    args.offline,
+                    args.size
+                )
+        else:
+            print(
+                "The message database does not exist. You may specify the path "
+                "to database file with option -d or check your provided path."
+            )
+            exit(2)
+
+        if os.path.isdir(args.media):
+            if os.path.isdir(f"{args.output}/{args.media}"):
+                print("Media directory already exists in output directory. Skipping...")
+            else:
+                if not args.move_media:
+                    if os.path.isdir(f"{args.output}/WhatsApp"):
+                        print("WhatsApp directory already exists in output directory. Skipping...")
+                    else:
+                        print("Copying media directory...")
+                        shutil.copytree(args.media, f"{args.output}/WhatsApp")
+                else:
+                    try:
+                        shutil.move(args.media, f"{args.output}/")
+                    except PermissionError:
+                        print("Cannot remove original WhatsApp directory. "
+                            "Perhaps the directory is opened?")
+    else:
+        extract_exported.messages(args.exported, data, args.assume_first_as_me)
         if not args.no_html:
-            create_html(
+            extract.create_html(
                 data,
                 args.output,
                 args.template,
@@ -256,29 +304,8 @@ def main():
                 args.offline,
                 args.size
             )
-    else:
-        print(
-            "The message database does not exist. You may specify the path "
-            "to database file with option -d or check your provided path."
-        )
-        exit(2)
-
-    if os.path.isdir(args.media):
-        if os.path.isdir(f"{args.output}/{args.media}"):
-            print("Media directory already exists in output directory. Skipping...")
-        else:
-            if not args.move_media:
-                if os.path.isdir(f"{args.output}/WhatsApp"):
-                    print("WhatsApp directory already exists in output directory. Skipping...")
-                else:
-                    print("Copying media directory...")
-                    shutil.copytree(args.media, f"{args.output}/WhatsApp")
-            else:
-                try:
-                    shutil.move(args.media, f"{args.output}/")
-                except PermissionError:
-                    print("Cannot remove original WhatsApp directory. "
-                          "Perhaps the directory is opened?")
+        for file in glob.glob(r'*.*'):
+            shutil.copy(file, args.output)
 
     if args.json:
         if isinstance(data[next(iter(data))], ChatStore):
