@@ -67,6 +67,10 @@ def messages(path, data, assume_first_as_me=False):
                             msg.meta = True
                     else:
                         msg.data = message
+                        if "\r\n" in message:
+                            msg.data = message.replace("\r\n", "<br>")
+                        if "\n" in message:
+                            msg.data = message.replace("\n", "<br>")
                 data["chat"].add_message(index, msg)
             else:
                 lookback = index - 1
