@@ -37,6 +37,8 @@ class Message():
             self.time = datetime.fromtimestamp(time/1000).strftime("%H:%M")
         elif isinstance(time, str):
             self.time = time
+        else:
+            raise TypeError("Time must be a string or integer")
         self.media = False
         self.key_id = key_id
         self.meta = False
