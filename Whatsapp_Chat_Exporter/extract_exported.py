@@ -2,13 +2,14 @@ from datetime import datetime
 from mimetypes import MimeTypes
 import os
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
+from Whatsapp_Chat_Exporter.utility import Device
 
 
 def messages(path, data, assume_first_as_me=False):
     """Extracts messages from the exported file"""
     with open(path, "r", encoding="utf8") as file:
         you = ""
-        data["ExportedChat"] = ChatStore()
+        data["ExportedChat"] = ChatStore(Device.EXPORTED)
         chat = data["ExportedChat"]
         total_row_number = len(file.readlines())
         file.seek(0)

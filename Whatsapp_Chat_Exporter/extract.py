@@ -12,7 +12,7 @@ from pathlib import Path
 from mimetypes import MimeTypes
 from hashlib import sha256
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, rendering, sanitize_except, determine_day, Crypt
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, rendering, sanitize_except, determine_day, Crypt
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
@@ -157,11 +157,11 @@ def contacts(db, data):
     c.execute("""SELECT jid, display_name FROM wa_contacts; """)
     row = c.fetchone()
     while row is not None:
-        data[row["jid"]] = ChatStore(row["display_name"])
+        data[row["jid"]] = ChatStore(Device.ANDROID, row["display_name"])
         row = c.fetchone()
 
 
-def messages(db, data):
+def messages(db, data, media_folder):
     # Get message history
     c = db.cursor()
     try:
@@ -251,7 +251,7 @@ def messages(db, data):
             break
     while content is not None:
         if content["key_remote_jid"] not in data:
-            data[content["key_remote_jid"]] = ChatStore()
+            data[content["key_remote_jid"]] = ChatStore(Device.ANDROID)
         if content["key_remote_jid"] is None:
             continue  # Not sure
         message = Message(
@@ -528,7 +528,8 @@ def create_html(
         template=None,
         embedded=False,
         offline_static=False,
-        maximum_size=None
+        maximum_size=None,
+        no_avatar=False
     ):
     if template is None:
         template_dir = os.path.dirname(__file__)
@@ -539,11 +540,12 @@ def create_html(
     templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
+    templateEnv.globals.update(no_avatar=no_avatar)
     templateEnv.filters['sanitize_except'] = sanitize_except
     template = templateEnv.get_template(template_file)
 
     total_row_number = len(data)
-    print(f"\nCreating HTML...(0/{total_row_number})", end="\r")
+    print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
 
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
@@ -602,7 +604,10 @@ def create_html(
                         render_box,
                         contact,
                         w3css,
-                        f"{safe_file_name}-{current_page + 1}.html"
+                        f"{safe_file_name}-{current_page + 1}.html",
+                        chat.my_avatar,
+                        chat.their_avatar,
+                        chat.their_avatar_thumb
                     )
                     render_box = [message]
                     current_size = 0
@@ -620,17 +625,31 @@ def create_html(
                             render_box,
                             contact,
                             w3css,
-                            False
+                            False,
+                            chat.my_avatar,
+                            chat.their_avatar,
+                            chat.their_avatar_thumb
                         )
                     else:
                         render_box.append(message)
         else:
             output_file_name = f"{output_folder}/{safe_file_name}.html"
-            rendering(output_file_name, template, name, chat.get_messages(), contact, w3css, False)
+            rendering(
+                output_file_name,
+                template,
+                name,
+                chat.get_messages(),
+                contact,
+                w3css,
+                False,
+                chat.my_avatar,
+                chat.their_avatar,
+                chat.their_avatar_thumb
+            )
         if current % 10 == 0:
-            print(f"Creating HTML...({current}/{total_row_number})", end="\r")
+            print(f"Generating chats...({current}/{total_row_number})", end="\r")
 
-    print(f"Creating HTML...({total_row_number}/{total_row_number})", end="\r")
+    print(f"Generating chats...({total_row_number}/{total_row_number})", end="\r")
 
 
 if __name__ == "__main__":
