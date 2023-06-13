@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from glob import glob
 import sqlite3
 import json
 import jinja2
@@ -8,10 +9,10 @@ import shutil
 from pathlib import Path
 from mimetypes import MimeTypes
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, rendering, sanitize_except, determine_day, APPLE_TIME
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, rendering, sanitize_except, determine_day, APPLE_TIME, Device
 
 
-def messages(db, data):
+def messages(db, data, media_folder):
     c = db.cursor()
     # Get contacts
     c.execute("""SELECT count() FROM ZWACHATSESSION""")
@@ -21,7 +22,17 @@ def messages(db, data):
     c.execute("""SELECT ZCONTACTJID, ZPARTNERNAME FROM ZWACHATSESSION; """)
     content = c.fetchone()
     while content is not None:
-        data[content["ZCONTACTJID"]] = ChatStore(content["ZPARTNERNAME"])
+        data[content["ZCONTACTJID"]] = ChatStore(Device.IOS, content["ZPARTNERNAME"], media_folder)
+        path = f'{media_folder}/Media/Profile/{content["ZCONTACTJID"].split("@")[0]}'
+        avatars = glob(f"{path}*")
+        if 0 < len(avatars) <= 1:
+            data[content["ZCONTACTJID"]].their_avatar = avatars[0]
+        else:
+            for avatar in avatars:
+                if avatar.endswith(".thumb"):
+                    data[content["ZCONTACTJID"]].their_avatar_thumb = avatar
+                elif avatar.endswith(".jpg"):
+                    data[content["ZCONTACTJID"]].their_avatar = avatar
         content = c.fetchone()
 
     # Get message history
@@ -49,7 +60,17 @@ def messages(db, data):
         _id = content["_id"]
         Z_PK = content["Z_PK"]
         if _id not in data:
-            data[_id] = ChatStore()
+            data[_id] = ChatStore(Device.IOS)
+            path = f'{media_folder}/Media/Profile/{_id.split("@")[0]}'
+            avatars = glob(f"{path}*")
+            if 0 < len(avatars) <= 1:
+                data[_id].their_avatar = avatars[0]
+            else:
+                for avatar in avatars:
+                    if avatar.endswith(".thumb"):
+                        data[_id].their_avatar_thumb = avatar
+                    elif avatar.endswith(".jpg"):
+                        data[_id].their_avatar = avatar
         ts = APPLE_TIME + content["ZMESSAGEDATE"]
         message = Message(
             from_me=content["ZISFROMME"],
@@ -232,7 +253,8 @@ def create_html(
         template=None,
         embedded=False,
         offline_static=False,
-        maximum_size=None
+        maximum_size=None,
+        no_avatar=False
     ):
     if template is None:
         template_dir = os.path.dirname(__file__)
@@ -243,11 +265,12 @@ def create_html(
     templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals.update(determine_day=determine_day)
+    templateEnv.globals.update(no_avatar=no_avatar)
     templateEnv.filters['sanitize_except'] = sanitize_except
     template = templateEnv.get_template(template_file)
 
     total_row_number = len(data)
-    print(f"\nCreating HTML...(0/{total_row_number})", end="\r")
+    print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
 
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
@@ -305,7 +328,10 @@ def create_html(
                         render_box,
                         contact,
                         w3css,
-                        f"{safe_file_name}-{current_page + 1}.html"
+                        f"{safe_file_name}-{current_page + 1}.html",
+                        chat.my_avatar,
+                        chat.their_avatar,
+                        chat.their_avatar_thumb
                     )
                     render_box = [message]
                     current_size = 0
@@ -323,17 +349,31 @@ def create_html(
                             render_box,
                             contact,
                             w3css,
-                            False
+                            False,
+                            chat.my_avatar,
+                            chat.their_avatar,
+                            chat.their_avatar_thumb
                         )
                     else:
                         render_box.append(message)
         else:
             output_file_name = f"{output_folder}/{safe_file_name}.html"
-            rendering(output_file_name, template, name, chat.get_messages(), contact, w3css, False)
+            rendering(
+                output_file_name,
+                template,
+                name,
+                chat.get_messages(),
+                contact,
+                w3css,
+                False,
+                chat.my_avatar,
+                chat.their_avatar,
+                chat.their_avatar_thumb
+            )
         if current % 10 == 0:
-            print(f"Creating HTML...({current}/{total_row_number})", end="\r")
+            print(f"Generating chats...({current}/{total_row_number})", end="\r")
 
-    print(f"Creating HTML...({total_row_number}/{total_row_number})", end="\r")
+    print(f"Generating chats...({total_row_number}/{total_row_number})", end="\r")
 
 
 if __name__ == "__main__":

@@ -53,18 +53,38 @@ def check_update():
     return 0
 
 
-def rendering(output_file_name, template, name, msgs, contact, w3css, next):
+def rendering(
+        output_file_name,
+        template,
+        name,
+        msgs,
+        contact,
+        w3css,
+        next,
+        my_avatar,
+        their_avatar,
+        their_avatar_thumb
+    ):
+    if their_avatar_thumb is None and their_avatar is not None:
+        their_avatar_thumb = their_avatar
     with open(output_file_name, "w", encoding="utf-8") as f:
         f.write(
             template.render(
                 name=name,
                 msgs=msgs,
-                my_avatar=None,
-                their_avatar=f"WhatsApp/Avatars/{contact}.j",
+                my_avatar=my_avatar,
+                their_avatar=their_avatar,
+                their_avatar_thumb=their_avatar_thumb,
                 w3css=w3css,
                 next=next
             )
         )
+
+
+class Device(Enum):
+    IOS = "ios"
+    ANDROID = "android"
+    EXPORTED = "exported"
 
 
 # Android Specific

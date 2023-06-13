@@ -58,6 +58,12 @@
 				border-color: rgba(0,0,0,0);
 			}
 		}
+		.avatar {
+			border-radius:50%;
+			overflow:hidden;
+			max-width: 64px;
+			max-height: 64px;
+		}
 		</style>
 	</head>
 	<body>
@@ -77,7 +83,11 @@
 						<div style="padding-left: 10px; text-align: right; color: #3892da;">You</div>
 					</div>
 					<div class="w3-row">
+						{% if not no_avatar and my_avatar is not none %}
 						<div class="w3-col m10 l10">
+						{% else %}
+						<div class="w3-col m12 l12">
+						{% endif %}
 							<div style="text-align: right;">
 							{% if msg.reply is not none %}
 								<div class="reply">
@@ -92,7 +102,7 @@
 								</div>
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
-								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 								 	<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 							    </div>
 							{% else %}
@@ -110,7 +120,7 @@
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
-										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
 										</div>
 									{% else %}
@@ -124,7 +134,13 @@
 								{% endif %}
 							</div>
 						</div>
-						<div class="w3-col m2 l2" style="padding-left: 10px"><img src="{{ my_avatar }}" onerror="this.style.display='none'"></div>
+						{% if not no_avatar and my_avatar is not none %}
+						<div class="w3-col m2 l2" style="padding-left: 10px">
+							<a href="{{ my_avatar }}">
+								<img src="{{ my_avatar }}" onerror="this.style.display='none'" class="avatar">
+							</a>
+						</div>
+						{% endif %}
 					</div>
 					{% else %}
 					<div class="w3-row">
@@ -138,8 +154,18 @@
 						<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
 					</div>
 					<div class="w3-row">
-						<div class="w3-col m2 l2"><img src="{{ their_avatar }}" onerror="this.style.display='none'"></div>
+						{% if not no_avatar %}
+						<div class="w3-col m2 l2">
+								{% if their_avatar is not none %}
+								<a href="{{ their_avatar }}"><img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar"></a>
+								{% else %}
+								<img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar">
+								{% endif %}
+						</div>
 						<div class="w3-col m10 l10">
+						{% else %}
+						<div class="w3-col m12 l12">
+						{% endif %}
 							<div style="text-align: left;">
 							{% if msg.reply is not none %}
 								<div class="reply">
@@ -154,7 +180,7 @@
 								</div>
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
-								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 								</div>
 							{% else %}
@@ -172,7 +198,7 @@
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
-										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar">
+										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
 										</div>
 									{% else %}

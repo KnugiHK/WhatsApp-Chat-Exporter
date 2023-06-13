@@ -1,13 +1,26 @@
+import os
 from datetime import datetime
 from typing import Union
+from Whatsapp_Chat_Exporter.utility import Device
 
 
 class ChatStore():
-    def __init__(self, name=None):
+    def __init__(self, type, name=None, media=None):
         if name is not None and not isinstance(name, str):
             raise TypeError("Name must be a string or None")
         self.name = name
         self.messages = {}
+        if media is not None:
+            if type == Device.IOS:
+                self.my_avatar = os.path.join(media, "Media/Profile/Photo.jpg")
+            elif type == Device.ANDROID:
+                self.my_avatar = None  # TODO: Add Android support
+            else:
+                self.my_avatar = None
+        else:
+            self.my_avatar = None
+        self.their_avatar = None
+        self.their_avatar_thumb = None
     
     def add_message(self, id, message):
         if not isinstance(message, Message):

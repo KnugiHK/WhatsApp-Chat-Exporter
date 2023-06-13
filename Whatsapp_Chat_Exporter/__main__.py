@@ -161,6 +161,13 @@ def main():
         action='store_true',
         help="Assume the first message in a chat as sent by me (must be used together with -e)"
     )
+    parser.add_argument(
+        "--no-avatar",
+        dest="no_avatar",
+        default=False,
+        action='store_true',
+        help="Do not render avatar in HTML output"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -261,7 +268,7 @@ def main():
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
-                messages(db, data)
+                messages(db, data, args.media)
                 media(db, data, args.media)
                 vcard(db, data)
             if not args.no_html:
@@ -271,7 +278,8 @@ def main():
                     args.template,
                     args.embedded,
                     args.offline,
-                    args.size
+                    args.size,
+                    args.no_avatar
                 )
         else:
             print(
@@ -283,20 +291,20 @@ def main():
         if os.path.isdir(args.media):
             media_path = os.path.join(args.output, args.media)
             if os.path.isdir(media_path):
-                print("Media directory already exists in output directory. Skipping...")
+                print("\nMedia directory already exists in output directory. Skipping...", end="\n")
             else:
                 if not args.move_media:
                     if os.path.isdir(media_path):
-                        print("WhatsApp directory already exists in output directory. Skipping...")
+                        print("\nWhatsApp directory already exists in output directory. Skipping...", end="\n")
                     else:
-                        print("Copying media directory...")
+                        print("\nCopying media directory...", end="\n")
                         shutil.copytree(args.media, media_path)
                 else:
                     try:
                         shutil.move(args.media, f"{args.output}/")
                     except PermissionError:
-                        print("Cannot remove original WhatsApp directory. "
-                            "Perhaps the directory is opened?")
+                        print("\nCannot remove original WhatsApp directory. "
+                            "Perhaps the directory is opened?", end="\n")
     else:
         extract_exported.messages(args.exported, data, args.assume_first_as_me)
         if not args.no_html:
