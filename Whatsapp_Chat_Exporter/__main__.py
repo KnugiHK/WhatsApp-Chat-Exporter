@@ -7,7 +7,7 @@ from Whatsapp_Chat_Exporter import extract, extract_exported, extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Crypt, check_update
-from argparse import ArgumentParser
+from argparse import ArgumentParser, SUPPRESS
 import os
 import sqlite3
 import shutil
@@ -38,6 +38,13 @@ def main():
         default=False,
         action='store_true',
         help="Define the target as iPhone/iPad")
+    parser.add_argument(
+        "-e",
+        "--exported",
+        dest="exported",
+        default=None,
+        help="Define the target as exported chat file and specify the path to the file"
+    )
     parser.add_argument(
         "-w",
         "--wa",
@@ -98,7 +105,7 @@ def main():
         dest="embedded",
         default=False,
         action='store_true',
-        help="Embed media into HTML file (not yet implemented)"
+        help=SUPPRESS or "Embed media into HTML file (not yet implemented)"
     )
     parser.add_argument(
         "-s",
@@ -131,7 +138,7 @@ def main():
         type=int,
         const=0,
         default=None,
-        help="Maximum (Rough) size of a single output file in bytes, 0 for auto"
+        help="Maximum (rough) size of a single output file in bytes, 0 for auto"
     )
     parser.add_argument(
         "--no-html",
@@ -146,13 +153,6 @@ def main():
         default=False,
         action='store_true',
         help="Check for updates (require Internet access)"
-    )
-    parser.add_argument(
-        "-e",
-        "--exported",
-        dest="exported",
-        default=None,
-        help="Path to exported chat file"
     )
     parser.add_argument(
         "--assume-first-as-me",

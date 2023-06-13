@@ -106,12 +106,15 @@ After extracting, you will get these:
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-usage: wtsexporter [options]
+usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-o OUTPUT] [-j [JSON]] [-d DB] [-k KEY] [-t TEMPLATE] [-s] [-c] [--offline OFFLINE] [--size [SIZE]]
+                   [--no-html] [--check-update] [--assume-first-as-me]
 
 options:
   -h, --help            show this help message and exit
   -a, --android         Define the target as Android
-  -i, --iphone, --ios   Define the target as iPhone
+  -i, --iphone, --ios   Define the target as iPhone/iPad
+  -e EXPORTED, --exported EXPORTED
+                        Define the target as exported chat file and specify the path to the file
   -w WA, --wa WA        Path to contact database (default: wa.db/ContactsV2.sqlite)
   -m MEDIA, --media MEDIA
                         Path to WhatsApp media folder (default: WhatsApp)
@@ -125,14 +128,16 @@ options:
   -k KEY, --key KEY     Path to key file
   -t TEMPLATE, --template TEMPLATE
                         Path to custom HTML template
-  -e, --embedded        Embed media into HTML file (not yet implemented)
   -s, --showkey         Show the HEX key used to decrypt the database
   -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
   --offline OFFLINE     Relative path to offline static files
-  --size SIZE, --output-size SIZE
-                        Maximum size of a single output file in bytes, 0 for auto (not yet implemented)
+  --size [SIZE], --output-size [SIZE], --split [SIZE]
+                        Maximum (rough) size of a single output file in bytes, 0 for auto
   --no-html             Do not output html files
-  --check-update        Check for updates
+  --check-update        Check for updates (require Internet access)
+  --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
+
+WhatsApp Chat Exporter: 0.9.1 Licensed with MIT
 ```
 
 # To do
