@@ -113,14 +113,14 @@ def extract_media(base_dir):
                         FROM Files
                         WHERE domain = '{_wts_id}'
                         ORDER BY relativePath""")
-            if not os.path.isdir("WhatsApp"):
-                os.mkdir("WhatsApp")
+            if not os.path.isdir(_wts_id):
+                os.mkdir(_wts_id)
             row = c.fetchone()
             while row is not None:
                 if row["relativePath"] == "":
                     row = c.fetchone()
                     continue
-                destination = os.path.join("WhatsApp/", row["relativePath"])
+                destination = os.path.join(_wts_id, row["relativePath"])
                 hashes = row["fileID"]
                 folder = hashes[:2]
                 flags = row["flags"]

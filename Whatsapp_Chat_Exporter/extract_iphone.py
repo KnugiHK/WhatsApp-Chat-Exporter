@@ -152,12 +152,11 @@ def media(db, data, media_folder):
     content = c.fetchone()
     mime = MimeTypes()
     while content is not None:
-        file_path = f"{media_folder}/{content['ZMEDIALOCALPATH']}"
+        file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
         _id = content["_id"]
         ZMESSAGE = content["ZMESSAGE"]
         message = data[_id].messages[ZMESSAGE]
         message.media = True
-
         if os.path.isfile(file_path):
             message.data = file_path
             if content["ZVCARDSTRING"] is None:
@@ -207,7 +206,7 @@ def vcard(db, data):
     contents = c.fetchall()
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
-    base = "Message/vCards"
+    base = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared/Message/vCards"
     if not os.path.isdir(base):
         Path(base).mkdir(parents=True, exist_ok=True)
     for index, content in enumerate(contents):

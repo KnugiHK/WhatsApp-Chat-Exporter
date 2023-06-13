@@ -242,7 +242,7 @@ def main():
         vcard = extract_iphone.vcard
         create_html = extract_iphone.create_html
         if args.media is None:
-            args.media = "Message"
+            args.media = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
         if args.backup is not None:
             if not os.path.isdir(args.media):
                 extract_iphone_media.extract_media(args.backup)
