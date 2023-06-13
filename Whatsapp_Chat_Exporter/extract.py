@@ -538,11 +538,13 @@ def create_html(
         template_dir = os.path.dirname(template)
         template_file = os.path.basename(template)
     templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
-    templateEnv = jinja2.Environment(loader=templateLoader)
-    templateEnv.globals.update(determine_day=determine_day)
-    templateEnv.globals.update(no_avatar=no_avatar)
-    templateEnv.filters['sanitize_except'] = sanitize_except
-    template = templateEnv.get_template(template_file)
+    template_env = jinja2.Environment(loader=templateLoader)
+    template_env.globals.update(
+        determine_day=determine_day,
+        no_avatar=no_avatar
+    )
+    template_env.filters['sanitize_except'] = sanitize_except
+    template = template_env.get_template(template_file)
 
     total_row_number = len(data)
     print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
