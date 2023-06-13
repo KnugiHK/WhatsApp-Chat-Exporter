@@ -84,34 +84,43 @@ def extract_media(base_dir):
         extract_encrypted(base_dir, password)
     else:
         wts_db = os.path.join(base_dir, "7c/7c7fba66680ef796b916b067077cc246adacf01d")
+        contact_db = os.path.join(base_dir, "b8/b8548dc30aa1030df0ce18ef08b882cf7ab5212f")
         if not os.path.isfile(wts_db):
             print("WhatsApp database not found.")
             exit()
         else:
             shutil.copyfile(wts_db, "7c7fba66680ef796b916b067077cc246adacf01d")
-        with sqlite3.connect(f"{base_dir}/Manifest.db") as manifest:
+        if not os.path.isfile(contact_db):
+            print("Contact database not found.")
+            exit()
+        else:
+            shutil.copyfile(contact_db, "b8548dc30aa1030df0ce18ef08b882cf7ab5212f")    
+        _wts_id = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+        with sqlite3.connect(os.path.join(base_dir, "Manifest.db")) as manifest:
             manifest.row_factory = sqlite3.Row
             c = manifest.cursor()
-            c.execute("""SELECT count()
-                        FROM Files
-                        WHERE relativePath
-                            LIKE 'Message/Media/%'""")
+            c.execute(
+                f"""SELECT count()
+                   FROM Files
+                   WHERE domain = '{_wts_id}'"""
+            )
             total_row_number = c.fetchone()[0]
-            print(f"Extracting media...(0/{total_row_number})", end="\r")
-            c.execute("""SELECT fileID,
+            print(f"Extracting WhatsApp files...(0/{total_row_number})", end="\r")
+            c.execute(f"""SELECT fileID,
                                 relativePath,
-                                flags
+                                flags,
+                                ROW_NUMBER() OVER(ORDER BY relativePath) AS _index
                         FROM Files
-                        WHERE relativePath
-                            LIKE 'Message/Media/%'""")
+                        WHERE domain = '{_wts_id}'
+                        ORDER BY relativePath""")
+            if not os.path.isdir("WhatsApp"):
+                os.mkdir("WhatsApp")
             row = c.fetchone()
-            if not os.path.isdir("Message"):
-                os.mkdir("Message")
-            if not os.path.isdir("Message/Media"):
-                os.mkdir("Message/Media")
-            i = 0
             while row is not None:
-                destination = row["relativePath"]
+                if row["relativePath"] == "":
+                    row = c.fetchone()
+                    continue
+                destination = os.path.join("WhatsApp/", row["relativePath"])
                 hashes = row["fileID"]
                 folder = hashes[:2]
                 flags = row["flags"]
@@ -121,12 +130,11 @@ def extract_media(base_dir):
                     except FileExistsError:
                         pass
                 elif flags == 1:
-                    shutil.copyfile(f"{base_dir}/{folder}/{hashes}", destination)
-                i += 1
-                if i % 100 == 0:
-                    print(f"Extracting media...({i}/{total_row_number})", end="\r")
+                    shutil.copyfile(os.path.join(base_dir, folder, hashes), destination)
+                if row["_index"] % 100 == 0:
+                    print(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})", end="\r")
                 row = c.fetchone()
-            print(f"Extracting media...({total_row_number}/{total_row_number})", end="\n")
+            print(f"Extracting WhatsApp files...({total_row_number}/{total_row_number})", end="\n")
 
 
 if __name__ == "__main__":
