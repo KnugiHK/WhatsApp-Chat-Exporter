@@ -50,6 +50,9 @@
 			animation: border-blink 0.5s steps(1) 5;
 			border-color: rgba(0,0,0,0)
 		}
+		table {
+			width: 100%;
+		}
 		@keyframes border-blink {
 			0% {
 				border-color: #2196F3;	
@@ -64,23 +67,38 @@
 			max-width: 64px;
 			max-height: 64px;
 		}
+		.name {
+			color: #3892da;
+		}
+		.pad-left-10 {
+			padding-left: 10px;
+		}
+		.pad-right-10 {
+			padding-right: 10px;
+		}
+		.reply_link {
+			color: #168acc;
+		}
+		.blue {
+			color: #70777a;
+		}
 		</style>
 	</head>
 	<body>
 		<header class="w3-center w3-top">Chat history with {{ name }}</header>
 		<article class="w3-container">
-			<div class="table" style="width:100%">
+			<div class="table">
 			{% set last = {'last': 946688461.001} %}
 			{% for msg in msgs -%}
-				<div class="w3-row" style="padding-bottom: 10px" id="{{ msg.key_id }}">
+				<div class="w3-row w3-padding-small w3-margin-bottom" id="{{ msg.key_id }}">
 					{% if determine_day(last.last, msg.timestamp) is not none  %}
-					<div class="w3-center" style="color:#70777c;padding: 10px 0 10px 0;">{{ determine_day(last.last, msg.timestamp) }}</div>
+					<div class="w3-center w3-padding-16 blue">{{ determine_day(last.last, msg.timestamp) }}</div>
 					{% if last.update({'last': msg.timestamp}) %}{% endif %}
 					{% endif %}
 					{% if msg.from_me == true %}
 					<div class="w3-row">
-						<div style="float: left; color:#70777c;">{{ msg.time }}</div>
-						<div style="padding-left: 10px; text-align: right; color: #3892da;">You</div>
+						<div class="w3-left blue">{{ msg.time }}</div>
+						<div class="name w3-right-align pad-left-10">You</div>
 					</div>
 					<div class="w3-row">
 						{% if not no_avatar and my_avatar is not none %}
@@ -88,11 +106,11 @@
 						{% else %}
 						<div class="w3-col m12 l12">
 						{% endif %}
-							<div style="text-align: right;">
+							<div class="w3-right-align">
 							{% if msg.reply is not none %}
 								<div class="reply">
-									<span style="color: #70777a;">Replying to </span>
-									<a href="#{{msg.reply}}" style="color: #168acc;">
+									<span class="blue">Replying to </span>
+									<a href="#{{msg.reply}}" class="reply_link">
 										{% if msg.quoted_data is not none %}
 											"{{msg.quoted_data}}"
 										{% else %}
@@ -102,9 +120,9 @@
 								</div>
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
-								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
-								 	<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
-							    </div>
+								<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
+								</div>
 							{% else %}
 								{% if msg.media == false %}
 								{{ msg.data | sanitize_except() }}
@@ -120,7 +138,7 @@
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
-										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
 										</div>
 									{% else %}
@@ -135,7 +153,7 @@
 							</div>
 						</div>
 						{% if not no_avatar and my_avatar is not none %}
-						<div class="w3-col m2 l2" style="padding-left: 10px">
+						<div class="w3-col m2 l2 pad-left-10">
 							<a href="{{ my_avatar }}">
 								<img src="{{ my_avatar }}" onerror="this.style.display='none'" class="avatar">
 							</a>
@@ -144,14 +162,14 @@
 					</div>
 					{% else %}
 					<div class="w3-row">
-						<div style="padding-right: 10px; float: left; color: #3892da;">
+						<div class="w3-left pad-right-10 name">
 							{% if msg.sender is not none %}
 							{{ msg.sender }}
 							{% else %}
 							{{ name }}
 							{% endif %}
 						</div>
-						<div style="text-align: right; color:#70777c;">{{ msg.time }}</div>
+						<div class="w3-right-align blue">{{ msg.time }}</div>
 					</div>
 					<div class="w3-row">
 						{% if not no_avatar %}
@@ -166,11 +184,11 @@
 						{% else %}
 						<div class="w3-col m12 l12">
 						{% endif %}
-							<div style="text-align: left;">
+							<div class="w3-left-align">
 							{% if msg.reply is not none %}
 								<div class="reply">
-									<span style="color: #70777a;">Replying to </span>
-									<a href="#{{msg.reply}}" style="color: #168acc;">
+									<span class="blue">Replying to </span>
+									<a href="#{{msg.reply}}" class="reply_link">
 										{% if msg.quoted_data is not none %}
 											"{{msg.quoted_data}}"
 										{% else %}
@@ -180,7 +198,7 @@
 								</div>
 							{% endif %}
 							{% if msg.meta == true or msg.media == false and msg.data is none %}
-								<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+								<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 								</div>
 							{% else %}
@@ -198,7 +216,7 @@
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
-										<div style="text-align: center;" class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
 											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
 										</div>
 									{% else %}
