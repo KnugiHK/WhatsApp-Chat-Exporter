@@ -19,10 +19,22 @@ def messages(db, data, media_folder):
     total_row_number = c.fetchone()[0]
     print(f"Processing contacts...({total_row_number})")
 
-    c.execute("""SELECT ZCONTACTJID, ZPARTNERNAME FROM ZWACHATSESSION; """)
+    c.execute(
+        """SELECT ZCONTACTJID,
+                ZPARTNERNAME,
+                ZPUSHNAME
+           FROM ZWACHATSESSION
+                LEFT JOIN ZWAPROFILEPUSHNAME
+                    ON ZWACHATSESSION.ZCONTACTJID = ZWAPROFILEPUSHNAME.ZJID;"""
+    )
     content = c.fetchone()
     while content is not None:
-        data[content["ZCONTACTJID"]] = ChatStore(Device.IOS, content["ZPARTNERNAME"], media_folder)
+        is_phone = content["ZPARTNERNAME"].replace("+", "").replace(" ", "").isdigit()
+        if content["ZPUSHNAME"] is None or (content["ZPUSHNAME"] and not is_phone):
+            contact_name = content["ZPARTNERNAME"]
+        else:
+            contact_name = content["ZPUSHNAME"]
+        data[content["ZCONTACTJID"]] = ChatStore(Device.IOS, contact_name, media_folder)
         path = f'{media_folder}/Media/Profile/{content["ZCONTACTJID"].split("@")[0]}'
         avatars = glob(f"{path}*")
         if 0 < len(avatars) <= 1:
