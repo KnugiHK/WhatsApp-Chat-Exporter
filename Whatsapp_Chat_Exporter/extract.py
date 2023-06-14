@@ -451,16 +451,17 @@ def media(db, data, media_folder):
             else:
                 message.mime = content["mime_type"]
         else:
-            # if "https://mmg" in content[4]:
-            # try:
-            # r = requests.get(content[3])
-            # if r.status_code != 200:
-            # raise RuntimeError()
-            # except:
-            # data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
-            # data[content[0]]["messages"][content[1]]["media"] = True
-            # data[content[0]]["messages"][content[1]]["mime"] = "media"
-            # else:
+            if False: # Block execution
+                try:
+                    r = requests.get(content["message_url"])
+                    if r.status_code != 200:
+                        raise RuntimeError()
+                except:
+                    message.data = "The media is missing"
+                    message.mime = "media"
+                    message.meta = True
+                else:
+                    ...
             message.data = "The media is missing"
             message.mime = "media"
             message.meta = True

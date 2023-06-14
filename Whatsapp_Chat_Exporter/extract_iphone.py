@@ -201,15 +201,17 @@ def media(db, data, media_folder):
             else:
                 message.mime = content["ZVCARDSTRING"]
         else:
-            # if "https://mmg" in content["ZVCARDSTRING"]:
-            # try:
-            # r = requests.get(content["ZMEDIAURL"])
-            # if r.status_code != 200:
-            # raise RuntimeError()
-            # except:
-            # message.data"] = "{The media is missing}"
-            # message.mime"] = "media"
-            # else:
+            if False: # Block execution
+                try:
+                    r = requests.get(content["ZMEDIAURL"])
+                    if r.status_code != 200:
+                        raise RuntimeError()
+                except:
+                    message.data = "The media is missing"
+                    message.mime = "media"
+                    message.meta = True
+                else:
+                    ...
             message.data = "The media is missing"
             message.mime = "media"
             message.meta = True
