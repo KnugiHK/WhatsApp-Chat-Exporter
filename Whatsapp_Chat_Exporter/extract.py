@@ -553,6 +553,61 @@ def vcard(db, data):
         print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
 
 
+def calls(db, data):
+    c = db.cursor()
+    c.execute("""SELECT count() FROM call_log""")
+    total_row_number = c.fetchone()[0]
+    if total_row_number == 0:
+        return
+    print(f"\nProcessing calls...({total_row_number})", end="\r")
+    c.execute("""SELECT call_log._id,
+                        jid.raw_string,
+                        from_me,
+                        call_id,
+                        timestamp,
+                        video_call,
+                        duration,
+                        call_result,
+                        bytes_transferred
+                FROM call_log
+                    INNER JOIN jid
+                        ON call_log.jid_row_id = jid._id"""
+    )
+    chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
+    content = c.fetchone()
+    while content is not None:
+        call = Message(
+            from_me=content["from_me"],
+            timestamp=content["timestamp"],
+            time=content["timestamp"],
+            key_id=content["call_id"],
+        )
+        _jid = content["raw_string"]
+        if _jid in data:
+            name = data[_jid].name
+            fallback = _jid.split('@')[0] if "@" in _jid else None
+            call.sender = name or fallback
+
+        call.meta = True
+        call.data = (
+            f"A {'video' if content['video_call'] else 'voice'} "
+            f"call {'to' if call.from_me else 'from'} "
+            f"{name or fallback} was "
+        )
+        if content['call_result'] == 2:
+            call.data += "not answered." if call.from_me else "missed."
+        elif content['call_result'] == 3:
+            call.data += "unavailable."
+        elif content['call_result'] == 5:
+            call.data += (
+                f"initiated and lasted for {content['duration']} second(s) "
+                f"with {content['bytes_transferred']} bytes transferred."
+            )
+        chat.add_message(content["_id"], call)
+        content = c.fetchone()
+    data["000000000000000"] = chat
+
+
 def create_html(
         data,
         output_folder,

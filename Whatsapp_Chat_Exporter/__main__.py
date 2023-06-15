@@ -271,6 +271,8 @@ def main():
                 messages(db, data, args.media)
                 media(db, data, args.media)
                 vcard(db, data)
+                if args.android:
+                    extract.calls(db, data)
             if not args.no_html:
                 create_html(
                     data,
