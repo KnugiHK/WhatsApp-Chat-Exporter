@@ -279,7 +279,7 @@ def create_html(
         template_dir = os.path.dirname(template)
         template_file = os.path.basename(template)
     templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
-    template_env = jinja2.Environment(loader=templateLoader)
+    template_env = jinja2.Environment(loader=templateLoader, autoescape=True)
     template_env.globals.update(
         determine_day=determine_day,
         no_avatar=no_avatar
