@@ -129,6 +129,8 @@ def messages(db, data, media_folder):
                 quoted = content["ZMETADATA"][2:19]
                 message.reply = quoted.decode()
                 message.quoted_data = None # TODO
+            if content["ZMESSAGETYPE"] == 15: # Sticker
+                message.sticker = True
 
             if content["ZISFROMME"] == 1:
                 if content["ZMESSAGETYPE"] == 14:

@@ -351,6 +351,8 @@ def messages(db, data, media_folder):
                     invalid = True
 
         else:
+            if content["media_wa_type"] == 20: # Sticker
+                message.sticker = True
             if content["key_from_me"] == 1:
                 if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
                     msg = "Message deleted"
