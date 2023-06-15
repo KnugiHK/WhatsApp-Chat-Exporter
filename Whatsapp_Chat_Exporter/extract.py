@@ -189,10 +189,13 @@ def messages(db, data, media_folder):
                             messages_quotes.key_id as quoted,
                             messages.key_id,
                             messages_quotes.data as quoted_data,
-                            messages.media_caption
+                            messages.media_caption,
+							missed_call_logs.video_call
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
+						LEFT JOIN missed_call_logs
+							ON messages._id = missed_call_logs.message_row_id
                     WHERE messages.key_remote_jid <> '-1';"""
         )
     except sqlite3.OperationalError:
@@ -213,7 +216,8 @@ def messages(db, data, media_folder):
                             message_quoted.text_data as quoted_data,
                             message.message_type as media_wa_type,
                             jid_group.raw_string as group_sender_jid,
-                            chat.subject as chat_subject
+                            chat.subject as chat_subject,
+							missed_call_logs.video_call
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -231,6 +235,8 @@ def messages(db, data, media_folder):
                             ON jid_global._id = chat.jid_row_id
                         LEFT JOIN jid jid_group
                             ON jid_group._id = message.sender_jid_row_id
+						LEFT JOIN missed_call_logs
+							ON message._id = missed_call_logs.message_row_id
                         WHERE key_remote_jid <> '-1';"""
             )
         except Exception as e:
@@ -346,11 +352,17 @@ def messages(db, data, media_folder):
                             invalid = True
             else:
                 # Private chat
-                if content["data"] is None and content["thumb_image"] is None:
-                    invalid = True
-
+                if content["video_call"] is not None:  # Missed call
+                    message.meta = True
+                    if content["video_call"] == 1:
+                        message.data = "A video call was missed"
+                    elif content["video_call"] == 0:
+                        message.data = "A voice call was missed"
+                elif content["data"] is None and content["thumb_image"] is None:
+                    invalid = True  # Unhandle metadata
         else:
-            if content["media_wa_type"] == 20: # Sticker
+            # Real message
+            if content["media_wa_type"] == 20: # Sticker is a message
                 message.sticker = True
             if content["key_from_me"] == 1:
                 if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
