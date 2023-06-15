@@ -24,7 +24,7 @@ class ChatStore():
     
     def add_message(self, id, message):
         if not isinstance(message, Message):
-            raise TypeError("Chat must be a Chat object")
+            raise TypeError("message must be a Message object")
         self.messages[id] = message
 
     def delete_message(self, id):
