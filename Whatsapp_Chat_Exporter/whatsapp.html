@@ -216,11 +216,11 @@
 										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' if msg.sticker }}/>
 									</a>
 									{% elif "audio/" in msg.mime %}
-									<audio controls preload="auto">
+									<audio controls="controls" autobuffer="autobuffer">
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls preload="auto">
+									<video controls="controls" autobuffer="autobuffer">
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
