@@ -206,13 +206,12 @@ def messages(db, data, media_folder):
                             message_future.version as edit_version,
                             message_thumbnail.thumbnail as thumb_image,
                             message_media.file_path as remote_resource,
-                            message_media.mime_type as media_wa_type,
                             message_location.latitude,
                             message_location.longitude,
                             message_quoted.key_id as quoted,
                             message.key_id,
                             message_quoted.text_data as quoted_data,
-                            message.message_type,
+                            message.message_type as media_wa_type,
                             jid_group.raw_string as group_sender_jid,
                             chat.subject as chat_subject
                     FROM message
@@ -297,7 +296,7 @@ def messages(db, data, media_folder):
         if not table_message and content["media_caption"] is not None:
             # Old schema
             message.caption = content["media_caption"]
-        elif table_message and content["message_type"] == 1 and content["data"] is not None:
+        elif table_message and content["media_wa_type"] == 1 and content["data"] is not None:
             # New schema
             message.caption = content["data"]
         else:
@@ -354,7 +353,7 @@ def messages(db, data, media_folder):
             if content["media_wa_type"] == 20: # Sticker
                 message.sticker = True
             if content["key_from_me"] == 1:
-                if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
+                if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
                     msg = "Message deleted"
                     message.meta = True
                 else:
@@ -369,7 +368,7 @@ def messages(db, data, media_folder):
                             if "\n" in msg:
                                 msg = msg.replace("\n", "<br>")
             else:
-                if content["status"] == 0 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
+                if content["status"] == 0 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
                     msg = "Message deleted"
                     message.meta = True
                 else:
