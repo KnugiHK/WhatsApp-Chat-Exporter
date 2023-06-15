@@ -128,7 +128,7 @@
 								{{ msg.data | sanitize_except() }}
 								{% else %}
 									{% if "image/" in msg.mime %}
-									<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
+									<a href="{{ msg.data }}"><img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" /></a>
 									{% elif "audio/" in msg.mime %}
 									<audio controls="controls" autobuffer="autobuffer">
 										<source src="{{ msg.data }}" />
@@ -206,7 +206,7 @@
 								{{ msg.data | sanitize_except() }}
 								{% else %}
 									{% if "image/" in msg.mime %}
-									<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
+									<a href="{{ msg.data }}"><img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" /></a>
 									{% elif "audio/" in msg.mime %}
 									<audio controls preload="auto">
 										<source src="{{ msg.data }}" />

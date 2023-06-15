@@ -11,6 +11,7 @@ import hmac
 from pathlib import Path
 from mimetypes import MimeTypes
 from hashlib import sha256
+from base64 import b64decode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, rendering, sanitize_except, determine_day, Crypt
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
@@ -412,10 +413,14 @@ def media(db, data, media_folder):
                         file_path,
                         message_url,
                         mime_type,
-                        media_key
+                        media_key,
+                        file_hash,
+						thumbnail
                  FROM message_media
                     INNER JOIN messages
                         ON message_media.message_row_id = messages._id
+					LEFT JOIN media_hash_thumbnail
+						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 ORDER BY messages.key_remote_jid ASC"""
         )
     except sqlite3.OperationalError:
@@ -424,7 +429,9 @@ def media(db, data, media_folder):
                     file_path,
                     message_url,
                     mime_type,
-                    media_key
+                    media_key,
+                    file_hash,
+                    thumbnail
                 FROM message_media
                 INNER JOIN message
                     ON message_media.message_row_id = message._id
@@ -432,10 +439,14 @@ def media(db, data, media_folder):
                     ON chat._id = message.chat_row_id
                 INNER JOIN jid
                     ON jid._id = chat.jid_row_id
+                LEFT JOIN media_hash_thumbnail
+						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 ORDER BY jid.raw_string ASC"""
         )
     content = c.fetchone()
     mime = MimeTypes()
+    if not os.path.isdir(f"{media_folder}/thumbnails"):
+        os.mkdir(f"{media_folder}/thumbnails")
     while content is not None:
         file_path = f"{media_folder}/{content['file_path']}"
         message = data[content["key_remote_jid"]].messages[content["message_row_id"]]
@@ -465,6 +476,12 @@ def media(db, data, media_folder):
             message.data = "The media is missing"
             message.mime = "media"
             message.meta = True
+        if content["thumbnail"] is not None:
+            thumb_path = f"{media_folder}/thumbnails/{b64decode(content['file_hash']).hex()}.png"
+            if not os.path.isfile(thumb_path):
+                with open(thumb_path, "wb") as f:
+                    f.write(content["thumbnail"])
+            message.thumb = thumb_path
         i += 1
         if i % 100 == 0:
             print(f"Processing media...({i}/{total_row_number})", end="\r")
