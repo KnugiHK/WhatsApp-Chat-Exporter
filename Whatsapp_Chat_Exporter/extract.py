@@ -11,7 +11,7 @@ import hmac
 from pathlib import Path
 from mimetypes import MimeTypes
 from hashlib import sha256
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, rendering, sanitize_except, determine_day, Crypt
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
@@ -252,8 +252,6 @@ def messages(db, data, media_folder):
         except sqlite3.OperationalError:
             continue
         else:
-            if content is not None and isinstance(content["data"], bytes):
-                continue
             break
     while content is not None:
         if content["key_remote_jid"] not in data:
@@ -266,6 +264,17 @@ def messages(db, data, media_folder):
             time=content["timestamp"],
             key_id=content["key_id"],
         )
+        if isinstance(content["data"], bytes):
+            message.data = ("The message is binary data and its base64 is "
+                '<a href="https://gchq.github.io/CyberChef/#recipe=From_Base64'
+                "('A-Za-z0-9%2B/%3D',true,false)Text_Encoding_Brute_Force"
+                f"""('Decode')&input={b64encode(b64encode(content["data"])).decode()}">""")
+            message.data += b64encode(content["data"]).decode("utf-8") + "</a>"
+            message.safe = message.meta = True
+            data[content["key_remote_jid"]].add_message(content["_id"], message)
+            i += 1
+            content = c.fetchone()
+            continue
         invalid = False
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = None
@@ -407,8 +416,6 @@ def messages(db, data, media_folder):
             except sqlite3.OperationalError:
                 continue
             else:
-                if content is not None and isinstance(content["data"], bytes):
-                    continue
                 break
     print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 

@@ -57,6 +57,7 @@ class Message():
         self.meta = False
         self.data = None
         self.sender = None
+        self.safe = False
         # Extra
         self.reply = None
         self.quoted_data = None
