@@ -317,7 +317,7 @@ def messages(db, data, media_folder):
         else:
             message.caption = None
 
-        if content["status"] == 6:  # 6 = Metadata, otherwise it's a message
+        if content["status"] == 6:  # 6 = Metadata, otherwise assume a message
             if (not table_message and "-" in content["key_remote_jid"]) or \
                (table_message and content["chat_subject"] is not None):
                 # Is Group
@@ -630,8 +630,8 @@ def create_html(
     else:
         template_dir = os.path.dirname(template)
         template_file = os.path.basename(template)
-    templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
-    template_env = jinja2.Environment(loader=templateLoader, autoescape=True)
+    template_loader = jinja2.FileSystemLoader(searchpath=template_dir)
+    template_env = jinja2.Environment(loader=template_loader, autoescape=True)
     template_env.globals.update(
         determine_day=determine_day,
         no_avatar=no_avatar
