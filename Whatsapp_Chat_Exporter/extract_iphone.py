@@ -248,7 +248,7 @@ def vcard(db, data):
         Path(base).mkdir(parents=True, exist_ok=True)
     for index, content in enumerate(contents):
         file_name = "".join(x for x in content["ZVCARDNAME"] if x.isalnum())
-        file_name = file_name.encode('utf-8')[:251].decode('utf-8', 'ignore')
+        file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
         file_path = os.path.join(base, f"{file_name}.vcf")
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
