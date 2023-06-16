@@ -93,7 +93,6 @@ pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
 #### Windows
 ```sh
-```sh
 wtsexporter -i -b "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
 ```
 #### Mac
