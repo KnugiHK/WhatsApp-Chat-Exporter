@@ -1,7 +1,8 @@
+import json
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
-from enum import Enum
+from enum import IntEnum, StrEnum
 
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
@@ -81,10 +82,43 @@ def rendering(
         )
 
 
-class Device(Enum):
+class Device(StrEnum):
     IOS = "ios"
     ANDROID = "android"
     EXPORTED = "exported"
+
+
+def import_from_json(json_file, data):
+    from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
+    with open(json_file, "r") as f:
+        temp_data = json.loads(f.read())
+    total_row_number = len(tuple(temp_data.keys()))
+    print(f"Importing chats from JSON...(0/{total_row_number})", end="\r")
+    for index, (jid, chat_data) in enumerate(temp_data.items()):
+        chat = ChatStore(chat_data["type"], chat_data["name"])
+        chat.my_avatar = chat_data["my_avatar"]
+        chat.their_avatar = chat_data["their_avatar"]
+        chat.their_avatar_thumb = chat_data["their_avatar_thumb"]
+        for id, msg in chat_data["messages"].items():
+            message = Message(
+                msg["from_me"],
+                msg["timestamp"],
+                msg["time"],
+                msg["key_id"],
+            )
+            message.media = msg["media"]
+            message.meta = msg["meta"]
+            message.data = msg["data"]
+            message.sender = msg["sender"]
+            message.safe = msg["safe"]
+            message.reply = msg["reply"]
+            message.quoted_data = msg["quoted_data"]
+            message.caption = msg["caption"]
+            message.thumb = msg["thumb"]
+            message.sticker = msg["sticker"]
+            chat.add_message(id, message)
+        data[jid] = chat
+        print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
 
 
 # Android Specific
@@ -97,7 +131,7 @@ CRYPT14_OFFSETS = (
 )
 
 
-class Crypt(Enum):
+class Crypt(IntEnum):
     CRYPT15 = 15
     CRYPT14 = 14
     CRYPT12 = 12

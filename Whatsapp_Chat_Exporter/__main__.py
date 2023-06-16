@@ -6,7 +6,7 @@ import glob
 from Whatsapp_Chat_Exporter import extract, extract_exported, extract_iphone
 from Whatsapp_Chat_Exporter import extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import Crypt, check_update
+from Whatsapp_Chat_Exporter.utility import Crypt, check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 import os
 import sqlite3
@@ -168,6 +168,13 @@ def main():
         action='store_true',
         help="Do not render avatar in HTML output"
     )
+    parser.add_argument(
+        "--import",
+        dest="import_json",
+        default=False,
+        action='store_true',
+        help="Import JSON file and convert to HTML output"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -175,14 +182,20 @@ def main():
         exit(check_update())
 
     # Sanity checks
-    if args.android and args.iphone and args.exported:
+    if args.android and args.iphone and args.exported and args.import_json:
         print("You must define only one device type.")
         exit(1)
-    if not args.android and not args.iphone and not args.exported:
+    if not args.android and not args.iphone and not args.exported and not args.import_json:
         print("You must define the device type.")
         exit(1)
     if args.no_html and not args.json:
         print("You must either specify a JSON output file or enable HTML output.")
+        exit(1)
+    if args.import_json and (args.android or args.iphone or args.exported or args.no_html):
+        print("You can only use --import with -j and without --no-html.")
+        exit(1)
+    elif args.import_json and not os.path.isfile(args.json):
+        print("JSON file not found.")
         exit(1)
 
     data = {}
@@ -264,7 +277,7 @@ def main():
         else:
             contact_db = args.wa
 
-    if not args.exported:
+    if not args.exported and not args.import_json:
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
@@ -307,7 +320,7 @@ def main():
                     except PermissionError:
                         print("\nCannot remove original WhatsApp directory. "
                             "Perhaps the directory is opened?", end="\n")
-    else:
+    elif args.exported:
         extract_exported.messages(args.exported, data, args.assume_first_as_me)
         if not args.no_html:
             extract.create_html(
@@ -320,8 +333,18 @@ def main():
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
+    elif args.import_json:
+        import_from_json(args.json, data)
+        extract.create_html(
+            data,
+            args.output,
+            args.template,
+            args.embedded,
+            args.offline,
+            args.size
+        )
 
-    if args.json:
+    if args.json and not args.import_json:
         if isinstance(data[next(iter(data))], ChatStore):
             data = {jik: chat.to_json() for jik, chat in data.items()}
         with open(args.json, "w") as f:
