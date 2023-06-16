@@ -77,19 +77,28 @@ If you have the 32 bytes hex key, simply put the hex key in the -k option and in
 wtsexporter -a -k 432435053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cdaa5a8 -b msgstore.db.crypt15
 ```
 
-## Working with iPhone
-Do an iPhone Backup with iTunes first.
-### Encrypted iPhone Backup
-**If you are working on unencrypted iPhone backup, skip this**
+## Working with iOS/iPadOS (iPhone or iPad)
+Do an iPhone/iPad Backup with iTunes first.
+* iPhone backup on Mac: https://support.apple.com/HT211229
+* iPhone backup on Windows: https://support.apple.com/HT212156
+* iPad backup: https://support.apple.com/guide/ipad/ipad9a74df05xx/ipados
+### Encrypted iOS/iPadOS Backup
+**If you are working on unencrypted iOS/iPadOS backup, skip this**
 
-If you want to work on an encrypted iPhone Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
+If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 ### Extracting
 Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
+#### Windows
+```sh
 ```sh
 wtsexporter -i -b "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
+```
+#### Mac
+```sh
+wtsexporter -i -b "~/Library/Application Support/MobileSync/Backup/[device id]"
 ```
 
 ## Results
