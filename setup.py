@@ -53,7 +53,8 @@ setuptools.setup(
         'android_backup':  ["pycryptodome", "javaobj-py3"],
         'crypt12':  ["pycryptodome"],
         'crypt14':  ["pycryptodome"],
-        'crypt15':  ["pycryptodome", "javaobj-py3"]
+        'crypt15':  ["pycryptodome", "javaobj-py3"],
+        'ios_backup': [' iphone-backup-decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt.git']
     },
     entry_points={
         "console_scripts": [
