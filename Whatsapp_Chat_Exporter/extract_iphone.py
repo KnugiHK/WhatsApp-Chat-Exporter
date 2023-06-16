@@ -6,25 +6,9 @@ import jinja2
 import os
 import shutil
 from pathlib import Path
-from bleach import clean as sanitize
-from markupsafe import Markup
 from datetime import datetime
 from mimetypes import MimeTypes
-
-APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
-
-
-def sanitize_except(html):
-    return Markup(sanitize(html, tags=["br"]))
-
-
-def determine_day(last, current):
-    last = datetime.fromtimestamp(last).date()
-    current = datetime.fromtimestamp(current).date()
-    if last == current:
-        return None
-    else:
-        return current
+from Whatsapp_Chat_Exporter.utility import sanitize_except, determine_day, APPLE_TIME
 
 
 def messages(db, data):
@@ -228,7 +212,7 @@ def vcard(db, data):
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def create_html(data, output_folder, template=None, embedded=False):
+def create_html(data, output_folder, template=None, embedded=False, offline_static=False, maximum_size=None):
     if template is None:
         template_dir = os.path.dirname(__file__)
         template_file = "whatsapp.html"
@@ -246,6 +230,18 @@ def create_html(data, output_folder, template=None, embedded=False):
 
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
+
+    w3css = "https://www.w3schools.com/w3css/4/w3.css"
+    if offline_static:
+        import urllib.request
+        static_folder = os.path.join(output_folder, offline_static)
+        if not os.path.isdir(static_folder):
+            os.mkdir(static_folder)
+        w3css_path = os.path.join(static_folder, "w3.css")
+        if not os.path.isfile(w3css_path):
+            with urllib.request.urlopen(w3css) as resp:
+                with open(w3css_path, "wb") as f: f.write(resp.read())
+        w3css = os.path.join(offline_static, "w3.css")
 
     for current, contact in enumerate(data):
         if len(data[contact]["messages"]) == 0:
@@ -272,7 +268,8 @@ def create_html(data, output_folder, template=None, embedded=False):
                     name=name,
                     msgs=data[contact]["messages"].values(),
                     my_avatar=None,
-                    their_avatar=f"WhatsApp/Avatars/{contact}.j"
+                    their_avatar=f"WhatsApp/Avatars/{contact}.j",
+                    w3css=w3css
                 )
             )
         if current % 10 == 0:

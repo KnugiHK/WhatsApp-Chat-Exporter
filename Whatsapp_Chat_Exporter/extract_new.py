@@ -9,11 +9,14 @@ import re
 import io
 import hmac
 from pathlib import Path
+from bleach import clean as sanitize
+from markupsafe import Markup
+from datetime import datetime
+from enum import Enum
 from mimetypes import MimeTypes
 from hashlib import sha256
+
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import sanitize_except, determine_day, Crypt
-from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
     import zlib
@@ -28,6 +31,39 @@ except ModuleNotFoundError:
     support_crypt15 = False
 else:
     support_crypt15 = True
+
+
+def sanitize_except(html):
+    return Markup(sanitize(html, tags=["br"]))
+
+
+def determine_day(last, current):
+    last = datetime.fromtimestamp(last).date()
+    current = datetime.fromtimestamp(current).date()
+    if last == current:
+        return None
+    else:
+        return current
+
+
+CRYPT14_OFFSETS = (
+    {"iv": 67, "db": 191},
+    {"iv": 67, "db": 190},
+    {"iv": 66, "db": 99},
+    {"iv": 67, "db": 193}
+)
+
+
+class Crypt(Enum):
+    CRYPT15 = 15
+    CRYPT14 = 14
+    CRYPT12 = 12
+
+
+def brute_force_offset():
+    for iv in range(0, 200):
+        for db in range(0, 200):
+            yield iv, iv + 16, db
 
 
 def _generate_hmac_of_hmac(key_stream):
@@ -49,7 +85,7 @@ def _extract_encrypted_key(keyfile):
         key_stream += byte.to_bytes(1, "big", signed=True)
 
     return _generate_hmac_of_hmac(key_stream)
-    
+
 
 def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=False):
     if not support_backup:
@@ -60,7 +96,6 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
             t1 = key[30:62]
     if crypt is not Crypt.CRYPT15 and len(key) != 158:
         raise ValueError("The key file must be 158 bytes")
-    # Determine the IV and database offsets
     if crypt == Crypt.CRYPT14:
         if len(database) < 191:
             raise ValueError("The crypt14 file must be at least 191 bytes")
@@ -164,116 +199,71 @@ def contacts(db, data):
 def messages(db, data):
     # Get message history
     c = db.cursor()
-    try:
-        c.execute("""SELECT count() FROM messages""")
-    except sqlite3.OperationalError:
-        c.execute("""SELECT count() FROM message""")
+    c.execute("""SELECT count() FROM message""")
     total_row_number = c.fetchone()[0]
     print(f"Gathering messages...(0/{total_row_number})", end="\r")
 
     phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
-    try:
-        c.execute("""SELECT messages.key_remote_jid,
-                            messages._id,
-                            messages.key_from_me,
-                            messages.timestamp,
-                            messages.data,
-                            messages.status,
-                            messages.edit_version,
-                            messages.thumb_image,
-                            messages.remote_resource,
-                            messages.media_wa_type,
-                            messages.latitude,
-                            messages.longitude,
-                            messages_quotes.key_id as quoted,
-                            messages.key_id,
-                            messages_quotes.data as quoted_data,
-                            messages.media_caption
-                    FROM messages
-                        LEFT JOIN messages_quotes
-                            ON messages.quoted_row_id = messages_quotes._id
-                    WHERE messages.key_remote_jid <> '-1';"""
-        )
-    except sqlite3.OperationalError:
-        try:
-            c.execute("""SELECT jid_global.raw_string as key_remote_jid,
-                            message._id,
-                            message.from_me as key_from_me,
-                            message.timestamp,
-                            message.text_data as data,
-                            message.status,
-                            message_future.version as edit_version,
-                            message_thumbnail.thumbnail as thumb_image,
-                            message_media.file_path as remote_resource,
-                            message_media.mime_type as media_wa_type,
-                            message_location.latitude,
-                            message_location.longitude,
-                            message_quoted.key_id as quoted,
-                            message.key_id,
-                            message_quoted.text_data as quoted_data,
-                            message.message_type,
-                            jid_group.raw_string as group_sender_jid,
-                            chat.subject as chat_subject
-                    FROM message
-                        LEFT JOIN message_quoted
-                            ON message_quoted.message_row_id = message._id
-                        LEFT JOIN message_location
-                            ON message_location.message_row_id = message._id
-                        LEFT JOIN message_media
-                            ON message_media.message_row_id = message._id
-                        LEFT JOIN message_thumbnail
-                            ON message_thumbnail.message_row_id = message._id
-                        LEFT JOIN message_future
-                            ON message_future.message_row_id = message._id
-                        LEFT JOIN chat
-                            ON chat._id = message.chat_row_id
-                        INNER JOIN jid jid_global
-                            ON jid_global._id = chat.jid_row_id
-                        LEFT JOIN jid jid_group
-                            ON jid_group._id = message.sender_jid_row_id
-                        WHERE key_remote_jid <> '-1';"""
-            )
-        except Exception as e:
-            raise e
-        else:
-            table_message = True
-    else:
-        table_message = False
+    c.execute("""SELECT jid_global.raw_string as key_remote_jid,
+                        message._id,
+                        message.from_me as key_from_me,
+                        message.timestamp,
+                        message.text_data as data,
+                        message.status,
+                        message_future.version as edit_version,
+                        message_thumbnail.thumbnail as thumb_image,
+                        message_media.file_path as remote_resource,
+                        message_media.mime_type as media_wa_type,
+                        message_location.latitude,
+                        message_location.longitude,
+                        message_quoted.key_id as quoted,
+                        message.key_id,
+                        message_quoted.text_data as quoted_data,
+                        message.message_type,
+                        jid_group.raw_string as group_sender_jid,
+                        chat.subject as chat_subject
+                 FROM message
+                    LEFT JOIN message_quoted
+                        ON message_quoted.message_row_id = message._id
+                    LEFT JOIN message_location
+                        ON message_location.message_row_id = message._id
+                    LEFT JOIN message_media
+                        ON message_media.message_row_id = message._id
+                    LEFT JOIN message_thumbnail
+                        ON message_thumbnail.message_row_id = message._id
+                    LEFT JOIN message_future
+                        ON message_future.message_row_id = message._id
+                    LEFT JOIN chat
+                        ON chat._id = message.chat_row_id
+                    INNER JOIN jid jid_global
+                        ON jid_global._id = chat.jid_row_id
+                    LEFT JOIN jid jid_group
+                        ON jid_group._id = message.sender_jid_row_id
+                    WHERE key_remote_jid <> '-1';""")
     i = 0
     content = c.fetchone()
     while content is not None:
         if content["key_remote_jid"] not in data:
             data[content["key_remote_jid"]] = ChatStore()
         if content["key_remote_jid"] is None:
-            continue # Not sure
+            continue
         data[content["key_remote_jid"]].add_message(content["_id"], Message(
             from_me=content["key_from_me"],
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
-        ))    
+        ))
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = None
-            if table_message:
-                if content["chat_subject"] is not None:
-                    _jid = content["group_sender_jid"]
-                else:
-                    _jid = content["key_remote_jid"]
-                if _jid in data:
-                    name = data[_jid].name
-                    fallback = _jid.split('@')[0] if "@" in _jid else None
-                else:
-                    fallback = None
+            if content["chat_subject"] is not None:
+                _jid = content["group_sender_jid"]
             else:
-                if content["remote_resource"] in data:
-                    name = data[content["remote_resource"]].name
-                    if "@" in content["remote_resource"]:
-                        fallback = content["remote_resource"].split('@')[0]
-                    else:
-                        fallback = None
-                else:
-                    fallback = None
-
+                _jid = content["key_remote_jid"]
+            if _jid in data:
+                name = data[_jid].name
+                fallback = _jid.split('@')[0] if "@" in _jid else None
+            else:
+                fallback = None
             data[content["key_remote_jid"]].messages[content["_id"]].sender = name or fallback
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].sender = None
@@ -284,18 +274,13 @@ def messages(db, data):
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].reply = None
 
-        if not table_message and content["media_caption"] is not None:
-            # Old schema
-            data[content["key_remote_jid"]].messages[content["_id"]].caption = content["media_caption"]
-        elif table_message and content["message_type"] == 1 and content["data"] is not None:
-            # New schema
+        if content["message_type"] == 1:
             data[content["key_remote_jid"]].messages[content["_id"]].caption = content["data"]
         else:
             data[content["key_remote_jid"]].messages[content["_id"]].caption = None
 
-        if content["status"] == 6:  # 6 = Metadata, otherwise it's a message
-            if (not table_message and "-" in content["key_remote_jid"]) or \
-               (table_message and content["chat_subject"] is not None):
+        if content["status"] == 6:
+            if content["chat_subject"] is not None:
                 # Is Group
                 if content["data"] is not None:
                     try:
@@ -314,12 +299,12 @@ def messages(db, data):
                             added = phone_number_re.search(
                                 thumb_image.decode("unicode_escape"))[0]
                             if added in data:
-                                name_right = data[added].name
+                                name_right = data[added]["name"]
                             else:
                                 name_right = added.split('@')[0]
                             if content["remote_resource"] is not None:
                                 if content["remote_resource"] in data:
-                                    name_left = data[content["remote_resource"]].name
+                                    name_left = data[content["remote_resource"]]["name"]
                                 else:
                                     name_left = content["remote_resource"].split('@')[0]
                                 msg = f"{name_left} added {name_right or 'You'}"
@@ -342,12 +327,12 @@ def messages(db, data):
 
         else:
             if content["key_from_me"] == 1:
-                if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
+                if content["status"] == 5 and content["edit_version"] == 7:
                     msg = "Message deleted"
                     data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                 else:
                     if content["media_wa_type"] == "5":
-                        msg = f"Location shared: {content['latitude'], content['longitude']}"
+                        msg = f"Location shared: {content[10], content[11]}"
                         data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                     else:
                         msg = content["data"]
@@ -357,12 +342,12 @@ def messages(db, data):
                             if "\n" in msg:
                                 msg = msg.replace("\n", "<br>")
             else:
-                if content["status"] == 0 and content["edit_version"] == 7 or table_message and content["message_type"] == 15:
+                if content["status"] == 0 and content["edit_version"] == 7:
                     msg = "Message deleted"
                     data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                 else:
                     if content["media_wa_type"] == "5":
-                        msg = f"Location shared: {content['latitude'], content['longitude']}"
+                        msg = f"Location shared: {content[10], content[11]}"
                         data[content["key_remote_jid"]].messages[content["_id"]].meta = True
                     else:
                         msg = content["data"]
@@ -388,63 +373,49 @@ def media(db, data, media_folder):
     total_row_number = c.fetchone()[0]
     print(f"\nGathering media...(0/{total_row_number})", end="\r")
     i = 0
-    try:
-        c.execute("""SELECT messages.key_remote_jid,
+    c.execute("""SELECT jid.raw_string,
                         message_row_id,
                         file_path,
                         message_url,
                         mime_type,
                         media_key
                  FROM message_media
-                    INNER JOIN messages
-                        ON message_media.message_row_id = messages._id
-                ORDER BY messages.key_remote_jid ASC"""
-        )
-    except sqlite3.OperationalError:
-        c.execute("""SELECT jid.raw_string as key_remote_jid,
-                    message_row_id,
-                    file_path,
-                    message_url,
-                    mime_type,
-                    media_key
-                FROM message_media
-                INNER JOIN message
-                    ON message_media.message_row_id = message._id
-                LEFT JOIN chat
-                    ON chat._id = message.chat_row_id
-                INNER JOIN jid
-                    ON jid._id = chat.jid_row_id
-                ORDER BY jid.raw_string ASC"""
-        )
+                    INNER JOIN message
+                        ON message_media.message_row_id = message._id
+                    LEFT JOIN chat
+                        ON chat._id = message.chat_row_id
+                    INNER JOIN jid
+                        ON jid._id = chat.jid_row_id
+                 ORDER BY jid.raw_string ASC""")
     content = c.fetchone()
     mime = MimeTypes()
     while content is not None:
         file_path = f"{media_folder}/{content['file_path']}"
-        data[content["key_remote_jid"]].messages[content["message_row_id"]].media = True
+        data[content["raw_string"]].messages[content["message_row_id"]].media = True
         if os.path.isfile(file_path):
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].data = file_path
+            data[content["raw_string"]].messages[content["message_row_id"]].data = file_path
             if content["mime_type"] is None:
                 guess = mime.guess_type(file_path)[0]
                 if guess is not None:
-                    data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = guess
+                    data[content["raw_string"]].messages[content["message_row_id"]].mime = guess
                 else:
-                    data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = "data/data"
+                    data[content["raw_string"]].messages[content["message_row_id"]].mime = "data/data"
             else:
-                data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = content["mime_type"]
+                data[content["raw_string"]].messages[content["message_row_id"]].mime = content["mime_type"]
         else:
-            # if "https://mmg" in content[4]:
+            # if "https://mmg" in content["mime_type"]:
             # try:
-            # r = requests.get(content[3])
+            # r = requests.get(content["message_url"])
             # if r.status_code != 200:
             # raise RuntimeError()
             # except:
-            # data[content[0]]["messages"][content[1]]["data"] = "{The media is missing}"
-            # data[content[0]]["messages"][content[1]]["media"] = True
-            # data[content[0]]["messages"][content[1]]["mime"] = "media"
+            # data[content["raw_string"]].messages[content["message_row_id"]].data = "{The media is missing}"
+            # data[content["raw_string"]].messages[content["message_row_id"]].media = True
+            # data[content["raw_string"]].messages[content["message_row_id"]].mime = "media"
             # else:
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].data = "The media is missing"
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].mime = "media"
-            data[content["key_remote_jid"]].messages[content["message_row_id"]].meta = True
+            data[content["raw_string"]].messages[content["message_row_id"]].data = "The media is missing"
+            data[content["raw_string"]].messages[content["message_row_id"]].mime = "media"
+            data[content["raw_string"]].messages[content["message_row_id"]].meta = True
         i += 1
         if i % 100 == 0:
             print(f"Gathering media...({i}/{total_row_number})", end="\r")
@@ -455,21 +426,10 @@ def media(db, data, media_folder):
 
 def vcard(db, data):
     c = db.cursor()
-    try:
-        c.execute("""SELECT message_row_id,
-                        messages.key_remote_jid,
+    c.execute("""SELECT message_row_id,
+                        jid.raw_string,
                         vcard,
-                        messages.media_name
-                 FROM messages_vcards
-                    INNER JOIN messages
-                        ON messages_vcards.message_row_id = messages._id
-                 ORDER BY messages.key_remote_jid ASC;"""
-        )
-    except sqlite3.OperationalError:
-        c.execute("""SELECT message_row_id,
-                        jid.raw_string as key_remote_jid,
-                        vcard,
-                        message.text_data as media_name
+                        message.text_data
                  FROM message_vcard
                     INNER JOIN message
                         ON message_vcard.message_row_id = message._id
@@ -477,9 +437,7 @@ def vcard(db, data):
                         ON chat._id = message.chat_row_id
                     INNER JOIN jid
                         ON jid._id = chat.jid_row_id
-                 ORDER BY message.chat_row_id ASC;"""
-        )
-    
+                 ORDER BY message.chat_row_id ASC;""")
     rows = c.fetchall()
     total_row_number = len(rows)
     print(f"\nGathering vCards...(0/{total_row_number})", end="\r")
@@ -487,17 +445,17 @@ def vcard(db, data):
     if not os.path.isdir(base):
         Path(base).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
-        media_name = row["media_name"] if row["media_name"] is not None else ""
+        media_name = row["text_data"] if row["text_data"] else ""
         file_name = "".join(x for x in media_name if x.isalnum())
         file_path = f"{base}/{file_name}.vcf"
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
-        data[row["key_remote_jid"]].messages[row["message_row_id"]].data = media_name + \
+        data[row["raw_string"]].messages[row["message_row_id"]].data = media_name + \
             "The vCard file cannot be displayed here, " \
             f"however it should be located at {file_path}"
-        data[row["key_remote_jid"]].messages[row["message_row_id"]].mime = "text/x-vcard"
-        data[row["key_remote_jid"]].messages[row["message_row_id"]].meta = True
+        data[row["raw_string"]].messages[row["message_row_id"]].mime = "text/x-vcard"
+        data[row["raw_string"]].messages[row["message_row_id"]].meta = True
         print(f"Gathering vCards...({index + 1}/{total_row_number})", end="\r")
 
 
@@ -536,8 +494,7 @@ def create_html(
         w3css_path = os.path.join(static_folder, "w3.css")
         if not os.path.isfile(w3css_path):
             with urllib.request.urlopen(w3css) as resp:
-                with open(w3css_path, "wb") as f:
-                    f.write(resp.read())
+                with open(w3css_path, "wb") as f: f.write(resp.read())
         w3css = os.path.join(offline_static, "w3.css")
 
     for current, contact in enumerate(data):
@@ -556,7 +513,7 @@ def create_html(
             name = data[contact].name
         else:
             name = phone_number
-        safe_file_name = ''
+
         safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
         with open(f"{output_folder}/{safe_file_name}.html", "w", encoding="utf-8") as f:
             f.write(

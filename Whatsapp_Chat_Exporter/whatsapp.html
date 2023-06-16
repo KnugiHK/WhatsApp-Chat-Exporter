@@ -2,11 +2,10 @@
 <html>
 	<head>
 		<title>Whatsapp - {{ name }}</title> 
-		<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="{{w3css}}"> 
 		<style>
-		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400&display=swap');
-		html {
-			font-family: 'Noto Sans HK', sans-serif;
+		html, body {
 			font-size: 12px;
 			scroll-behavior: smooth;
 		}
@@ -139,11 +138,11 @@
 									{% if "image/" in msg.mime %}
 									<a href="{{ msg.data }}"><img src="{{ msg.data }}" /></a>
 									{% elif "audio/" in msg.mime %}
-									<audio controls="controls" autobuffer="autobuffer">
+									<audio controls preload="auto">
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls="controls" autobuffer="autobuffer">
+									<video controls preload="auto">
 										<source src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}

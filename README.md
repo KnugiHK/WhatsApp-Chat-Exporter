@@ -3,7 +3,7 @@
 ![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter)
 [![Python](https://img.shields.io/pypi/pyversions/Whatsapp-Chat-Exporter)](https://pypi.org/project/Whatsapp-Chat-Exporter/)
 
-A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON.  
+A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
 **If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
 
 # Usage
@@ -14,7 +14,7 @@ A customizable Android and iPhone Whatsapp database parser that will give you th
 First, install the exporter by:
 ```shell
 pip install whatsapp-chat-exporter
-pip install whatsapp-chat-exporter[android_backup]  & :: Optional, if you want it to support decrypting Android WhatsApp backup.
+pip install whatsapp-chat-exporter[android_backup]  :; # Optional, if you want it to support decrypting Android WhatsApp backup.
 ```
 Then, create a working directory in somewhere you want
 ```shell
@@ -42,7 +42,7 @@ In order to support the decryption, install pycryptodome if it is not installed
 pip install pycryptodome # Or 
 pip install whatsapp-chat-exporter["android_backup"] # install along with this software
 ```
-
+### Crypt15 is now the easiest way to decrypt a backup. If you have the 32 bytes hex key generated when you enable End-to-End encrypted backup, you can use it to decrypt the backup. If you do not have the 32 bytes hex key, you can still use the key file extracted just like extacting key file for Crypt12 and Crypt14 to decrypt the backup.
 #### Crypt12 or Crypt14
 You will need the decryption key file. You can find it on your phone in the WhatsApp backup directory as `WhatsApp/Databases/.nomedia`, or, if you have root access, `/data/data/com.whatsapp/files/key`.
 
@@ -102,36 +102,47 @@ After extracting, you will get these:
 #### Group Message
 ![Group Message](imgs/group.png)
 
+*The above screenshots were taken longgggggggggggggg ago. I am going to update them when possible.*
+
 ## More options
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-Usage: wtsexporter [options]
+usage: wtsexporter [options]
 
-Options:
-  --version             show program's version number and exit
+options:
   -h, --help            show this help message and exit
   -a, --android         Define the target as Android
-  -i, --iphone          Define the target as iPhone
-  -w WA, --wa=WA        Path to contact database
-  -m MEDIA, --media=MEDIA
-                        Path to WhatsApp media folder
-  -b BACKUP, --backup=BACKUP
-                        Path to Android (must be used together with -k)/iPhone
-                        WhatsApp backup
-  -o OUTPUT, --output=OUTPUT
-                        Output to specific directory
-  -j, --json            Save the result to a single JSON file
-  -d DB, --db=DB        Path to database file
-  -k KEY, --key=KEY     Path to key file
-  -t TEMPLATE, --template=TEMPLATE
+  -i, --iphone, --ios   Define the target as iPhone
+  -w WA, --wa WA        Path to contact database (default: wa.db/ContactsV2.sqlite)
+  -m MEDIA, --media MEDIA
+                        Path to WhatsApp media folder (default: WhatsApp)
+  -b BACKUP, --backup BACKUP
+                        Path to Android (must be used together with -k)/iPhone WhatsApp backup
+  -o OUTPUT, --output OUTPUT
+                        Output to specific directory (default: result)
+  -j [JSON], --json [JSON]
+                        Save the result to a single JSON file (default if present: result.json)
+  -d DB, --db DB        Path to database file (default: msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
+  -k KEY, --key KEY     Path to key file
+  -t TEMPLATE, --template TEMPLATE
                         Path to custom HTML template
+  -e, --embedded        Embed media into HTML file (not yet implemented)
+  -s, --showkey         Show the HEX key used to decrypt the database
+  -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
+  --offline OFFLINE     Relative path to offline static files
+  --size SIZE, --output-size SIZE
+                        Maximum size of a single output file in bytes, 0 for auto (not yet implemented)
+  --no-html             Do not output html files
+  --check-update        Check for updates
 ```
 
 # To do
-1. Reply in iPhone
+See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
 
 # Copyright
 This is a MIT licensed project.
 
 The Telegram Desktop's export is the reference for whatsapp.html in this repo
+
+WhatsApp Chat Exporter is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the WhatsApp LLC, or any of its subsidiaries or its affiliates. The official WhatsApp LLC website can be found at https://www.whatsapp.com/.

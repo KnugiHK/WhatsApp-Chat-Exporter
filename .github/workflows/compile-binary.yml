@@ -1,6 +1,8 @@
 name: Compile standalone binary
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -24,6 +26,7 @@ jobs:
       run: |
         python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --follow-imports Whatsapp_Chat_Exporter/__main__.py 
         cp __main__.bin wtsexporter_linux_x64
+        sha256sum wtsexporter_linux_x64
     - uses: actions/upload-artifact@v3
       with:
         name: binary-linux
@@ -35,7 +38,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -47,6 +50,7 @@ jobs:
       run: |
         python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter\__main__.py 
         copy __main__.exe wtsexporter_x64.exe
+        Get-FileHash wtsexporter_x64.exe
     - uses: actions/upload-artifact@v3
       with:
         name: binary-windows
@@ -58,7 +62,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -70,6 +74,7 @@ jobs:
       run: |
         python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --follow-imports Whatsapp_Chat_Exporter/__main__.py 
         cp __main__.bin wtsexporter_macos_x64
+        shasum -a 256 wtsexporter_macos_x64
     - uses: actions/upload-artifact@v3
       with:
         name: binary-macos

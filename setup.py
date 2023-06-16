@@ -11,11 +11,19 @@ setuptools.setup(
     name="whatsapp-chat-exporter",
     version=version,
     author="KnugiHK",
-    author_email="info@knugi.com",
+    author_email="hello@knugi.com",
     description="A Whatsapp database parser that will give you the "
                 "history of your Whatsapp conversations in HTML and JSON.",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    license="MIT",
+    keywords=[
+        "android", "ios", "parsing", "history","iphone", "whatsapp", "message"
+        "customizable", "android-backup", "crypt12", "whatsapp-chat-exporter",
+        "whatsapp-export", "whatsapp-database", "whatsapp-database-parser",
+        "whatsapp-conversations", "iphone-backup", "crypt14", "crypt15", "messages"
+    ],
+    platforms=["any"],
     url="https://github.com/KnugiHK/Whatsapp-Chat-Exporter",
     packages=setuptools.find_packages(),
     package_data={
