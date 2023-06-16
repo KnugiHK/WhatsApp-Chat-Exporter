@@ -466,7 +466,7 @@ def media(db, data, media_folder):
     content = c.fetchone()
     mime = MimeTypes()
     if not os.path.isdir(f"{media_folder}/thumbnails"):
-        os.mkdir(f"{media_folder}/thumbnails")
+        Path(f"{media_folder}/thumbnails").mkdir(parents=True, exist_ok=True)
     while content is not None:
         file_path = f"{media_folder}/{content['file_path']}"
         message = data[content["key_remote_jid"]].messages[content["message_row_id"]]
