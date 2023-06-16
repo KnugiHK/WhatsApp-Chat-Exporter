@@ -10,10 +10,11 @@ class ChatStore():
             raise TypeError("Name must be a string or None")
         self.name = name
         self.messages = {}
+        self.type = type
         if media is not None:
-            if type == Device.IOS:
+            if self.type == Device.IOS:
                 self.my_avatar = os.path.join(media, "Media/Profile/Photo.jpg")
-            elif type == Device.ANDROID:
+            elif self.type == Device.ANDROID:
                 self.my_avatar = None  # TODO: Add Android support
             else:
                 self.my_avatar = None
