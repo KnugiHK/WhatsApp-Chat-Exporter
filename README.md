@@ -155,3 +155,5 @@ See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
 This is a MIT licensed project.
 
 The Telegram Desktop's export is the reference for whatsapp.html in this repo
+
+WhatsApp Chat Exporter is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the WhatsApp LLC, or any of its subsidiaries or its affiliates. The official WhatsApp LLC website can be found at https://www.whatsapp.com/.
