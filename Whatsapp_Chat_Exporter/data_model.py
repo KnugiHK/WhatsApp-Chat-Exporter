@@ -33,7 +33,14 @@ class ChatStore():
 
     def to_json(self):
         serialized_msgs = {id: msg.to_json() for id, msg in self.messages.items()}
-        return {'name' : self.name, 'messages' : serialized_msgs}
+        return {
+            'name': self.name,
+            'type': self.type,
+            'my_avatar': self.my_avatar,
+            'their_avatar': self.their_avatar,
+            'their_avatar_thumb': self.their_avatar_thumb,
+            'messages': serialized_msgs
+        }
 
     def get_last_message(self):
         return tuple(self.messages.values())[-1]
@@ -75,7 +82,10 @@ class Message():
             'meta'        : self.meta,
             'data'        : self.data,
             'sender'      : self.sender,
+            'safe'        : self.safe,
             'reply'       : self.reply,
             'quoted_data' : self.quoted_data,
-            'caption'     : self.caption
+            'caption'     : self.caption,
+            'thumb'       : self.thumb,
+            'sticker'     : self.sticker
         }
