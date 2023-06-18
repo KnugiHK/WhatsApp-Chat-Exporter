@@ -12,16 +12,17 @@ setuptools.setup(
     version=version,
     author="KnugiHK",
     author_email="hello@knugi.com",
-    description="A Whatsapp database parser that will give you the "
-                "history of your Whatsapp conversations in HTML and JSON.",
+    description=("A Whatsapp database parser that will give you the "
+                "history of your Whatsapp conversations in HTML and JSON. "
+                "Android, iOS, iPadOS, Crypt12, Crypt14, Crypt15 supported."),
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
     keywords=[
-        "android", "ios", "parsing", "history","iphone", "whatsapp", "message"
-        "customizable", "android-backup", "crypt12", "whatsapp-chat-exporter",
-        "whatsapp-export", "whatsapp-database", "whatsapp-database-parser",
-        "whatsapp-conversations", "iphone-backup", "crypt14", "crypt15", "messages"
+        "android", "ios", "parsing", "history", "iphone", "message", "crypt15",
+        "customizable", "whatsapp", "android-backup", "messages", "crypt14", 
+        "crypt12", "whatsapp-chat-exporter", "whatsapp-export", "iphone-backup",
+        "whatsapp-database", "whatsapp-database-parser", "whatsapp-conversations"
     ],
     platforms=["any"],
     url="https://github.com/KnugiHK/Whatsapp-Chat-Exporter",
@@ -44,7 +45,7 @@ setuptools.setup(
         "Topic :: Utilities",
         "Topic :: Database"
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     install_requires=[
         'jinja2',
         'bleach'
