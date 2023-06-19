@@ -267,7 +267,7 @@ def main():
             if not os.path.isdir(args.media):
                 extract_iphone_media.extract_media(args.backup)
             else:
-                print("Media directory already exists, skipping media extraction.")
+                print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:
             msg_db = "7c7fba66680ef796b916b067077cc246adacf01d"
         else:
@@ -306,7 +306,7 @@ def main():
         if os.path.isdir(args.media):
             media_path = os.path.join(args.output, args.media)
             if os.path.isdir(media_path):
-                print("\nMedia directory already exists in output directory. Skipping...", end="\n")
+                print("\nWhatsApp directory already exists in output directory. Skipping...", end="\n")
             else:
                 if not args.move_media:
                     if os.path.isdir(media_path):
