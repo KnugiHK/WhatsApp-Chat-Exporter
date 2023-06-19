@@ -148,7 +148,7 @@ options:
   --check-update        Check for updates (require Internet access)
   --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
 
-WhatsApp Chat Exporter: 0.9.1 Licensed with MIT
+WhatsApp Chat Exporter: 0.9.5 Licensed with MIT
 ```
 
 # To do
