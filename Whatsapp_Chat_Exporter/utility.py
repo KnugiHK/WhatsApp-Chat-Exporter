@@ -2,7 +2,14 @@ import json
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
-from enum import IntEnum, StrEnum
+from enum import IntEnum
+try:
+    from enum import StrEnum
+except ImportError:
+    # < Python 3.11
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
 
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
