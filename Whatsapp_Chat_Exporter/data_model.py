@@ -71,7 +71,7 @@ class Message():
         self.quoted_data = None
         self.caption = None
         self.thumb = None # Android specific
-        self.sticker = None
+        self.sticker = False
     
     def to_json(self):
         return {

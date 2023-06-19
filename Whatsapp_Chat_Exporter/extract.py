@@ -183,7 +183,7 @@ def messages(db, data, media_folder):
                             messages.edit_version,
                             messages.thumb_image,
                             messages.remote_resource,
-                            messages.media_wa_type,
+                            CAST(messages.media_wa_type as INTEGER) as media_wa_type,
                             messages.latitude,
                             messages.longitude,
                             messages_quotes.key_id as quoted,
@@ -378,7 +378,7 @@ def messages(db, data, media_folder):
                     msg = "Message deleted"
                     message.meta = True
                 else:
-                    if content["media_wa_type"] == "5":
+                    if content["media_wa_type"] == 5:
                         msg = f"Location shared: {content['latitude'], content['longitude']}"
                         message.meta = True
                     else:
@@ -393,7 +393,7 @@ def messages(db, data, media_folder):
                     msg = "Message deleted"
                     message.meta = True
                 else:
-                    if content["media_wa_type"] == "5":
+                    if content["media_wa_type"] == 5:
                         msg = f"Location shared: {content['latitude'], content['longitude']}"
                         message.meta = True
                     else:
