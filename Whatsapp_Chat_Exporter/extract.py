@@ -192,12 +192,17 @@ def messages(db, data, media_folder):
                             messages.key_id,
                             messages_quotes.data as quoted_data,
                             messages.media_caption,
-							missed_call_logs.video_call
+							missed_call_logs.video_call,
+                            chat.subject as chat_subject
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
 						LEFT JOIN missed_call_logs
 							ON messages._id = missed_call_logs.message_row_id
+                        INNER JOIN jid
+                            ON messages.key_remote_jid = jid.raw_string
+                        LEFT JOIN chat
+                            ON chat.jid_row_id = jid._id
                     WHERE messages.key_remote_jid <> '-1';"""
         )
     except sqlite3.OperationalError:
@@ -257,7 +262,7 @@ def messages(db, data, media_folder):
             break
     while content is not None:
         if content["key_remote_jid"] not in data:
-            data[content["key_remote_jid"]] = ChatStore(Device.ANDROID)
+            data[content["key_remote_jid"]] = ChatStore(Device.ANDROID, content["chat_subject"])
         if content["key_remote_jid"] is None:
             continue  # Not sure
         message = Message(
