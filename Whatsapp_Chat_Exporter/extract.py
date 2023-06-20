@@ -702,10 +702,7 @@ def create_html(
                         contact,
                         w3css,
                         f"{safe_file_name}-{current_page + 1}.html",
-                        chat.my_avatar,
-                        chat.their_avatar,
-                        chat.their_avatar_thumb,
-                        chat.status
+                        chat
                     )
                     render_box = [message]
                     current_size = 0
@@ -724,10 +721,7 @@ def create_html(
                             contact,
                             w3css,
                             False,
-                            chat.my_avatar,
-                            chat.their_avatar,
-                            chat.their_avatar_thumb,
-                            chat.status
+                            chat
                         )
                     else:
                         render_box.append(message)
@@ -741,10 +735,7 @@ def create_html(
                 contact,
                 w3css,
                 False,
-                chat.my_avatar,
-                chat.their_avatar,
-                chat.their_avatar_thumb,
-                chat.status
+                chat
             )
         if current % 10 == 0:
             print(f"Generating chats...({current}/{total_row_number})", end="\r")

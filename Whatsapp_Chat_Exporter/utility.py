@@ -69,24 +69,23 @@ def rendering(
         contact,
         w3css,
         next,
-        my_avatar,
-        their_avatar,
-        their_avatar_thumb,
-        status
+        chat,
     ):
-    if their_avatar_thumb is None and their_avatar is not None:
-        their_avatar_thumb = their_avatar
+    if chat.their_avatar_thumb is None and chat.their_avatar is not None:
+        their_avatar_thumb = chat.their_avatar
+    else:
+        their_avatar_thumb = chat.their_avatar_thumb
     with open(output_file_name, "w", encoding="utf-8") as f:
         f.write(
             template.render(
                 name=name,
                 msgs=msgs,
-                my_avatar=my_avatar,
-                their_avatar=their_avatar,
+                my_avatar=chat.my_avatar,
+                their_avatar=chat.their_avatar,
                 their_avatar_thumb=their_avatar_thumb,
                 w3css=w3css,
                 next=next,
-                status=status,
+                status=chat.status,
             )
         )
 
