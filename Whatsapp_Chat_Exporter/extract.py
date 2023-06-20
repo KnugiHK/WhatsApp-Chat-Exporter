@@ -224,7 +224,8 @@ def messages(db, data, media_folder):
                             message.message_type as media_wa_type,
                             jid_group.raw_string as group_sender_jid,
                             chat.subject as chat_subject,
-							missed_call_logs.video_call
+							missed_call_logs.video_call,
+                            message.sender_jid_row_id
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -284,26 +285,20 @@ def messages(db, data, media_folder):
             continue
         invalid = False
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
-            name = None
+            name = fallback = None
             if table_message:
-                if content["chat_subject"] is not None:
+                if content["sender_jid_row_id"] > 0:
                     _jid = content["group_sender_jid"]
-                else:
-                    _jid = content["key_remote_jid"]
-                if _jid in data:
-                    name = data[_jid].name
-                    fallback = _jid.split('@')[0] if "@" in _jid else None
-                else:
-                    fallback = None
+                    if _jid in data:
+                        name = data[_jid].name
+                    if "@" in _jid:
+                        fallback = _jid.split('@')[0]
             else:
-                if content["remote_resource"] in data:
-                    name = data[content["remote_resource"]].name
+                if content["remote_resource"] is not None:
+                    if content["remote_resource"] in data:
+                        name = data[content["remote_resource"]].name
                     if "@" in content["remote_resource"]:
                         fallback = content["remote_resource"].split('@')[0]
-                    else:
-                        fallback = None
-                else:
-                    fallback = None
 
             message.sender = name or fallback
         else:
