@@ -62,9 +62,9 @@ def messages(db, data, media_folder):
             data[contact_id].their_avatar = avatars[0]
         else:
             for avatar in avatars:
-                if avatar.endswith(".thumb"):
+                if avatar.endswith(".thumb") and data[content["ZCONTACTJID"]].their_avatar_thumb is None:
                     data[contact_id].their_avatar_thumb = avatar
-                elif avatar.endswith(".jpg"):
+                elif avatar.endswith(".jpg") and data[content["ZCONTACTJID"]].their_avatar is None:
                     data[contact_id].their_avatar = avatar
         content = c.fetchone()
 
