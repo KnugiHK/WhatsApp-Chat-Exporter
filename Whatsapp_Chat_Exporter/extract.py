@@ -155,7 +155,7 @@ def contacts(db, data):
     total_row_number = c.fetchone()[0]
     print(f"Processing contacts...({total_row_number})")
 
-    c.execute("""SELECT jid, display_name FROM wa_contacts; """)
+    c.execute("""SELECT jid, COALESCE(display_name, wa_name) as display_name FROM wa_contacts; """)
     row = c.fetchone()
     while row is not None:
         data[row["jid"]] = ChatStore(Device.ANDROID, row["display_name"])
