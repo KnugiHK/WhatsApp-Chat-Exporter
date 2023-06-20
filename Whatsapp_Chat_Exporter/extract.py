@@ -13,7 +13,8 @@ from mimetypes import MimeTypes
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, rendering, sanitize_except, determine_day, Crypt
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, determine_metadata
+from Whatsapp_Chat_Exporter.utility import rendering, sanitize_except, determine_day, Crypt
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
@@ -225,7 +226,11 @@ def messages(db, data, media_folder):
                             jid_group.raw_string as group_sender_jid,
                             chat.subject as chat_subject,
 							missed_call_logs.video_call,
-                            message.sender_jid_row_id
+                            message.sender_jid_row_id,
+                            message_system.action_type,
+                            message_system_group.is_me_joined,
+                            jid_old.raw_string as old_jid,
+                            jid_new.raw_string as new_jid
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -245,6 +250,16 @@ def messages(db, data, media_folder):
                             ON jid_group._id = message.sender_jid_row_id
 						LEFT JOIN missed_call_logs
 							ON message._id = missed_call_logs.message_row_id
+                        LEFT JOIN message_system
+                            ON message_system.message_row_id = message._id
+                        LEFT JOIN message_system_group
+                            ON message_system_group.message_row_id = message._id
+                        LEFT JOIN message_system_number_change
+                            ON message_system_number_change.message_row_id = message._id
+                        LEFT JOIN jid jid_old
+                            ON jid_old._id = message_system_number_change.old_jid_row_id
+                        LEFT JOIN jid jid_new
+                            ON jid_new._id = message_system_number_change.new_jid_row_id
                         WHERE key_remote_jid <> '-1';"""
             )
         except Exception as e:
@@ -266,8 +281,12 @@ def messages(db, data, media_folder):
             data[content["key_remote_jid"]] = ChatStore(Device.ANDROID, content["chat_subject"])
         if content["key_remote_jid"] is None:
             continue  # Not sure
+        if "sender_jid_row_id" in content:
+            sender_jid_row_id = content["sender_jid_row_id"]
+        else:
+            sender_jid_row_id = None
         message = Message(
-            from_me=content["key_from_me"],
+            from_me=not sender_jid_row_id and content["key_from_me"],
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
@@ -283,7 +302,6 @@ def messages(db, data, media_folder):
             i += 1
             content = c.fetchone()
             continue
-        invalid = False
         if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
             name = fallback = None
             if table_message:
@@ -320,18 +338,18 @@ def messages(db, data, media_folder):
             message.caption = None
 
         if content["status"] == 6:  # 6 = Metadata, otherwise assume a message
-            if (not table_message and "-" in content["key_remote_jid"]) or \
-               (table_message and content["chat_subject"] is not None):
+            if not table_message and "-" in content["key_remote_jid"]:
                 # Is Group
                 if content["data"] is not None and content["data"] != "":
                     try:
                         int(content["data"])
                     except ValueError:
-                        msg = f"The group name changed to {content['data']}"
+                        msg = f'''The group name changed to "{content['data']}"'''
                         message.data = msg
                         message.meta = True
                     else:
-                        invalid = True
+                        message.meta = True
+                        message.data = None
                 else:
                     thumb_image = content["thumb_image"]  # Not applicable for new schema
                     if thumb_image is not None:
@@ -344,7 +362,7 @@ def messages(db, data, media_folder):
                             else:
                                 name_right = added.split('@')[0]
                             if content["remote_resource"] is not None:
-                                if content["remote_resource"] in data:
+                                if content["remote_resource"] in data and data[content["remote_resource"]].name is not None:
                                     name_left = data[content["remote_resource"]].name
                                 else:
                                     name_left = content["remote_resource"].split('@')[0]
@@ -360,7 +378,23 @@ def messages(db, data, media_folder):
                         message.meta = True
                     else:
                         if content["data"] is None:
-                            invalid = True
+                            message.meta = True
+                            message.data = None
+            
+            elif table_message:
+                message.meta = True
+                name = fallback = None
+                if content["sender_jid_row_id"] > 0:
+                    _jid = content["group_sender_jid"]
+                    if _jid in data:
+                        name = data[_jid].name
+                    if "@" in _jid:
+                        fallback = _jid.split('@')[0]
+                else:
+                    name = "You"
+                message.data = determine_metadata(content, name or fallback)
+                if isinstance(message.data, str) and "<br>" in message.data:
+                    message.safe = True
             else:
                 # Private chat
                 if content["video_call"] is not None:  # Missed call
@@ -370,7 +404,8 @@ def messages(db, data, media_folder):
                     elif content["video_call"] == 0:
                         message.data = "A voice call was missed"
                 elif content["data"] is None and content["thumb_image"] is None:
-                    invalid = True  # Unhandle metadata
+                    message.meta = True
+                    message.data = None
         else:
             # Real message
             if content["media_wa_type"] == 20: # Sticker is a message
@@ -407,8 +442,7 @@ def messages(db, data, media_folder):
                                 msg = msg.replace("\n", "<br>")
             message.data = msg
 
-        if not invalid:
-            data[content["key_remote_jid"]].add_message(content["_id"], message)
+        data[content["key_remote_jid"]].add_message(content["_id"], message)
         i += 1
         if i % 1000 == 0:
             print(f"Processing messages...({i}/{total_row_number})", end="\r")

@@ -152,5 +152,86 @@ def brute_force_offset(max_iv=200, max_db=200):
             yield iv, iv + 16, db
 
 
+def determine_metadata(content, init_msg):
+    msg = init_msg if init_msg else ""
+    if content["is_me_joined"] == 1:  # Override
+        return f"You were added into the group by {msg}"
+    if content["action_type"] == 1:
+        msg += f''' changed the group name to "{content['data']}"'''
+    elif content["action_type"] == 4:
+        msg += " was added to the group"
+    elif content["action_type"] == 5:
+        msg += " left the group"
+    elif content["action_type"] == 6:
+        msg += f" changed the group icon"
+    elif content["action_type"] == 7:
+        msg = "You were removed"
+    elif content["action_type"] == 8:
+        msg += ("WhatsApp Internal Error Occurred: "
+                "you cannot send message to this group")
+    elif content["action_type"] == 9:
+        msg += " created a broadcast channel"
+    elif content["action_type"] == 10:
+        try:
+            old = content['old_jid'].split('@')[0]
+            new = content['new_jid'].split('@')[0]
+        except (AttributeError, IndexError):
+            return None
+        else:
+            msg = f"{old} changed their number to {new}"
+    elif content["action_type"] == 11:
+        msg += f''' created a group with name: "{content['data']}"'''
+    elif content["action_type"] == 12:
+        msg += f" added someone"  # TODO: Find out who
+    elif content["action_type"] == 13:
+        return  # Someone left the group
+    elif content["action_type"] == 14:
+        msg += f" removed someone"  # TODO: Find out who
+    elif content["action_type"] == 15:
+        return  # Someone promoted someone as an admin
+    elif content["action_type"] == 18:
+        if msg != "You":
+            msg = f"The security code between you and {msg} changed"
+        else:
+            msg = "The security code in this chat changed"
+    elif content["action_type"] == 19:
+        msg = "This chat is now end-to-end encrypted"
+    elif content["action_type"] == 20:
+        msg = "Someone joined this group by using a invite link"  # TODO: Find out who
+    elif content["action_type"] == 27:
+        msg += " changed the group description to:<br>"
+        msg += content['data'].replace("\n", '<br>')
+    elif content["action_type"] == 28:
+        try:
+            old = content['old_jid'].split('@')[0]
+            new = content['new_jid'].split('@')[0]
+        except (AttributeError, IndexError):
+            return None
+        else:
+            msg = f"{old} changed their number to {new}"
+    elif content["action_type"] == 46:
+        return # Voice message in PM??? Seems no need to handle.
+    elif content["action_type"] == 47:
+        msg = "The contact is an official business account"
+    elif content["action_type"] == 50:
+        msg = "The contact's account type changed from business to standard"
+    elif content["action_type"] == 56:
+        msg = "Messgae timer was enabled/updated/disabled"
+    elif content["action_type"] == 57:
+        if msg != "You":
+            msg = f"The security code between you and {msg} changed"
+        else:
+            msg = "The security code in this chat changed"
+    elif content["action_type"] == 58:
+        msg = "You blocked this contact"
+    elif content["action_type"] == 67:
+        return  # (PM) this contact use secure service from Facebook???
+    elif content["action_type"] == 69:
+        return  # (PM) this contact use secure service from Facebook??? What's the difference with 67????
+    else:
+        return  # Unsupported
+    return msg
+
+
 # iOS Specific
 APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
