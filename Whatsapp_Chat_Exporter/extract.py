@@ -328,7 +328,7 @@ def messages(db, data, media_folder):
             if (not table_message and "-" in content["key_remote_jid"]) or \
                (table_message and content["chat_subject"] is not None):
                 # Is Group
-                if content["data"] is not None:
+                if content["data"] is not None and content["data"] != "":
                     try:
                         int(content["data"])
                     except ValueError:
@@ -338,7 +338,7 @@ def messages(db, data, media_folder):
                     else:
                         invalid = True
                 else:
-                    thumb_image = content["thumb_image"]
+                    thumb_image = content["thumb_image"]  # Not applicable for new schema
                     if thumb_image is not None:
                         if b"\x00\x00\x01\x74\x00\x1A" in thumb_image:
                             # Add user
