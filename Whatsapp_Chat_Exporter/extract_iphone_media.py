@@ -123,11 +123,3 @@ def extract_media(base_dir):
                     print(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})", end="\r")
                 row = c.fetchone()
             print(f"Extracting WhatsApp files...({total_row_number}/{total_row_number})", end="\n")
-
-
-if __name__ == "__main__":
-    from optparse import OptionParser
-    parser = OptionParser()
-    (_, args) = parser.parse_args()
-    base_dir = args[0]
-    extract_media(base_dir)
