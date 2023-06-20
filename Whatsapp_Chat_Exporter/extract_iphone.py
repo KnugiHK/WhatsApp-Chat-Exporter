@@ -12,6 +12,22 @@ from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, rendering, sanitize_except, determine_day, APPLE_TIME, Device
 
 
+def contacts(db, data):
+    c = db.cursor()
+    # Get status only lol
+    c.execute("""SELECT count() FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
+    total_row_number = c.fetchone()[0]
+    print(f"Pre-processing contacts...({total_row_number})")
+    c.execute("""SELECT ZWHATSAPPID, ZABOUTTEXT FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
+    content = c.fetchone()
+    while content is not None:
+        if not content["ZWHATSAPPID"].endswith("@s.whatsapp.net"):
+            _id = content["ZWHATSAPPID"] + "@s.whatsapp.net"
+        data[_id] = ChatStore(Device.IOS)
+        data[_id].status = content["ZABOUTTEXT"]
+        content = c.fetchone()
+
+
 def messages(db, data, media_folder):
     c = db.cursor()
     # Get contacts
@@ -34,17 +50,22 @@ def messages(db, data, media_folder):
             contact_name = content["ZPARTNERNAME"]
         else:
             contact_name = content["ZPUSHNAME"]
-        data[content["ZCONTACTJID"]] = ChatStore(Device.IOS, contact_name, media_folder)
-        path = f'{media_folder}/Media/Profile/{content["ZCONTACTJID"].split("@")[0]}'
+        contact_id = content["ZCONTACTJID"]
+        if contact_id not in data:
+            data[contact_id] = ChatStore(Device.IOS, contact_name, media_folder)
+        else:
+            data[contact_id].name = contact_name
+            data[contact_id].my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
+        path = f'{media_folder}/Media/Profile/{contact_id.split("@")[0]}'
         avatars = glob(f"{path}*")
         if 0 < len(avatars) <= 1:
-            data[content["ZCONTACTJID"]].their_avatar = avatars[0]
+            data[contact_id].their_avatar = avatars[0]
         else:
             for avatar in avatars:
                 if avatar.endswith(".thumb"):
-                    data[content["ZCONTACTJID"]].their_avatar_thumb = avatar
+                    data[contact_id].their_avatar_thumb = avatar
                 elif avatar.endswith(".jpg"):
-                    data[content["ZCONTACTJID"]].their_avatar = avatar
+                    data[contact_id].their_avatar = avatar
         content = c.fetchone()
 
     # Get message history
@@ -349,7 +370,8 @@ def create_html(
                         f"{safe_file_name}-{current_page + 1}.html",
                         chat.my_avatar,
                         chat.their_avatar,
-                        chat.their_avatar_thumb
+                        chat.their_avatar_thumb,
+                        chat.status
                     )
                     render_box = [message]
                     current_size = 0
@@ -370,7 +392,8 @@ def create_html(
                             False,
                             chat.my_avatar,
                             chat.their_avatar,
-                            chat.their_avatar_thumb
+                            chat.their_avatar_thumb,
+                            chat.status
                         )
                     else:
                         render_box.append(message)
@@ -386,7 +409,8 @@ def create_html(
                 False,
                 chat.my_avatar,
                 chat.their_avatar,
-                chat.their_avatar_thumb
+                chat.their_avatar_thumb,
+                chat.status
             )
         if current % 10 == 0:
             print(f"Generating chats...({current}/{total_row_number})", end="\r")

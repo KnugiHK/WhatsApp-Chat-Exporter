@@ -257,6 +257,7 @@ def main():
                 "WARNING: The --iphone flag is deprecated and will"
                 "be removed in the future. Use --ios instead."
             )
+        contacts = extract_iphone.contacts
         messages = extract_iphone.messages
         media = extract_iphone.media
         vcard = extract_iphone.vcard
@@ -276,6 +277,10 @@ def main():
             contact_db = "ContactsV2.sqlite"
         else:
             contact_db = args.wa
+        if os.path.isfile(contact_db):
+            with sqlite3.connect(contact_db) as db:
+                db.row_factory = sqlite3.Row
+                contacts(db, data)
 
     if not args.exported and not args.import_json:
         if os.path.isfile(msg_db):
