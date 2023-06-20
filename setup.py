@@ -62,7 +62,9 @@ setuptools.setup(
     },
     entry_points={
         "console_scripts": [
-            "wtsexporter = Whatsapp_Chat_Exporter.__main__:main"
+            "wtsexporter = Whatsapp_Chat_Exporter.__main__:main",
+            "waexporter = Whatsapp_Chat_Exporter.__main__:main",
+            "whatsapp-chat-exporter = Whatsapp_Chat_Exporter.__main__:main"
         ]
     }
 )
