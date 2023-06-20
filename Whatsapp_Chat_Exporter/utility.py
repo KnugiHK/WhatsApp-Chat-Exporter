@@ -104,28 +104,28 @@ def import_from_json(json_file, data):
     total_row_number = len(tuple(temp_data.keys()))
     print(f"Importing chats from JSON...(0/{total_row_number})", end="\r")
     for index, (jid, chat_data) in enumerate(temp_data.items()):
-        chat = ChatStore(chat_data["type"], chat_data["name"])
-        chat.my_avatar = chat_data["my_avatar"]
-        chat.their_avatar = chat_data["their_avatar"]
-        chat.their_avatar_thumb = chat_data["their_avatar_thumb"]
-        chat.status = chat_data["status"]
-        for id, msg in chat_data["messages"].items():
+        chat = ChatStore(chat_data.get("type"), chat_data.get("name"))
+        chat.my_avatar = chat_data.get("my_avatar")
+        chat.their_avatar = chat_data.get("their_avatar")
+        chat.their_avatar_thumb = chat_data.get("their_avatar_thumb")
+        chat.status = chat_data.get("status")
+        for id, msg in chat_data.get("messages").items():
             message = Message(
                 msg["from_me"],
                 msg["timestamp"],
                 msg["time"],
                 msg["key_id"],
             )
-            message.media = msg["media"]
-            message.meta = msg["meta"]
-            message.data = msg["data"]
-            message.sender = msg["sender"]
-            message.safe = msg["safe"]
-            message.reply = msg["reply"]
-            message.quoted_data = msg["quoted_data"]
-            message.caption = msg["caption"]
-            message.thumb = msg["thumb"]
-            message.sticker = msg["sticker"]
+            message.media = msg.get("media")
+            message.meta = msg.get("meta")
+            message.data = msg.get("data")
+            message.sender = msg.get("sender")
+            message.safe = msg.get("safe")
+            message.reply = msg.get("reply")
+            message.quoted_data = msg.get("quoted_data")
+            message.caption = msg.get("caption")
+            message.thumb = msg.get("thumb")
+            message.sticker = msg.get("sticker")
             chat.add_message(id, message)
         data[jid] = chat
         print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
