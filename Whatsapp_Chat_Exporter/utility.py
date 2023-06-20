@@ -108,6 +108,7 @@ def import_from_json(json_file, data):
         chat.my_avatar = chat_data["my_avatar"]
         chat.their_avatar = chat_data["their_avatar"]
         chat.their_avatar_thumb = chat_data["their_avatar_thumb"]
+        chat.status = chat_data["status"]
         for id, msg in chat_data["messages"].items():
             message = Message(
                 msg["from_me"],
