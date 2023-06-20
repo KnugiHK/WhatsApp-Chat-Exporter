@@ -155,10 +155,12 @@ def contacts(db, data):
     total_row_number = c.fetchone()[0]
     print(f"Processing contacts...({total_row_number})")
 
-    c.execute("""SELECT jid, COALESCE(display_name, wa_name) as display_name FROM wa_contacts; """)
+    c.execute("""SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts; """)
     row = c.fetchone()
     while row is not None:
         data[row["jid"]] = ChatStore(Device.ANDROID, row["display_name"])
+        if row["status"] is not None:
+            data[row["jid"]].status = row["status"]
         row = c.fetchone()
 
 
@@ -702,7 +704,8 @@ def create_html(
                         f"{safe_file_name}-{current_page + 1}.html",
                         chat.my_avatar,
                         chat.their_avatar,
-                        chat.their_avatar_thumb
+                        chat.their_avatar_thumb,
+                        chat.status
                     )
                     render_box = [message]
                     current_size = 0
@@ -723,7 +726,8 @@ def create_html(
                             False,
                             chat.my_avatar,
                             chat.their_avatar,
-                            chat.their_avatar_thumb
+                            chat.their_avatar_thumb,
+                            chat.status
                         )
                     else:
                         render_box.append(message)
@@ -739,7 +743,8 @@ def create_html(
                 False,
                 chat.my_avatar,
                 chat.their_avatar,
-                chat.their_avatar_thumb
+                chat.their_avatar_thumb,
+                chat.status
             )
         if current % 10 == 0:
             print(f"Generating chats...({current}/{total_row_number})", end="\r")

@@ -89,7 +89,13 @@
 		</style>
 	</head>
 	<body>
-		<header class="w3-center w3-top">Chat history with {{ name }}</header>
+		<header class="w3-center w3-top">
+			Chat history with {{ name }}
+			{% if status is not none %}
+			<br>
+			<span class="w3-small">{{ status }}</span>
+			{% endif %}
+		</header>
 		<article class="w3-container">
 			<div class="table">
 			{% set last = {'last': 946688461.001} %}

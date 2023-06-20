@@ -22,6 +22,7 @@ class ChatStore():
             self.my_avatar = None
         self.their_avatar = None
         self.their_avatar_thumb = None
+        self.status = None
     
     def add_message(self, id, message):
         if not isinstance(message, Message):
@@ -40,6 +41,7 @@ class ChatStore():
             'my_avatar': self.my_avatar,
             'their_avatar': self.their_avatar,
             'their_avatar_thumb': self.their_avatar_thumb,
+            'status': self.status,
             'messages': serialized_msgs
         }
 

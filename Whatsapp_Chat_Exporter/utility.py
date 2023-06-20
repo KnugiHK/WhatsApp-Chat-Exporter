@@ -71,7 +71,8 @@ def rendering(
         next,
         my_avatar,
         their_avatar,
-        their_avatar_thumb
+        their_avatar_thumb,
+        status
     ):
     if their_avatar_thumb is None and their_avatar is not None:
         their_avatar_thumb = their_avatar
@@ -84,7 +85,8 @@ def rendering(
                 their_avatar=their_avatar,
                 their_avatar_thumb=their_avatar_thumb,
                 w3css=w3css,
-                next=next
+                next=next,
+                status=status,
             )
         )
 
