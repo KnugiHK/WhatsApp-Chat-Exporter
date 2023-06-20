@@ -194,16 +194,30 @@ def messages(db, data, media_folder):
                             messages_quotes.data as quoted_data,
                             messages.media_caption,
 							missed_call_logs.video_call,
-                            chat.subject as chat_subject
+                            chat.subject as chat_subject,
+                            message_system.action_type,
+                            message_system_group.is_me_joined,
+                            jid_old.raw_string as old_jid,
+                            jid_new.raw_string as new_jid
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
 						LEFT JOIN missed_call_logs
 							ON messages._id = missed_call_logs.message_row_id
-                        INNER JOIN jid
-                            ON messages.key_remote_jid = jid.raw_string
+                        INNER JOIN jid jid_global
+                            ON messages.key_remote_jid = jid_global.raw_string
                         LEFT JOIN chat
-                            ON chat.jid_row_id = jid._id
+                            ON chat.jid_row_id = jid_global._id
+                        LEFT JOIN message_system
+                            ON message_system.message_row_id = messages._id
+                        LEFT JOIN message_system_group
+                            ON message_system_group.message_row_id = messages._id
+                        LEFT JOIN message_system_number_change
+                            ON message_system_number_change.message_row_id = messages._id
+                        LEFT JOIN jid jid_old
+                            ON jid_old._id = message_system_number_change.old_jid_row_id
+                        LEFT JOIN jid jid_new
+                            ON jid_new._id = message_system_number_change.new_jid_row_id
                     WHERE messages.key_remote_jid <> '-1';"""
         )
     except sqlite3.OperationalError:
@@ -338,52 +352,9 @@ def messages(db, data, media_folder):
             message.caption = None
 
         if content["status"] == 6:  # 6 = Metadata, otherwise assume a message
-            if not table_message and "-" in content["key_remote_jid"]:
-                # Is Group
-                if content["data"] is not None and content["data"] != "":
-                    try:
-                        int(content["data"])
-                    except ValueError:
-                        msg = f'''The group name changed to "{content['data']}"'''
-                        message.data = msg
-                        message.meta = True
-                    else:
-                        message.meta = True
-                        message.data = None
-                else:
-                    thumb_image = content["thumb_image"]  # Not applicable for new schema
-                    if thumb_image is not None:
-                        if b"\x00\x00\x01\x74\x00\x1A" in thumb_image:
-                            # Add user
-                            added = phone_number_re.search(
-                                thumb_image.decode("unicode_escape"))[0]
-                            if added in data:
-                                name_right = data[added].name
-                            else:
-                                name_right = added.split('@')[0]
-                            if content["remote_resource"] is not None:
-                                if content["remote_resource"] in data and data[content["remote_resource"]].name is not None:
-                                    name_left = data[content["remote_resource"]].name
-                                else:
-                                    name_left = content["remote_resource"].split('@')[0]
-                                msg = f"{name_left} added {name_right or 'You'}"
-                            else:
-                                msg = f"Added {name_right or 'You'}"
-                        elif b"\xac\xed\x00\x05\x74\x00" in thumb_image:
-                            # Changed number
-                            original = content["remote_resource"].split('@')[0]
-                            changed = thumb_image[7:].decode().split('@')[0]
-                            msg = f"{original} changed to {changed}"
-                        message.data = msg
-                        message.meta = True
-                    else:
-                        if content["data"] is None:
-                            message.meta = True
-                            message.data = None
-            
-            elif table_message:
-                message.meta = True
-                name = fallback = None
+            message.meta = True
+            name = fallback = None
+            if table_message:
                 if content["sender_jid_row_id"] > 0:
                     _jid = content["group_sender_jid"]
                     if _jid in data:
@@ -392,11 +363,19 @@ def messages(db, data, media_folder):
                         fallback = _jid.split('@')[0]
                 else:
                     name = "You"
-                message.data = determine_metadata(content, name or fallback)
-                if isinstance(message.data, str) and "<br>" in message.data:
-                    message.safe = True
             else:
-                # Private chat
+                _jid = content["remote_resource"]
+                if _jid is not None:
+                    if _jid in data:
+                        name = data[_jid].name
+                    if "@" in _jid:
+                        fallback = _jid.split('@')[0]
+                else:
+                    name = "You"
+            message.data = determine_metadata(content, name or fallback)
+            if isinstance(message.data, str) and "<br>" in message.data:
+                message.safe = True
+            if message.data is None:
                 if content["video_call"] is not None:  # Missed call
                     message.meta = True
                     if content["video_call"] == 1:
