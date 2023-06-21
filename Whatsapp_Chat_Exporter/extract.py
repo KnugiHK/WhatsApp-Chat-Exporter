@@ -338,7 +338,10 @@ def messages(db, data, media_folder):
 
         if content["quoted"] is not None:
             message.reply = content["quoted"]
-            message.quoted_data = content["quoted_data"]
+            if content["quoted_data"] is not None and len(content["quoted_data"]) > 200:
+                message.quoted_data = content["quoted_data"][:201] + "..."
+            else:
+                message.quoted_data = content["quoted_data"]
         else:
             message.reply = None
 
