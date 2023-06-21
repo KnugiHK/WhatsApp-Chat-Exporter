@@ -3,6 +3,7 @@ from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
 from enum import IntEnum
+from Whatsapp_Chat_Exporter.data_model import ChatStore
 try:
     from enum import StrEnum
 except ImportError:
@@ -128,6 +129,26 @@ def import_from_json(json_file, data):
             chat.add_message(id, message)
         data[jid] = chat
         print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
+
+
+def get_file_name(contact: str, chat: ChatStore):
+    if "@" not in contact:
+        raise ValueError("Unexpected contact format: " + contact)
+    phone_number = contact.split('@')[0]
+    if "-" in contact:
+        file_name = ""
+    else:
+        file_name = phone_number
+
+    if chat.name is not None:
+        if file_name != "":
+            file_name += "-"
+        file_name += chat.name.replace("/", "-")
+        name = chat.name
+    else:
+        name = phone_number
+
+    return "".join(x for x in file_name if x.isalnum() or x in "- "), name
 
 
 # Android Specific

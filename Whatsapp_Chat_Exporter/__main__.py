@@ -261,7 +261,7 @@ def main():
         messages = extract_iphone.messages
         media = extract_iphone.media
         vcard = extract_iphone.vcard
-        create_html = extract_iphone.create_html
+        create_html = extract.create_html
         if args.media is None:
             args.media = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
         if args.backup is not None:

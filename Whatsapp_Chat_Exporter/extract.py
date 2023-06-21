@@ -14,7 +14,7 @@ from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, determine_metadata
-from Whatsapp_Chat_Exporter.utility import rendering, sanitize_except, determine_day, Crypt
+from Whatsapp_Chat_Exporter.utility import rendering, sanitize_except, determine_day, Crypt, get_file_name
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
@@ -669,29 +669,14 @@ def create_html(
         w3css_path = os.path.join(static_folder, "w3.css")
         if not os.path.isfile(w3css_path):
             with urllib.request.urlopen(w3css) as resp:
-                with open(w3css_path, "wb") as f:
-                    f.write(resp.read())
+                with open(w3css_path, "wb") as f: f.write(resp.read())
         w3css = os.path.join(offline_static, "w3.css")
 
     for current, contact in enumerate(data):
         chat = data[contact]
         if len(chat.messages) == 0:
             continue
-        phone_number = contact.split('@')[0]
-        if "-" in contact:
-            file_name = ""
-        else:
-            file_name = phone_number
-
-        if chat.name is not None:
-            if file_name != "":
-                file_name += "-"
-            file_name += chat.name.replace("/", "-")
-            name = chat.name
-        else:
-            name = phone_number
-
-        safe_file_name = "".join(x for x in file_name if x.isalnum() or x in "- ")
+        safe_file_name, name = get_file_name(contact, chat)
 
         if maximum_size is not None:
             current_size = 0
