@@ -1,19 +1,21 @@
-try:
-    from .__init__ import __version__
-except ImportError:
-    from Whatsapp_Chat_Exporter.__init__ import __version__
-import glob
-from Whatsapp_Chat_Exporter import extract, extract_exported, extract_iphone
-from Whatsapp_Chat_Exporter import extract_iphone_media
-from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import Crypt, check_update, import_from_json
-from argparse import ArgumentParser, SUPPRESS
+#!/usr/bin/python3
+
 import os
 import sqlite3
 import shutil
 import json
 import string
+import glob
+from Whatsapp_Chat_Exporter import extract_exported, extract_iphone
+from Whatsapp_Chat_Exporter import extract, extract_iphone_media
+from Whatsapp_Chat_Exporter.data_model import ChatStore
+from Whatsapp_Chat_Exporter.utility import Crypt, check_update, import_from_json
+from argparse import ArgumentParser, SUPPRESS
 from sys import exit
+try:
+    from .__init__ import __version__
+except ImportError:
+    from Whatsapp_Chat_Exporter.__init__ import __version__
 
 
 def main():

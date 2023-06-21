@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import os
 from datetime import datetime
 from typing import Union

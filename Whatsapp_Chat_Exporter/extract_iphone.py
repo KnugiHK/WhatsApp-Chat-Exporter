@@ -1,11 +1,7 @@
 #!/usr/bin/python3
 
-from glob import glob
-import sqlite3
-import json
-import jinja2
 import os
-import shutil
+from glob import glob
 from pathlib import Path
 from mimetypes import MimeTypes
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message

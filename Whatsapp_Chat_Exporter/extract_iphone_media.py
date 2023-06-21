@@ -7,7 +7,8 @@ import time
 import getpass
 import threading
 try:
-    from iphone_backup_decrypt import EncryptedBackup, RelativePath, FailedToDecryptError, Domain
+    from iphone_backup_decrypt import EncryptedBackup, RelativePath
+    from iphone_backup_decrypt import FailedToDecryptError, Domain
 except ModuleNotFoundError:
     support_encrypted = False
 else:

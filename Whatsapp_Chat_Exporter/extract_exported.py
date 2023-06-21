@@ -1,6 +1,8 @@
+#!/usr/bin/python3
+
+import os
 from datetime import datetime
 from mimetypes import MimeTypes
-import os
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import Device
 
