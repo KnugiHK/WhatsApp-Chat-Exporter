@@ -1,4 +1,6 @@
+import jinja2
 import json
+import os
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime
@@ -253,6 +255,37 @@ def determine_metadata(content, init_msg):
         return  # Unsupported
     return msg
 
+
+def get_status_location(output_folder, offline_static):
+    w3css = "https://www.w3schools.com/w3css/4/w3.css"
+    if not offline_static:
+        return w3css
+    import urllib.request
+    static_folder = os.path.join(output_folder, offline_static)
+    if not os.path.isdir(static_folder):
+        os.mkdir(static_folder)
+    w3css_path = os.path.join(static_folder, "w3.css")
+    if not os.path.isfile(w3css_path):
+        with urllib.request.urlopen(w3css) as resp:
+            with open(w3css_path, "wb") as f: f.write(resp.read())
+    w3css = os.path.join(offline_static, "w3.css")
+
+
+def setup_template(template, no_avatar):
+    if template is None:
+        template_dir = os.path.dirname(__file__)
+        template_file = "whatsapp.html"
+    else:
+        template_dir = os.path.dirname(template)
+        template_file = os.path.basename(template)
+    template_loader = jinja2.FileSystemLoader(searchpath=template_dir)
+    template_env = jinja2.Environment(loader=template_loader, autoescape=True)
+    template_env.globals.update(
+        determine_day=determine_day,
+        no_avatar=no_avatar
+    )
+    template_env.filters['sanitize_except'] = sanitize_except
+    return template_env.get_template(template_file)
 
 # iOS Specific
 APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))

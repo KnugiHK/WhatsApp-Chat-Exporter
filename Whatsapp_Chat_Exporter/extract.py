@@ -13,8 +13,8 @@ from mimetypes import MimeTypes
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, Device, determine_metadata
-from Whatsapp_Chat_Exporter.utility import rendering, sanitize_except, determine_day, Crypt, get_file_name
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, determine_metadata, get_status_location
+from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
 
 try:
@@ -639,20 +639,7 @@ def create_html(
         maximum_size=None,
         no_avatar=False
     ):
-    if template is None:
-        template_dir = os.path.dirname(__file__)
-        template_file = "whatsapp.html"
-    else:
-        template_dir = os.path.dirname(template)
-        template_file = os.path.basename(template)
-    template_loader = jinja2.FileSystemLoader(searchpath=template_dir)
-    template_env = jinja2.Environment(loader=template_loader, autoescape=True)
-    template_env.globals.update(
-        determine_day=determine_day,
-        no_avatar=no_avatar
-    )
-    template_env.filters['sanitize_except'] = sanitize_except
-    template = template_env.get_template(template_file)
+    template = setup_template(template, no_avatar)
 
     total_row_number = len(data)
     print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
@@ -660,17 +647,7 @@ def create_html(
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
 
-    w3css = "https://www.w3schools.com/w3css/4/w3.css"
-    if offline_static:
-        import urllib.request
-        static_folder = os.path.join(output_folder, offline_static)
-        if not os.path.isdir(static_folder):
-            os.mkdir(static_folder)
-        w3css_path = os.path.join(static_folder, "w3.css")
-        if not os.path.isfile(w3css_path):
-            with urllib.request.urlopen(w3css) as resp:
-                with open(w3css_path, "wb") as f: f.write(resp.read())
-        w3css = os.path.join(offline_static, "w3.css")
+    w3css = get_status_location(output_folder, offline_static)
 
     for current, contact in enumerate(data):
         chat = data[contact]

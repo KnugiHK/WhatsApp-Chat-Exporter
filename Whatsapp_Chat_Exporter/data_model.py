@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 from typing import Union
-from Whatsapp_Chat_Exporter.utility import Device
 
 
 class ChatStore():
@@ -12,6 +11,7 @@ class ChatStore():
         self.messages = {}
         self.type = type
         if media is not None:
+            from Whatsapp_Chat_Exporter.utility import Device
             if self.type == Device.IOS:
                 self.my_avatar = os.path.join(media, "Media/Profile/Photo.jpg")
             elif self.type == Device.ANDROID:
