@@ -123,6 +123,7 @@ def import_from_json(json_file, data):
             message.data = msg.get("data")
             message.sender = msg.get("sender")
             message.safe = msg.get("safe")
+            message.mime = msg.get("mime")
             message.reply = msg.get("reply")
             message.quoted_data = msg.get("quoted_data")
             message.caption = msg.get("caption")

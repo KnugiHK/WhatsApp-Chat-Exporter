@@ -70,6 +70,7 @@ class Message():
         self.data = None
         self.sender = None
         self.safe = False
+        self.mime = None
         # Extra
         self.reply = None
         self.quoted_data = None
@@ -88,6 +89,7 @@ class Message():
             'data'        : self.data,
             'sender'      : self.sender,
             'safe'        : self.safe,
+            'mime'        : self.mime,
             'reply'       : self.reply,
             'quoted_data' : self.quoted_data,
             'caption'     : self.caption,
