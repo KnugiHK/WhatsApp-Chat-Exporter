@@ -16,7 +16,7 @@ except ImportError:
 
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
-ROW_SIZE = 0x300
+ROW_SIZE = 0x3D0
 
 
 def sanitize_except(html):
