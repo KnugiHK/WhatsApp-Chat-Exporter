@@ -89,8 +89,7 @@ Do an iPhone/iPad Backup with iTunes first.
 
 If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
-pip install git+https://github.com/KnugiHK/iphone_backup_decrypt # Or
-pip install whatsapp-chat-exporter["ios_backup"] # install along with this software
+pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 ### Extracting
 Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.

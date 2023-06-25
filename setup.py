@@ -55,10 +55,9 @@ setuptools.setup(
         'crypt12':  ["pycryptodome"],
         'crypt14':  ["pycryptodome"],
         'crypt15':  ["pycryptodome", "javaobj-py3"],
-        'ios_backup': ['iphone-backup-decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt.git'],
-        'all': ["pycryptodome", "javaobj-py3", 'iphone-backup-decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt.git'],
-        'everything': ["pycryptodome", "javaobj-py3", 'iphone-backup-decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt.git'],
-        'backup': ["pycryptodome", "javaobj-py3", 'iphone-backup-decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt.git']
+        'all': ["pycryptodome", "javaobj-py3"],
+        'everything': ["pycryptodome", "javaobj-py3"],
+        'backup': ["pycryptodome", "javaobj-py3"]
     },
     entry_points={
         "console_scripts": [
