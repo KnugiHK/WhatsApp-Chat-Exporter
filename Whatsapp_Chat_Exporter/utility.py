@@ -134,7 +134,7 @@ def import_from_json(json_file, data):
 
 
 def get_file_name(contact: str, chat: ChatStore):
-    if "@" not in contact and contact not in ("000000000000000", "000000000000001"):
+    if "@" not in contact and contact not in ("000000000000000", "000000000000001", "ExportedChat"):
         raise ValueError("Unexpected contact format: " + contact)
     phone_number = contact.split('@')[0]
     if "-" in contact:
