@@ -593,10 +593,13 @@ def calls(db, data):
                         video_call,
                         duration,
                         call_result,
-                        bytes_transferred
+                        bytes_transferred,
+                        chat.subject as chat_subject
                 FROM call_log
                     INNER JOIN jid
-                        ON call_log.jid_row_id = jid._id"""
+                        ON call_log.jid_row_id = jid._id
+                    LEFT JOIN chat
+                        ON call_log.jid_row_id = chat.jid_row_id"""
     )
     chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
     content = c.fetchone()
@@ -608,16 +611,17 @@ def calls(db, data):
             key_id=content["call_id"],
         )
         _jid = content["raw_string"]
-        if _jid in data:
-            name = data[_jid].name
-            fallback = _jid.split('@')[0] if "@" in _jid else None
-            call.sender = name or fallback
-
+        name = data[_jid].name if _jid in data else content["chat_subject"] or None
+        if _jid is not None and "@" in _jid:
+            fallback = _jid.split('@')[0]
+        else:
+            fallback = None
+        call.sender = name or fallback
         call.meta = True
         call.data = (
             f"A {'video' if content['video_call'] else 'voice'} "
             f"call {'to' if call.from_me else 'from'} "
-            f"{name or fallback} was "
+            f"{call.sender} was "
         )
         if content['call_result'] == 2:
             call.data += "not answered." if call.from_me else "missed."
