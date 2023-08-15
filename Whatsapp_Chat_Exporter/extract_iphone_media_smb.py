@@ -84,7 +84,7 @@ def extract_media(base_dir):
             exit()
         else:
             shutil.copyfile(contact_db, "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552")
-        _wts_id = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+        _wts_id = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared"
         with sqlite3.connect(os.path.join(base_dir, "Manifest.db")) as manifest:
             manifest.row_factory = sqlite3.Row
             c = manifest.cursor()
