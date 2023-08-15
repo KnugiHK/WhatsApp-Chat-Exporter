@@ -290,3 +290,15 @@ def setup_template(template, no_avatar):
 
 # iOS Specific
 APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
+
+
+class WhatsAppIdentifier(StrEnum):
+    MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
+    CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
+    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+
+
+class WhatsAppBusinessIdentifier(StrEnum):
+    MESSAGE = "724bd3b98b18518b455a87c1f3ac3a0d189c4466"
+    CONTACT = "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552"
+    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared"

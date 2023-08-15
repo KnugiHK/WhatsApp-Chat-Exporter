@@ -6,6 +6,7 @@ import os
 import time
 import getpass
 import threading
+from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
     from iphone_backup_decrypt import FailedToDecryptError, Domain
@@ -15,7 +16,7 @@ else:
     support_encrypted = True
 
 
-def extract_encrypted(base_dir, password):
+def extract_encrypted(base_dir, password, identifiers):
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
     print("Decrypting WhatsApp database...")
     try:
@@ -61,7 +62,7 @@ def is_encrypted(base_dir):
             return False
 
 
-def extract_media(base_dir):
+def extract_media(base_dir, identifiers):
     if is_encrypted(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
@@ -70,20 +71,23 @@ def extract_media(base_dir):
             return False
         print("Encryption detected on the backup!")
         password = getpass.getpass("Enter the password for the backup:")
-        extract_encrypted(base_dir, password)
+        extract_encrypted(base_dir, password, identifiers)
     else:
-        wts_db = os.path.join(base_dir, "7c/7c7fba66680ef796b916b067077cc246adacf01d")
-        contact_db = os.path.join(base_dir, "b8/b8548dc30aa1030df0ce18ef08b882cf7ab5212f")
+        wts_db = os.path.join(base_dir, identifiers.MESSAGE[:2], identifiers.MESSAGE)
+        contact_db = os.path.join(base_dir, identifiers.CONTACT[:2], identifiers.CONTACT)
         if not os.path.isfile(wts_db):
-            print("WhatsApp database not found.")
+            if identifiers is WhatsAppIdentifier:
+                print("WhatsApp database not found.")
+            else:
+                print("WhatsApp Business database not found.")
             exit()
         else:
-            shutil.copyfile(wts_db, "7c7fba66680ef796b916b067077cc246adacf01d")
+            shutil.copyfile(wts_db, identifiers.MESSAGE)
         if not os.path.isfile(contact_db):
             print("Contact database not found.")
             exit()
         else:
-            shutil.copyfile(contact_db, "b8548dc30aa1030df0ce18ef08b882cf7ab5212f")
+            shutil.copyfile(contact_db, identifiers.CONTACT)
         _wts_id = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
         with sqlite3.connect(os.path.join(base_dir, "Manifest.db")) as manifest:
             manifest.row_factory = sqlite3.Row

@@ -7,7 +7,7 @@ import json
 import string
 import glob
 from Whatsapp_Chat_Exporter import extract_exported, extract_iphone
-from Whatsapp_Chat_Exporter import extract, extract_iphone_media, extract_iphone_media_smb
+from Whatsapp_Chat_Exporter import extract, extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Crypt, check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
@@ -274,24 +274,19 @@ def main():
         media = extract_iphone.media
         vcard = extract_iphone.vcard
         create_html = extract.create_html
+        if args.business:
+            from Whatsapp_Chat_Exporter.utility import WhatsAppBusinessIdentifier as identifiers
+        else:
+            from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier as identifiers
         if args.media is None:
-            if args.smb:
-                args.media = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared"
-            else:
-                args.media = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+            args.media = identifiers.DOMAIN
         if args.backup is not None:
             if not os.path.isdir(args.media):
-                if args.smb:
-                    extract_iphone_media_smb.extract_media(args.backup)
-                else:
-                    extract_iphone_media.extract_media(args.backup)
+                extract_iphone_media.extract_media(args.backup, identifiers)
             else:
                 print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:
-            if args.smb:
-                msg_db = "724bd3b98b18518b455a87c1f3ac3a0d189c4466"
-            else:
-                msg_db = "7c7fba66680ef796b916b067077cc246adacf01d"
+            msg_db = identifiers.MESSAGE
         else:
             msg_db = args.db
         if args.wa is None:
