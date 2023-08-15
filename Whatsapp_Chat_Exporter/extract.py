@@ -528,7 +528,7 @@ def media(db, data, media_folder):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data):
+def vcard(db, data, media_folder):
     c = db.cursor()
     try:
         c.execute("""SELECT message_row_id,
