@@ -178,11 +178,11 @@ def main():
         help="Import JSON file and convert to HTML output"
     )
     parser.add_argument(
-        "--smb",
-        dest="smb",
+        "--business",
+        dest="business",
         default=False,
         action='store_true',
-        help="Use Whatsapp Business default files (iphone only)"
+        help="Use Whatsapp Business default files (iOS only)"
     )
     args = parser.parse_args()
 
@@ -205,6 +205,9 @@ def main():
         exit(1)
     elif args.import_json and not os.path.isfile(args.json):
         print("JSON file not found.")
+        exit(1)
+    if args.android and args.business:
+        print("WhatsApp Business is only available on iOS for now.")
         exit(1)
 
     data = {}
