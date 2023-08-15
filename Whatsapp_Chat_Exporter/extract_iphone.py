@@ -244,7 +244,7 @@ def media(db, data, media_folder):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data):
+def vcard(db, data, media_folder):
     c = db.cursor()
     c.execute("""SELECT DISTINCT ZWAVCARDMENTION.ZMEDIAITEM,
                         ZWAMEDIAITEM.ZMESSAGE,
@@ -260,13 +260,13 @@ def vcard(db, data):
     contents = c.fetchall()
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
-    base = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared/Message/vCards"
-    if not os.path.isdir(base):
-        Path(base).mkdir(parents=True, exist_ok=True)
+    path = f'{media_folder}/Message/vCards'
+    if not os.path.isdir(path):
+        Path(path).mkdir(parents=True, exist_ok=True)
     for index, content in enumerate(contents):
         file_name = "".join(x for x in content["ZVCARDNAME"] if x.isalnum())
         file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
-        file_path = os.path.join(base, f"{file_name}.vcf")
+        file_path = os.path.join(path, f"{file_name}.vcf")
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content["ZVCARDSTRING"])

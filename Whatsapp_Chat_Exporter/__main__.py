@@ -306,7 +306,7 @@ def main():
                 db.row_factory = sqlite3.Row
                 messages(db, data, args.media)
                 media(db, data, args.media)
-                vcard(db, data)
+                vcard(db, data, args.media)
                 if args.android:
                     extract.calls(db, data)
             if not args.no_html:
