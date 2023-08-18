@@ -9,7 +9,7 @@ import threading
 from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
-    from iphone_backup_decrypt import FailedToDecryptError, Domain
+    from iphone_backup_decrypt import FailedToDecryptError
 except ModuleNotFoundError:
     support_encrypted = False
 else:
@@ -21,15 +21,15 @@ def extract_encrypted(base_dir, password, identifiers):
     print("Decrypting WhatsApp database...")
     try:
         backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename="7c7fba66680ef796b916b067077cc246adacf01d")
+                        output_filename=identifiers.MESSAGE)
         backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
-                            output_filename="b8548dc30aa1030df0ce18ef08b882cf7ab5212f")
+                            output_filename=identifiers.CONTACT)
     except FailedToDecryptError:
         print("Failed to decrypt backup: incorrect password?")
         exit()
     extract_thread = threading.Thread(
         target=backup.extract_files_by_domain,
-        args=(Domain.WHATSAPP, Domain.WHATSAPP)
+        args=(identifiers.DOMAIN, identifiers.DOMAIN)
     )
     extract_thread.daemon = True
     extract_thread.start()
