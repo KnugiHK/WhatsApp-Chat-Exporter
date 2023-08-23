@@ -20,10 +20,16 @@ def extract_encrypted(base_dir, password, identifiers):
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
     print("Decrypting WhatsApp database...")
     try:
-        backup.extract_file(relative_path=RelativePath.WHATSAPP_MESSAGES,
-                        output_filename=identifiers.MESSAGE)
-        backup.extract_file(relative_path=RelativePath.WHATSAPP_CONTACTS,
-                            output_filename=identifiers.CONTACT)
+        backup.extract_file(
+            relative_path=RelativePath.WHATSAPP_MESSAGES,
+            domain=identifiers.DOMAIN,
+            output_filename=identifiers.MESSAGE
+        )
+        backup.extract_file(
+            relative_path=RelativePath.WHATSAPP_CONTACTS,
+            domain=identifiers.DOMAIN,
+            output_filename=identifiers.CONTACT
+        )
     except FailedToDecryptError:
         print("Failed to decrypt backup: incorrect password?")
         exit()
