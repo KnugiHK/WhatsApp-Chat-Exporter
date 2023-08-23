@@ -18,7 +18,7 @@ else:
 
 def extract_encrypted(base_dir, password, identifiers):
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
-    print("Decrypting WhatsApp database...")
+    print("Decrypting WhatsApp database...", end="")
     try:
         backup.extract_file(
             relative_path=RelativePath.WHATSAPP_MESSAGES,
@@ -33,6 +33,8 @@ def extract_encrypted(base_dir, password, identifiers):
     except FailedToDecryptError:
         print("Failed to decrypt backup: incorrect password?")
         exit()
+    else:
+        print("Done")
     extract_thread = threading.Thread(
         target=backup.extract_files_by_domain,
         args=(identifiers.DOMAIN, identifiers.DOMAIN)
