@@ -177,6 +177,13 @@ def main():
         action='store_true',
         help="Import JSON file and convert to HTML output"
     )
+    parser.add_argument(
+        "--business",
+        dest="business",
+        default=False,
+        action='store_true',
+        help="Use Whatsapp Business default files (iOS only)"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -198,6 +205,9 @@ def main():
         exit(1)
     elif args.import_json and not os.path.isfile(args.json):
         print("JSON file not found.")
+        exit(1)
+    if args.android and args.business:
+        print("WhatsApp Business is only available on iOS for now.")
         exit(1)
 
     data = {}
@@ -264,15 +274,19 @@ def main():
         media = extract_iphone.media
         vcard = extract_iphone.vcard
         create_html = extract.create_html
+        if args.business:
+            from Whatsapp_Chat_Exporter.utility import WhatsAppBusinessIdentifier as identifiers
+        else:
+            from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier as identifiers
         if args.media is None:
-            args.media = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+            args.media = identifiers.DOMAIN
         if args.backup is not None:
             if not os.path.isdir(args.media):
-                extract_iphone_media.extract_media(args.backup)
+                extract_iphone_media.extract_media(args.backup, identifiers)
             else:
                 print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:
-            msg_db = "7c7fba66680ef796b916b067077cc246adacf01d"
+            msg_db = identifiers.MESSAGE
         else:
             msg_db = args.db
         if args.wa is None:
@@ -290,7 +304,7 @@ def main():
                 db.row_factory = sqlite3.Row
                 messages(db, data, args.media)
                 media(db, data, args.media)
-                vcard(db, data)
+                vcard(db, data, args.media)
                 if args.android:
                     extract.calls(db, data)
             if not args.no_html:

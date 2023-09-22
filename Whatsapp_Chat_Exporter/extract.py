@@ -528,7 +528,7 @@ def media(db, data, media_folder):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data):
+def vcard(db, data, media_folder):
     c = db.cursor()
     try:
         c.execute("""SELECT message_row_id,
@@ -558,14 +558,14 @@ def vcard(db, data):
     rows = c.fetchall()
     total_row_number = len(rows)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
-    base = "WhatsApp/vCards"
-    if not os.path.isdir(base):
-        Path(base).mkdir(parents=True, exist_ok=True)
+    path = f"{media_folder}/vCards"
+    if not os.path.isdir(path):
+        Path(path).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
         media_name = row["media_name"] if row["media_name"] is not None else ""
         file_name = "".join(x for x in media_name if x.isalnum())
         file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
-        file_path = os.path.join(base, f"{file_name}.vcf")
+        file_path = os.path.join(path, f"{file_name}.vcf")
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
