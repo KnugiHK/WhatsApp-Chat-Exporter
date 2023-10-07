@@ -16,7 +16,7 @@ else:
     support_encrypted = True
 
 
-def extract_encrypted(base_dir, password, identifiers):
+def extract_encrypted(base_dir, password, identifiers, preserve_timestamp):
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
     print("Decrypting WhatsApp database...", end="")
     try:
@@ -70,7 +70,9 @@ def is_encrypted(base_dir):
             return False
 
 
-def extract_media(base_dir, identifiers):
+def extract_media(base_dir, identifiers, preserve_timestamp):
+    if preserve_timestamp:
+        from Whatsapp_Chat_Exporter.bplist import BPListReader
     if is_encrypted(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
@@ -110,6 +112,7 @@ def extract_media(base_dir, identifiers):
             c.execute(f"""SELECT fileID,
                                 relativePath,
                                 flags,
+                                file AS metadata,
                                 ROW_NUMBER() OVER(ORDER BY relativePath) AS _index
                         FROM Files
                         WHERE domain = '{_wts_id}'
@@ -132,6 +135,11 @@ def extract_media(base_dir, identifiers):
                         pass
                 elif flags == 1:
                     shutil.copyfile(os.path.join(base_dir, folder, hashes), destination)
+                    if preserve_timestamp:
+                        metadata = BPListReader(row["metadata"]).parse()
+                        creation = metadata["$objects"][1]["Birth"]
+                        modification = metadata["$objects"][1]["LastModified"]
+                        os.utime(destination, (modification, modification))
                 if row["_index"] % 100 == 0:
                     print(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})", end="\r")
                 row = c.fetchone()
