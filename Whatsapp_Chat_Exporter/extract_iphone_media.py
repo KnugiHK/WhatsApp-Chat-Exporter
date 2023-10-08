@@ -81,7 +81,7 @@ def extract_media(base_dir, identifiers, preserve_timestamp):
             return False
         print("Encryption detected on the backup!")
         password = getpass.getpass("Enter the password for the backup:")
-        extract_encrypted(base_dir, password, identifiers)
+        extract_encrypted(base_dir, password, identifiers, preserve_timestamp)
     else:
         wts_db = os.path.join(base_dir, identifiers.MESSAGE[:2], identifiers.MESSAGE)
         contact_db = os.path.join(base_dir, identifiers.CONTACT[:2], identifiers.CONTACT)
