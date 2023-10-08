@@ -16,7 +16,7 @@ else:
     support_encrypted = True
 
 
-def extract_encrypted(base_dir, password, identifiers, preserve_timestamp):
+def extract_encrypted(base_dir, password, identifiers, bplist_reader=None):
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
     print("Decrypting WhatsApp database...", end="")
     try:
@@ -37,7 +37,7 @@ def extract_encrypted(base_dir, password, identifiers, preserve_timestamp):
         print("Done")
     extract_thread = threading.Thread(
         target=backup.extract_files_by_domain,
-        args=(identifiers.DOMAIN, identifiers.DOMAIN)
+        args=(identifiers.DOMAIN, identifiers.DOMAIN, bplist_reader)
     )
     extract_thread.daemon = True
     extract_thread.start()
@@ -70,9 +70,10 @@ def is_encrypted(base_dir):
             return False
 
 
-def extract_media(base_dir, identifiers, preserve_timestamp):
+def extract_media(base_dir, identifiers, preserve_timestamp=False):
     if preserve_timestamp:
-        from Whatsapp_Chat_Exporter.bplist import BPListReader
+        from Whatsapp_Chat_Exporter.bplist import BPListReader 
+        preserve_timestamp = BPListReader
     if is_encrypted(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
