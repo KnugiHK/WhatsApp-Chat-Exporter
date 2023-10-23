@@ -316,7 +316,7 @@ def messages(db, data, media_folder):
             i += 1
             content = c.fetchone()
             continue
-        if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
+        if (content["chat_subject"] is not None or "-" in content["key_remote_jid"]) and content["key_from_me"] == 0:
             name = fallback = None
             if table_message:
                 if content["sender_jid_row_id"] > 0:
