@@ -458,6 +458,7 @@ def media(db, data, media_folder):
                         ON message_media.message_row_id = messages._id
 					LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
+                WHERE jid.type <> 7
                 ORDER BY messages.key_remote_jid ASC"""
         )
     except sqlite3.OperationalError:
@@ -478,6 +479,7 @@ def media(db, data, media_folder):
                     ON jid._id = chat.jid_row_id
                 LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
+                WHERE jid.type <> 7
                 ORDER BY jid.raw_string ASC"""
         )
     content = c.fetchone()
