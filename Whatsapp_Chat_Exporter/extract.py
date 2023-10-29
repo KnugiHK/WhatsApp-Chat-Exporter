@@ -199,6 +199,11 @@ def messages(db, data, media_folder):
                             jid_old.raw_string as old_jid,
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
+                            group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
+                            group_concat(message.received_timestamp) as received_timestamp,
+                            group_concat(receipt_user.read_timestamp) as read_timestamp,
+                            group_concat(receipt_user.played_timestamp) as played_timestamp,
+                            group_concat(messages.read_device_timestamp) as read_device_timestamp
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
@@ -218,7 +223,10 @@ def messages(db, data, media_folder):
                             ON jid_old._id = message_system_number_change.old_jid_row_id
                         LEFT JOIN jid jid_new
                             ON jid_new._id = message_system_number_change.new_jid_row_id
-                    WHERE messages.key_remote_jid <> '-1';"""
+                        LEFT JOIN receipt_user
+                            ON receipt_user.message_row_id = messages._id
+                    WHERE messages.key_remote_jid <> '-1'
+                    GROUP BY message._id;"""
         )
     except sqlite3.OperationalError:
         try:
@@ -246,6 +254,10 @@ def messages(db, data, media_folder):
                             jid_old.raw_string as old_jid,
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
+                            group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
+                            group_concat(message.received_timestamp) as received_timestamp,
+                            group_concat(receipt_user.read_timestamp) as read_timestamp,
+                            group_concat(receipt_user.played_timestamp) as played_timestamp
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -275,7 +287,10 @@ def messages(db, data, media_folder):
                             ON jid_old._id = message_system_number_change.old_jid_row_id
                         LEFT JOIN jid jid_new
                             ON jid_new._id = message_system_number_change.new_jid_row_id
-                        WHERE key_remote_jid <> '-1';"""
+                        LEFT JOIN receipt_user
+                            ON receipt_user.message_row_id = message._id
+                    WHERE key_remote_jid <> '-1'
+                    GROUP BY message._id;"""
             )
         except Exception as e:
             raise e
