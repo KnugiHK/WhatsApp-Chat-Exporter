@@ -175,7 +175,6 @@ def messages(db, data, media_folder):
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
 
-    phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
     try:
         c.execute("""SELECT messages.key_remote_jid,
                             messages._id,
