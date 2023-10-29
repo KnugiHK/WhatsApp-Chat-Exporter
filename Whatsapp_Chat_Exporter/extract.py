@@ -192,7 +192,7 @@ def messages(db, data, media_folder):
                             messages.key_id,
                             messages_quotes.data as quoted_data,
                             messages.media_caption,
-							missed_call_logs.video_call,
+                            missed_call_logs.video_call,
                             chat.subject as chat_subject,
                             message_system.action_type,
                             message_system_group.is_me_joined,
@@ -406,8 +406,7 @@ def messages(db, data, media_folder):
                     message.data = None
         else:
             # Real message
-            if content["media_wa_type"] == 20: # Sticker is a message
-                message.sticker = True
+            message.sticker = content["media_wa_type"] == 20  # Sticker is a message
             if content["key_from_me"] == 1:
                 if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
                     msg = "Message deleted"
@@ -488,13 +487,13 @@ def media(db, data, media_folder):
                     file_hash,
                     thumbnail
                 FROM message_media
-                INNER JOIN message
-                    ON message_media.message_row_id = message._id
-                LEFT JOIN chat
-                    ON chat._id = message.chat_row_id
-                INNER JOIN jid
-                    ON jid._id = chat.jid_row_id
-                LEFT JOIN media_hash_thumbnail
+                    INNER JOIN message
+                        ON message_media.message_row_id = message._id
+                    LEFT JOIN chat
+                        ON chat._id = message.chat_row_id
+                    INNER JOIN jid
+                        ON jid._id = chat.jid_row_id
+                    LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 WHERE jid.type <> 7
                 ORDER BY jid.raw_string ASC"""
