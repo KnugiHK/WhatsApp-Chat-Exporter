@@ -15,7 +15,7 @@ from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, determine_metadata, get_status_location
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
-from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
+from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, JidType
 
 try:
     import zlib
@@ -197,7 +197,8 @@ def messages(db, data, media_folder):
                             message_system.action_type,
                             message_system_group.is_me_joined,
                             jid_old.raw_string as old_jid,
-                            jid_new.raw_string as new_jid
+                            jid_new.raw_string as new_jid,
+                            jid_global.type as jid_type,
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
@@ -243,7 +244,8 @@ def messages(db, data, media_folder):
                             message_system.action_type,
                             message_system_group.is_me_joined,
                             jid_old.raw_string as old_jid,
-                            jid_new.raw_string as new_jid
+                            jid_new.raw_string as new_jid,
+                            jid_global.type as jid_type,
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -315,7 +317,7 @@ def messages(db, data, media_folder):
             i += 1
             content = c.fetchone()
             continue
-        if (content["chat_subject"] is not None or "-" in content["key_remote_jid"]) and content["key_from_me"] == 0:
+        if content["jid_type"] == JidType.GROUP and content["key_from_me"] == 0:
             name = fallback = None
             if table_message:
                 if content["sender_jid_row_id"] > 0:
