@@ -7,13 +7,15 @@ from datetime import datetime
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 try:
-    from enum import StrEnum
+    from enum import StrEnum, IntEnum
 except ImportError:
     # < Python 3.11
     from enum import Enum
     class StrEnum(str, Enum):
         pass
 
+    class IntEnum(int, Enum):
+        pass
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
@@ -290,3 +292,21 @@ def setup_template(template, no_avatar):
 
 # iOS Specific
 APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
+
+
+class WhatsAppIdentifier(StrEnum):
+    MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
+    CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
+    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+
+
+class WhatsAppBusinessIdentifier(StrEnum):
+    MESSAGE = "724bd3b98b18518b455a87c1f3ac3a0d189c4466"
+    CONTACT = "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552"
+    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared"
+
+class JidType(IntEnum):
+    PM = 0
+    GROUP = 1
+    SYSTEM_BROADCAST = 5
+    STATUS = 11

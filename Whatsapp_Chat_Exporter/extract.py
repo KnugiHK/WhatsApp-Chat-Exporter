@@ -15,7 +15,7 @@ from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, determine_metadata, get_status_location
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
-from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS
+from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, JidType
 
 try:
     import zlib
@@ -175,7 +175,6 @@ def messages(db, data, media_folder):
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
 
-    phone_number_re = re.compile(r"[0-9]+@s.whatsapp.net")
     try:
         c.execute("""SELECT messages.key_remote_jid,
                             messages._id,
@@ -193,12 +192,18 @@ def messages(db, data, media_folder):
                             messages.key_id,
                             messages_quotes.data as quoted_data,
                             messages.media_caption,
-							missed_call_logs.video_call,
+                            missed_call_logs.video_call,
                             chat.subject as chat_subject,
                             message_system.action_type,
                             message_system_group.is_me_joined,
                             jid_old.raw_string as old_jid,
-                            jid_new.raw_string as new_jid
+                            jid_new.raw_string as new_jid,
+                            jid_global.type as jid_type,
+                            group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
+                            group_concat(message.received_timestamp) as received_timestamp,
+                            group_concat(receipt_user.read_timestamp) as read_timestamp,
+                            group_concat(receipt_user.played_timestamp) as played_timestamp,
+                            group_concat(messages.read_device_timestamp) as read_device_timestamp
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
@@ -218,7 +223,10 @@ def messages(db, data, media_folder):
                             ON jid_old._id = message_system_number_change.old_jid_row_id
                         LEFT JOIN jid jid_new
                             ON jid_new._id = message_system_number_change.new_jid_row_id
-                    WHERE messages.key_remote_jid <> '-1';"""
+                        LEFT JOIN receipt_user
+                            ON receipt_user.message_row_id = messages._id
+                    WHERE messages.key_remote_jid <> '-1'
+                    GROUP BY message._id;"""
         )
     except sqlite3.OperationalError:
         try:
@@ -244,7 +252,12 @@ def messages(db, data, media_folder):
                             message_system.action_type,
                             message_system_group.is_me_joined,
                             jid_old.raw_string as old_jid,
-                            jid_new.raw_string as new_jid
+                            jid_new.raw_string as new_jid,
+                            jid_global.type as jid_type,
+                            group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
+                            group_concat(message.received_timestamp) as received_timestamp,
+                            group_concat(receipt_user.read_timestamp) as read_timestamp,
+                            group_concat(receipt_user.played_timestamp) as played_timestamp
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -274,7 +287,10 @@ def messages(db, data, media_folder):
                             ON jid_old._id = message_system_number_change.old_jid_row_id
                         LEFT JOIN jid jid_new
                             ON jid_new._id = message_system_number_change.new_jid_row_id
-                        WHERE key_remote_jid <> '-1';"""
+                        LEFT JOIN receipt_user
+                            ON receipt_user.message_row_id = message._id
+                    WHERE key_remote_jid <> '-1'
+                    GROUP BY message._id;"""
             )
         except Exception as e:
             raise e
@@ -316,7 +332,7 @@ def messages(db, data, media_folder):
             i += 1
             content = c.fetchone()
             continue
-        if "-" in content["key_remote_jid"] and content["key_from_me"] == 0:
+        if content["jid_type"] == JidType.GROUP and content["key_from_me"] == 0:
             name = fallback = None
             if table_message:
                 if content["sender_jid_row_id"] > 0:
@@ -390,8 +406,7 @@ def messages(db, data, media_folder):
                     message.data = None
         else:
             # Real message
-            if content["media_wa_type"] == 20: # Sticker is a message
-                message.sticker = True
+            message.sticker = content["media_wa_type"] == 20  # Sticker is a message
             if content["key_from_me"] == 1:
                 if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
                     msg = "Message deleted"
@@ -459,6 +474,7 @@ def media(db, data, media_folder):
                         ON message_media.message_row_id = messages._id
 					LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
+                WHERE jid.type <> 7
                 ORDER BY messages.key_remote_jid ASC"""
         )
     except sqlite3.OperationalError:
@@ -471,14 +487,15 @@ def media(db, data, media_folder):
                     file_hash,
                     thumbnail
                 FROM message_media
-                INNER JOIN message
-                    ON message_media.message_row_id = message._id
-                LEFT JOIN chat
-                    ON chat._id = message.chat_row_id
-                INNER JOIN jid
-                    ON jid._id = chat.jid_row_id
-                LEFT JOIN media_hash_thumbnail
+                    INNER JOIN message
+                        ON message_media.message_row_id = message._id
+                    LEFT JOIN chat
+                        ON chat._id = message.chat_row_id
+                    INNER JOIN jid
+                        ON jid._id = chat.jid_row_id
+                    LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
+                WHERE jid.type <> 7
                 ORDER BY jid.raw_string ASC"""
         )
     content = c.fetchone()
@@ -528,7 +545,7 @@ def media(db, data, media_folder):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data):
+def vcard(db, data, media_folder):
     c = db.cursor()
     try:
         c.execute("""SELECT message_row_id,
@@ -558,14 +575,14 @@ def vcard(db, data):
     rows = c.fetchall()
     total_row_number = len(rows)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
-    base = "WhatsApp/vCards"
-    if not os.path.isdir(base):
-        Path(base).mkdir(parents=True, exist_ok=True)
+    path = f"{media_folder}/vCards"
+    if not os.path.isdir(path):
+        Path(path).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
         media_name = row["media_name"] if row["media_name"] is not None else ""
         file_name = "".join(x for x in media_name if x.isalnum())
         file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
-        file_path = os.path.join(base, f"{file_name}.vcf")
+        file_path = os.path.join(path, f"{file_name}.vcf")
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
@@ -593,10 +610,13 @@ def calls(db, data):
                         video_call,
                         duration,
                         call_result,
-                        bytes_transferred
+                        bytes_transferred,
+                        chat.subject as chat_subject
                 FROM call_log
                     INNER JOIN jid
-                        ON call_log.jid_row_id = jid._id"""
+                        ON call_log.jid_row_id = jid._id
+                    LEFT JOIN chat
+                        ON call_log.jid_row_id = chat.jid_row_id"""
     )
     chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
     content = c.fetchone()
@@ -608,16 +628,17 @@ def calls(db, data):
             key_id=content["call_id"],
         )
         _jid = content["raw_string"]
-        if _jid in data:
-            name = data[_jid].name
-            fallback = _jid.split('@')[0] if "@" in _jid else None
-            call.sender = name or fallback
-
+        name = data[_jid].name if _jid in data else content["chat_subject"] or None
+        if _jid is not None and "@" in _jid:
+            fallback = _jid.split('@')[0]
+        else:
+            fallback = None
+        call.sender = name or fallback
         call.meta = True
         call.data = (
             f"A {'video' if content['video_call'] else 'voice'} "
             f"call {'to' if call.from_me else 'from'} "
-            f"{name or fallback} was "
+            f"{call.sender} was "
         )
         if content['call_result'] == 2:
             call.data += "not answered." if call.from_me else "missed."

@@ -139,7 +139,7 @@
 								</div>
 							{% else %}
 								{% if msg.media == false %}
-								{{ msg.data | sanitize_except() }}
+								{{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
 								{% else %}
 									{% if "image/" in msg.mime %}
 									<a href="{{ msg.data }}">
@@ -162,7 +162,7 @@
 									{% endif %}
 									{% if msg.caption is not none %}
 									<br>
-									{{ msg.caption }}
+									{{ msg.caption | urlize(none, true, '_blank') }}
 									{% endif %}
 								{% endif %}
 								{% endif %}
@@ -223,7 +223,7 @@
 								</div>
 							{% else %}
 								{% if msg.media == false %}
-								{{ msg.data | sanitize_except() }}
+								{{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
 								{% else %}
 									{% if "image/" in msg.mime %}
 									<a href="{{ msg.data }}">
@@ -246,7 +246,7 @@
 									{% endif %}
 									{% if msg.caption is not none %}
 									<br>
-									{{ msg.caption }}
+									{{ msg.caption | urlize(none, true, '_blank') }}
 									{% endif %}
 								{% endif %}
 							{% endif %}
