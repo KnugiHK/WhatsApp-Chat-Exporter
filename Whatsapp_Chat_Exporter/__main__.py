@@ -34,8 +34,8 @@ def main():
         help="Define the target as Android")
     parser.add_argument(
         '-i',
-        '--iphone',
         '--ios',
+        '--iphone',
         dest='iphone',
         default=False,
         action='store_true',

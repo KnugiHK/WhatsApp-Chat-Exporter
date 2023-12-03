@@ -114,13 +114,18 @@ After extracting, you will get these:
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-o OUTPUT] [-j [JSON]] [-d DB] [-k KEY] [-t TEMPLATE] [-s] [-c] [--offline OFFLINE] [--size [SIZE]]
-                   [--no-html] [--check-update] [--assume-first-as-me]
+usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-o OUTPUT] [-j [JSON]] [-d DB]
+                   [-k KEY] [-t TEMPLATE] [-s] [-c] [--offline OFFLINE] [--size [SIZE]] [--no-html] [--check-update]
+                   [--assume-first-as-me] [--no-avatar] [--import] [--business] [--preserve-timestamp] [--wab WAB]
+                   [--time-offset {-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}]
+
+A customizable Android and iPhone WhatsApp database parser that will give you the history of your WhatsApp
+conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
 
 options:
   -h, --help            show this help message and exit
   -a, --android         Define the target as Android
-  -i, --iphone, --ios   Define the target as iPhone/iPad
+  -i, --ios, --iphone   Define the target as iPhone/iPad
   -e EXPORTED, --exported EXPORTED
                         Define the target as exported chat file and specify the path to the file
   -w WA, --wa WA        Path to contact database (default: wa.db/ContactsV2.sqlite)
@@ -144,6 +149,14 @@ options:
   --no-html             Do not output html files
   --check-update        Check for updates (require Internet access)
   --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
+  --no-avatar           Do not render avatar in HTML output
+  --import              Import JSON file and convert to HTML output
+  --business            Use Whatsapp Business default files (iOS only)
+  --preserve-timestamp  Preserve the modification timestamp of the extracted files (iOS only)
+  --wab WAB, --wa-backup WAB
+                        Path to contact database in crypt15 format
+  --time-offset {-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}
+                        Offset in hours (-12 to 14) for time displayed in the output
 
 WhatsApp Chat Exporter: 0.9.7 Licensed with MIT
 ```
