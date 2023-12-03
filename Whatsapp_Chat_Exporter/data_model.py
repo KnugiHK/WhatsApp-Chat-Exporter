@@ -59,11 +59,11 @@ class Message():
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
         if isinstance(time, int) or isinstance(time, float):
-            self.time = datetime.fromtimestamp(time/1000).strftime("%H:%M")
+            self.time = datetime.fromtimestamp(timestamp).strftime("%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
-            raise TypeError("Time must be a string or integer")
+            raise TypeError("Time must be a string or number")
         self.media = False
         self.key_id = key_id
         self.meta = False
