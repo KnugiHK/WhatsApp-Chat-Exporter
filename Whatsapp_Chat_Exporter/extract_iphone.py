@@ -94,7 +94,7 @@ def messages(db, data, media_folder):
         is_group_message = content["ZGROUPINFO"] is not None
         if ZCONTACTJID not in data:
             data[ZCONTACTJID] = ChatStore(Device.IOS)
-            path = f'{media_folder}/Media/Profile/{_id.split("@")[0]}'
+            path = f'{media_folder}/Media/Profile/{ZCONTACTJID.split("@")[0]}'
             avatars = glob(f"{path}*")
             if 0 < len(avatars) <= 1:
                 data[ZCONTACTJID].their_avatar = avatars[0]
