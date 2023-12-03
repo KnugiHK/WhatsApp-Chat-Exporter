@@ -18,9 +18,9 @@ def contacts(db, data):
     content = c.fetchone()
     while content is not None:
         if not content["ZWHATSAPPID"].endswith("@s.whatsapp.net"):
-            _id = content["ZWHATSAPPID"] + "@s.whatsapp.net"
-        data[_id] = ChatStore(Device.IOS)
-        data[_id].status = content["ZABOUTTEXT"]
+            ZWHATSAPPID = content["ZWHATSAPPID"] + "@s.whatsapp.net"
+        data[ZWHATSAPPID] = ChatStore(Device.IOS)
+        data[ZWHATSAPPID].status = content["ZABOUTTEXT"]
         content = c.fetchone()
 
 
@@ -253,15 +253,16 @@ def vcard(db, data, media_folder):
     c = db.cursor()
     c.execute("""SELECT DISTINCT ZWAVCARDMENTION.ZMEDIAITEM,
                         ZWAMEDIAITEM.ZMESSAGE,
-                        COALESCE(ZWAMESSAGE.ZFROMJID,
-                        ZWAMESSAGE.ZTOJID) as _id,
+                        ZCONTACTJID,
                         ZVCARDNAME,
                         ZVCARDSTRING
                  FROM ZWAVCARDMENTION
                     INNER JOIN ZWAMEDIAITEM
                         ON ZWAVCARDMENTION.ZMEDIAITEM = ZWAMEDIAITEM.Z_PK
                     INNER JOIN ZWAMESSAGE
-                        ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK""")
+                        ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
+                    INNER JOIN ZWACHATSESSION
+                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK;""")
     contents = c.fetchall()
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
@@ -275,7 +276,7 @@ def vcard(db, data, media_folder):
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content["ZVCARDSTRING"])
-        message = data[content["_id"]].messages[content["ZMESSAGE"]]
+        message = data[content["ZCONTACTJID"]].messages[content["ZMESSAGE"]]
         message.data = content["ZVCARDNAME"] + \
             "The vCard file cannot be displayed here, " \
             f"however it should be located at {file_path}"
