@@ -8,13 +8,13 @@ assignees: ''
 ---
 
 # Must have
-- WhatsApp version: <WhatsApp version> - <Android/iOS>
-- Platform: <Linux/Windows/MacOS>
-- Branch and version: <main/dev> - <exporter version>
+- WhatsApp version: [WhatsApp version] - [Android/iOS]
+- Platform: [Linux/Windows/MacOS]
+- Branch and version: [main/dev] - [exporter version]
 
 If it is an error yield by Python, please also provide the trackback
 ```
-<trackback here>
+[trackback here]
 ```
 
 # Nice to have
