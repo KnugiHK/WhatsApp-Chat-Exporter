@@ -1,11 +1,7 @@
 #!/usr/bin/python3
 
 import sqlite3
-import json
-import jinja2
 import os
-import shutil
-import re
 import io
 import hmac
 from pathlib import Path
@@ -13,7 +9,7 @@ from mimetypes import MimeTypes
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, determine_metadata, get_status_location
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, determine_metadata, get_status_location
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, JidType
 
@@ -53,7 +49,7 @@ def _extract_encrypted_key(keyfile):
     return _generate_hmac_of_hmac(key_stream)
 
 
-def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=False):
+def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=False, db_type=DbType.MESSAGE):
     if not support_backup:
         return 1
     if isinstance(key, io.IOBase):
@@ -83,8 +79,12 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
         if len(database) < 131:
             raise ValueError("The crypt15 file must be at least 131 bytes")
         t1 = t2 = None
-        iv = database[8:24]
-        db_offset = database[0] + 2  # Skip protobuf + protobuf size and backup type
+        if db_type == DbType.MESSAGE:
+            iv = database[8:24]
+            db_offset = database[0] + 2  # Skip protobuf + protobuf size and backup type
+        elif db_type == DbType.CONTACT:
+            iv = database[7:23]
+            db_offset = database[0] + 1  # Skip protobuf + protobuf size
         db_ciphertext = database[db_offset:]
 
     if t1 != t2:

@@ -172,6 +172,11 @@ class Crypt(IntEnum):
     CRYPT12 = 12
 
 
+class DbType(StrEnum):
+    MESSAGE = "message"
+    CONTACT = "contact"
+
+
 def brute_force_offset(max_iv=200, max_db=200):
     for iv in range(0, max_iv):
         for db in range(0, max_db):

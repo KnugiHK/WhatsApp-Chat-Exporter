@@ -9,7 +9,7 @@ import glob
 from Whatsapp_Chat_Exporter import extract_exported, extract_iphone
 from Whatsapp_Chat_Exporter import extract, extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import Crypt, check_update, import_from_json
+from Whatsapp_Chat_Exporter.utility import Crypt, DbType, check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 from sys import exit
 try:
@@ -191,6 +191,13 @@ def main():
         action='store_true',
         help="Preserve the modification timestamp of the extracted files (iOS only)"
     )
+    parser.add_argument(
+        "--wab",
+        "--wa-backup",
+        dest="wab",
+        default=None,
+        help="Path to contact database in crypt15 format"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -229,6 +236,10 @@ def main():
             msg_db = "msgstore.db"
         else:
             msg_db = args.db
+        if args.wa is None:
+            contact_db = "wa.db"
+        else:
+            contact_db = args.wa
         if args.key is not None:
             if args.backup is None:
                 print("You must specify the backup file with -b")
@@ -245,7 +256,19 @@ def main():
             elif all(char in string.hexdigits for char in args.key):
                 key = bytes.fromhex(args.key)
             db = open(args.backup, "rb").read()
-            error = extract.decrypt_backup(db, key, msg_db, crypt, args.showkey)
+            if args.wab:
+                wab = open(args.wab, "rb").read()
+                error_wa = extract.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT)
+                key.seek(0)
+            else:
+                error_wa = 0
+            error_message = extract.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE)               
+            if error_wa != 0:
+                error = error_wa
+            elif error_message != 0:
+                error = error_message
+            else:
+                error = 0
             if error != 0:
                 if error == 1:
                     print("Dependencies of decrypt_backup and/or extract_encrypted_key"
@@ -258,10 +281,6 @@ def main():
                 else:
                     print("Unknown error occurred.", error)
                     exit(5)
-        if args.wa is None:
-            contact_db = "wa.db"
-        else:
-            contact_db = args.wa
         if args.media is None:
             args.media = "WhatsApp"
 
