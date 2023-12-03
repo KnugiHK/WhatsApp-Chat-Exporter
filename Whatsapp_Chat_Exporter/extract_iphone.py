@@ -24,7 +24,7 @@ def contacts(db, data):
         content = c.fetchone()
 
 
-def messages(db, data, media_folder):
+def messages(db, data, media_folder, timezone_offset):
     c = db.cursor()
     # Get contacts
     c.execute("""SELECT count() FROM ZWACHATSESSION""")
@@ -110,6 +110,7 @@ def messages(db, data, media_folder):
             timestamp=ts,
             time=ts, # TODO: Could be bug
             key_id=content["ZSTANZAID"][:17],
+            timezone_offset=timezone_offset
         )
         invalid = False
         if is_group_message and content["ZISFROMME"] == 0:

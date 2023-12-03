@@ -198,6 +198,14 @@ def main():
         default=None,
         help="Path to contact database in crypt15 format"
     )
+    parser.add_argument(
+        "--time-offset",
+        dest="timezone_offset",
+        default=0,
+        type=int,
+        choices=range(-12, 15),
+        help="Offset in hours (-12 to 14) for time displayed in the output"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -328,11 +336,11 @@ def main():
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
-                messages(db, data, args.media)
+                messages(db, data, args.media, args.timezone_offset)
                 media(db, data, args.media)
                 vcard(db, data, args.media)
                 if args.android:
-                    extract.calls(db, data)
+                    extract.calls(db, data, args.timezone_offset)
             if not args.no_html:
                 create_html(
                     data,

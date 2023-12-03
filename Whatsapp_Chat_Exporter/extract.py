@@ -165,7 +165,7 @@ def contacts(db, data):
         row = c.fetchone()
 
 
-def messages(db, data, media_folder):
+def messages(db, data, media_folder, timezone_offset):
     # Get message history
     c = db.cursor()
     try:
@@ -320,6 +320,7 @@ def messages(db, data, media_folder):
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
+            timezone_offset=timezone_offset
         )
         if isinstance(content["data"], bytes):
             message.data = ("The message is binary data and its base64 is "
@@ -595,7 +596,7 @@ def vcard(db, data, media_folder):
         print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def calls(db, data):
+def calls(db, data, timezone_offset):
     c = db.cursor()
     c.execute("""SELECT count() FROM call_log""")
     total_row_number = c.fetchone()[0]
@@ -626,6 +627,7 @@ def calls(db, data):
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["call_id"],
+            timezone_offset=timezone_offset
         )
         _jid = content["raw_string"]
         name = data[_jid].name if _jid in data else content["chat_subject"] or None

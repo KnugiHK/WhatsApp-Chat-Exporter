@@ -1,8 +1,17 @@
 #!/usr/bin/python3
 
 import os
-from datetime import datetime
+from datetime import datetime, tzinfo, timedelta
 from typing import Union
+
+
+class TimeZone(tzinfo):
+    def __init__(self, offset):
+        self.offset = offset
+    def utcoffset(self, dt):
+       return timedelta(hours=self.offset)
+    def dst(self, dt):
+       return timedelta(0)
 
 
 class ChatStore():
@@ -55,11 +64,11 @@ class ChatStore():
 
 
 class Message():
-    def __init__(self, from_me: Union[bool,int], timestamp: int, time: Union[int,float,str], key_id: int):
+    def __init__(self, from_me: Union[bool,int], timestamp: int, time: Union[int,float,str], key_id: int, timezone_offset: int = 0):
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
         if isinstance(time, int) or isinstance(time, float):
-            self.time = datetime.fromtimestamp(timestamp).strftime("%H:%M")
+            self.time = datetime.fromtimestamp(timestamp, TimeZone(timezone_offset)).strftime("%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
