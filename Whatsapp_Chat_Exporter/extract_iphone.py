@@ -69,7 +69,7 @@ def messages(db, data, media_folder):
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
 
-    c.execute("""SELECT COALESCE(ZFROMJID, ZTOJID) as _id,
+    c.execute("""SELECT ZCONTACTJID,
                         ZWAMESSAGE.Z_PK,
                         ZISFROMME,
                         ZMESSAGEDATE,
@@ -77,29 +77,33 @@ def messages(db, data, media_folder):
                         ZMESSAGETYPE,
                         ZWAGROUPMEMBER.ZMEMBERJID,
 						ZMETADATA,
-                        ZSTANZAID
+                        ZSTANZAID,
+                        ZGROUPINFO
                  FROM ZWAMESSAGE
                     LEFT JOIN ZWAGROUPMEMBER
                         ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
 					LEFT JOIN ZWAMEDIAITEM
-						ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE;""")
+						ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE
+                    INNER JOIN ZWACHATSESSION
+                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK;""")
     i = 0
     content = c.fetchone()
     while content is not None:
-        _id = content["_id"]
+        ZCONTACTJID = content["ZCONTACTJID"]
         Z_PK = content["Z_PK"]
-        if _id not in data:
-            data[_id] = ChatStore(Device.IOS)
+        is_group_message = content["ZGROUPINFO"] is not None
+        if ZCONTACTJID not in data:
+            data[ZCONTACTJID] = ChatStore(Device.IOS)
             path = f'{media_folder}/Media/Profile/{_id.split("@")[0]}'
             avatars = glob(f"{path}*")
             if 0 < len(avatars) <= 1:
-                data[_id].their_avatar = avatars[0]
+                data[ZCONTACTJID].their_avatar = avatars[0]
             else:
                 for avatar in avatars:
                     if avatar.endswith(".thumb"):
-                        data[_id].their_avatar_thumb = avatar
+                        data[ZCONTACTJID].their_avatar_thumb = avatar
                     elif avatar.endswith(".jpg"):
-                        data[_id].their_avatar = avatar
+                        data[ZCONTACTJID].their_avatar = avatar
         ts = APPLE_TIME + content["ZMESSAGEDATE"]
         message = Message(
             from_me=content["ZISFROMME"],
@@ -108,7 +112,7 @@ def messages(db, data, media_folder):
             key_id=content["ZSTANZAID"][:17],
         )
         invalid = False
-        if "-" in _id and content["ZISFROMME"] == 0:
+        if is_group_message and content["ZISFROMME"] == 0:
             name = None
             if content["ZMEMBERJID"] is not None:
                 if content["ZMEMBERJID"] in data:
@@ -124,7 +128,7 @@ def messages(db, data, media_folder):
             message.sender = None
         if content["ZMESSAGETYPE"] == 6:
             # Metadata
-            if "-" in _id:
+            if is_group_message:
                 # Group
                 if content["ZTEXT"] is not None:
                     # Chnaged name
@@ -173,7 +177,7 @@ def messages(db, data, media_folder):
                             msg = msg.replace("\n", "<br>")
             message.data = msg
         if not invalid:
-            data[_id].add_message(Z_PK, message)
+            data[ZCONTACTJID].add_message(Z_PK, message)
         i += 1
         if i % 1000 == 0:
             print(f"Processing messages...({i}/{total_row_number})", end="\r")
@@ -189,7 +193,7 @@ def media(db, data, media_folder):
     total_row_number = c.fetchone()[0]
     print(f"\nProcessing media...(0/{total_row_number})", end="\r")
     i = 0
-    c.execute("""SELECT COALESCE(ZWAMESSAGE.ZFROMJID, ZWAMESSAGE.ZTOJID) as _id,
+    c.execute("""SELECT ZCONTACTJID,
                         ZMESSAGE,
                         ZMEDIALOCALPATH,
                         ZMEDIAURL,
@@ -199,15 +203,16 @@ def media(db, data, media_folder):
                  FROM ZWAMEDIAITEM
                     INNER JOIN ZWAMESSAGE
                         ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
+                    INNER JOIN ZWACHATSESSION
+                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                  WHERE ZMEDIALOCALPATH IS NOT NULL
-                 ORDER BY _id ASC""")
+                 ORDER BY ZCONTACTJID ASC""")
     content = c.fetchone()
     mime = MimeTypes()
     while content is not None:
         file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
-        _id = content["_id"]
         ZMESSAGE = content["ZMESSAGE"]
-        message = data[_id].messages[ZMESSAGE]
+        message = data[content["ZCONTACTJID"]].messages[ZMESSAGE]
         message.media = True
         if os.path.isfile(file_path):
             message.data = file_path
