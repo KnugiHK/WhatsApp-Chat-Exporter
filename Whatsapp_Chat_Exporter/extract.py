@@ -226,7 +226,8 @@ def messages(db, data, media_folder, timezone_offset):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = messages._id
                     WHERE messages.key_remote_jid <> '-1'
-                    GROUP BY message._id;"""
+                    GROUP BY message._id
+                    ORDER BY timestamp ASC;"""
         )
     except sqlite3.OperationalError:
         try:

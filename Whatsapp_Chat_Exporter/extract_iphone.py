@@ -85,7 +85,8 @@ def messages(db, data, media_folder, timezone_offset):
 					LEFT JOIN ZWAMEDIAITEM
 						ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE
                     INNER JOIN ZWACHATSESSION
-                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK;""")
+                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                 ORDER BY ZMESSAGEDATE ASC;""")
     i = 0
     content = c.fetchone()
     while content is not None:
