@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import io
 import os
 import sqlite3
 import shutil
@@ -267,7 +268,8 @@ def main():
             if args.wab:
                 wab = open(args.wab, "rb").read()
                 error_wa = extract.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT)
-                key.seek(0)
+                if isinstance(key, io.IOBase):
+                    key.seek(0)
             else:
                 error_wa = 0
             error_message = extract.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE)               
