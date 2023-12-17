@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Nuitka
+*.build/
+*.dist/
+*.onefile-build/
+*.exe
+__main__
