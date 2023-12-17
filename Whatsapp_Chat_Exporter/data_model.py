@@ -68,7 +68,7 @@ class Message():
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
         if isinstance(time, int) or isinstance(time, float):
-            self.time = datetime.fromtimestamp(timestamp, TimeZone(timezone_offset)).strftime("%H:%M")
+            self.time = datetime.fromtimestamp(self.timestamp, TimeZone(timezone_offset)).strftime("%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
