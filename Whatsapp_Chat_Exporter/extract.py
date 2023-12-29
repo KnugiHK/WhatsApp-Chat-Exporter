@@ -200,7 +200,7 @@ def messages(db, data, media_folder, timezone_offset):
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
                             group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
-                            group_concat(message.received_timestamp) as received_timestamp,
+                            group_concat(messages.received_timestamp) as received_timestamp,
                             group_concat(receipt_user.read_timestamp) as read_timestamp,
                             group_concat(receipt_user.played_timestamp) as played_timestamp,
                             group_concat(messages.read_device_timestamp) as read_device_timestamp
@@ -226,8 +226,8 @@ def messages(db, data, media_folder, timezone_offset):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = messages._id
                     WHERE messages.key_remote_jid <> '-1'
-                    GROUP BY message._id
-                    ORDER BY timestamp ASC;"""
+                    GROUP BY messages._id
+                    ORDER BY messages.timestamp ASC;"""
         )
     except sqlite3.OperationalError:
         try:
