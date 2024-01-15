@@ -204,6 +204,14 @@ def messages(db, data, media_folder):
                             group_concat(receipt_user.read_timestamp) as read_timestamp,
                             group_concat(receipt_user.played_timestamp) as played_timestamp,
                             group_concat(messages.read_device_timestamp) as read_device_timestamp
+                            group_concat(
+                                message_add_on_reaction.reaction || ':' || 
+                                CASE 
+                                    WHEN message_add_on.sender_jid_row_id = -1 THEN 'S' || ':' || message_add_on.from_me
+                                    ELSE 'G' || ':' || jid.raw_string 
+                                END || ':' || 
+                                message_add_on_reaction.sender_timestamp
+                            ) as reactions
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
@@ -225,6 +233,12 @@ def messages(db, data, media_folder):
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = messages._id
+                        LEFT JOIN message_add_on
+                            ON message._id = message_add_on.parent_message_row_id
+                        LEFT JOIN message_add_on_reaction 
+                            ON message_add_on._id = message_add_on_reaction.message_add_on_row_id
+                        LEFT JOIN jid 
+	                        ON message_add_on.sender_jid_row_id = jid._id
                     WHERE messages.key_remote_jid <> '-1'
                     GROUP BY message._id;"""
         )
@@ -258,6 +272,14 @@ def messages(db, data, media_folder):
                             group_concat(message.received_timestamp) as received_timestamp,
                             group_concat(receipt_user.read_timestamp) as read_timestamp,
                             group_concat(receipt_user.played_timestamp) as played_timestamp
+                            group_concat(
+                                message_add_on_reaction.reaction || ':' || 
+                                CASE 
+                                    WHEN message_add_on.sender_jid_row_id = -1 THEN 'S' || ':' || message_add_on.from_me
+                                    ELSE 'G' || ':' || jid.raw_string 
+                                END || ':' || 
+                                message_add_on_reaction.sender_timestamp
+                            ) as reactions
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -289,6 +311,12 @@ def messages(db, data, media_folder):
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
+                        LEFT JOIN message_add_on
+                            ON message._id = message_add_on.parent_message_row_id
+                        LEFT JOIN message_add_on_reaction 
+                            ON message_add_on._id = message_add_on_reaction.message_add_on_row_id
+                        LEFT JOIN jid 
+	                        ON message_add_on.sender_jid_row_id = jid._id
                     WHERE key_remote_jid <> '-1'
                     GROUP BY message._id;"""
             )
@@ -360,6 +388,32 @@ def messages(db, data, media_folder):
                 message.quoted_data = content["quoted_data"]
         else:
             message.reply = None
+
+        if content["reactions"] is not None:
+            # Split the concatenated string into elements (Reactions)
+            elements = content['reactions'].split(',')
+            # Process each element
+            processed_elements = []
+            for element in elements:
+                attributes = element.split(':')
+                # Each element has 4 attributes: reaction, self/group flag, reactor, timestamp
+                if len(attributes) == 4:
+                    # Identify sender
+                    # sg_flag: "G" is for non-self group reactor, "S" is for self reactor
+                    # reactor: group reactor information; otherwise, reactor is 0 / 1, a "from_you" tag
+                    reaction, sg_flag, reactor, timestamp = attributes
+                    if sg_flag == 'G':
+                        reactor_tag = reactor
+                    else:
+                        reactor_tag = "You" if reactor == "1" else content["key_remote_jid"]
+                    element_dict = {
+                        "reaction": reaction,
+                        "reactor": reactor_tag,
+                        "timestamp": timestamp
+                    }
+                    processed_elements.append(element_dict)
+            message.reactions = processed_elements
+
 
         if not table_message and content["media_caption"] is not None:
             # Old schema
