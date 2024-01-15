@@ -399,7 +399,7 @@ def messages(db, data, media_folder):
                 # Each element has 4 attributes: reaction, self/group flag, reactor, timestamp
                 if len(attributes) == 4:
                     # Identify sender
-                    # sg_flag: "G" is for non-self group reactor, "S" is for self reactor
+                    # sg_flag: "G" is for non-self group-reactor, "S" is for self-reactor
                     # reactor: group reactor information; otherwise, reactor is 0 / 1, a "from_you" tag
                     reaction, sg_flag, reactor, timestamp = attributes
                     if sg_flag == 'G':
@@ -413,7 +413,6 @@ def messages(db, data, media_folder):
                     }
                     processed_elements.append(element_dict)
             message.reactions = processed_elements
-
 
         if not table_message and content["media_caption"] is not None:
             # Old schema
