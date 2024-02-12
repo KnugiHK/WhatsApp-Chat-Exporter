@@ -12,6 +12,7 @@ from Whatsapp_Chat_Exporter import extract, extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Crypt, DbType, check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
+from datetime import datetime
 from sys import exit
 try:
     from .__init__ import __version__
@@ -207,6 +208,18 @@ def main():
         choices=range(-12, 15),
         help="Offset in hours (-12 to 14) for time displayed in the output"
     )
+    parser.add_argument(
+        "--date",
+        dest="filter_date",
+        default=None,
+        help="The date filter in specific format (inclusive)"
+    )
+    parser.add_argument(
+        "--date-format",
+        dest="filter_date_format",
+        default="%Y-%m-%d %H:%M",
+        help="The date format for the date filter."
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -232,6 +245,22 @@ def main():
     if args.android and args.business:
         print("WhatsApp Business is only available on iOS for now.")
         exit(1)
+    if args.filter_date is not None:
+        if " - " in args.filter_date:
+            start, end = args.filter_date.split(" - ")
+            start = int(datetime.strptime(start, args.filter_date_format).timestamp())
+            end = int(datetime.strptime(end, args.filter_date_format).timestamp())
+            args.filter_date = f"BETWEEN {start}000 AND {end}000"
+        else:
+            _timestamp = int(datetime.strptime(args.filter_date[2:], args.filter_date_format).timestamp())
+            if args.filter_date[:2] == "> ":
+                args.filter_date = f">= {_timestamp}000"
+            elif args.filter_date[:2] == "< ":
+                args.filter_date = f"<= {_timestamp}000"
+            else:
+                print("Unsupported date format. See https://wts.knugi.dev/filter.html")
+                exit(1)
+
 
     data = {}
 
@@ -338,9 +367,9 @@ def main():
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
-                messages(db, data, args.media, args.timezone_offset)
-                media(db, data, args.media)
-                vcard(db, data, args.media)
+                messages(db, data, args.media, args.timezone_offset, args.filter_date)
+                media(db, data, args.media, args.filter_date)
+                vcard(db, data, args.media, args.filter_date)
                 if args.android:
                     extract.calls(db, data, args.timezone_offset)
             if not args.no_html:

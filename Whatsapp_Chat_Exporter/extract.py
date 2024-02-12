@@ -165,18 +165,18 @@ def contacts(db, data):
         row = c.fetchone()
 
 
-def messages(db, data, media_folder, timezone_offset):
+def messages(db, data, media_folder, timezone_offset, range):
     # Get message history
     c = db.cursor()
     try:
-        c.execute("""SELECT count() FROM messages""")
+        c.execute(f"""SELECT count() FROM messages {f'WHERE timestamp {range}' if range is not None else ''}""")
     except sqlite3.OperationalError:
-        c.execute("""SELECT count() FROM message""")
+        c.execute(f"""SELECT count() FROM message {f'WHERE timestamp {range}' if range is not None else ''}""")
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
 
     try:
-        c.execute("""SELECT messages.key_remote_jid,
+        c.execute(f"""SELECT messages.key_remote_jid,
                             messages._id,
                             messages.key_from_me,
                             messages.timestamp,
@@ -226,12 +226,13 @@ def messages(db, data, media_folder, timezone_offset):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = messages._id
                     WHERE messages.key_remote_jid <> '-1'
+                        {f'AND messages.timestamp {range}' if range is not None else ''}
                     GROUP BY messages._id
                     ORDER BY messages.timestamp ASC;"""
         )
     except sqlite3.OperationalError:
         try:
-            c.execute("""SELECT jid_global.raw_string as key_remote_jid,
+            c.execute(f"""SELECT jid_global.raw_string as key_remote_jid,
                             message._id,
                             message.from_me as key_from_me,
                             message.timestamp,
@@ -291,6 +292,7 @@ def messages(db, data, media_folder, timezone_offset):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
                     WHERE key_remote_jid <> '-1'
+                        {f'AND message.timestamp {range}' if range is not None else ''}
                     GROUP BY message._id;"""
             )
         except Exception as e:
@@ -455,15 +457,26 @@ def messages(db, data, media_folder, timezone_offset):
     print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder):
+def media(db, data, media_folder, range):
     # Get media
     c = db.cursor()
-    c.execute("""SELECT count() FROM message_media""")
+    try:
+        c.execute(f"""SELECT count()
+                    FROM message_media
+                        INNER JOIN messages
+                            ON message_media.message_row_id = messages._id
+                    {f'WHERE messages.timestamp {range}' if range is not None else ''}""")
+    except sqlite3.OperationalError:
+        c.execute(f"""SELECT count()
+                    FROM message_media
+                        INNER JOIN message
+                            ON message_media.message_row_id = message._id
+                    {f'WHERE message.timestamp {range}' if range is not None else ''}""")
     total_row_number = c.fetchone()[0]
     print(f"\nProcessing media...(0/{total_row_number})", end="\r")
     i = 0
     try:
-        c.execute("""SELECT messages.key_remote_jid,
+        c.execute(f"""SELECT messages.key_remote_jid,
                         message_row_id,
                         file_path,
                         message_url,
@@ -477,10 +490,11 @@ def media(db, data, media_folder):
 					LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 WHERE jid.type <> 7
+                    {f'AND messages.timestamp {range}' if range is not None else ''}
                 ORDER BY messages.key_remote_jid ASC"""
         )
     except sqlite3.OperationalError:
-        c.execute("""SELECT jid.raw_string as key_remote_jid,
+        c.execute(f"""SELECT jid.raw_string as key_remote_jid,
                     message_row_id,
                     file_path,
                     message_url,
@@ -498,6 +512,7 @@ def media(db, data, media_folder):
                     LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 WHERE jid.type <> 7
+                    {f'AND message.timestamp {range}' if range is not None else ''}
                 ORDER BY jid.raw_string ASC"""
         )
     content = c.fetchone()
@@ -547,20 +562,21 @@ def media(db, data, media_folder):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data, media_folder):
+def vcard(db, data, media_folder, range):
     c = db.cursor()
     try:
-        c.execute("""SELECT message_row_id,
+        c.execute(f"""SELECT message_row_id,
                         messages.key_remote_jid,
                         vcard,
                         messages.media_name
                  FROM messages_vcards
                     INNER JOIN messages
                         ON messages_vcards.message_row_id = messages._id
+                 {f'WHERE messages.timestamp {range}' if range is not None else ''}
                  ORDER BY messages.key_remote_jid ASC;"""
         )
     except sqlite3.OperationalError:
-        c.execute("""SELECT message_row_id,
+        c.execute(f"""SELECT message_row_id,
                         jid.raw_string as key_remote_jid,
                         vcard,
                         message.text_data as media_name
@@ -571,6 +587,7 @@ def vcard(db, data, media_folder):
                         ON chat._id = message.chat_row_id
                     INNER JOIN jid
                         ON jid._id = chat.jid_row_id
+                {f'WHERE message.timestamp {range}' if range is not None else ''}
                  ORDER BY message.chat_row_id ASC;"""
         )
 
