@@ -24,7 +24,7 @@ def contacts(db, data):
         content = c.fetchone()
 
 
-def messages(db, data, media_folder, timezone_offset):
+def messages(db, data, media_folder, timezone_offset, range):
     c = db.cursor()
     # Get contacts
     c.execute("""SELECT count() FROM ZWACHATSESSION""")
@@ -65,11 +65,10 @@ def messages(db, data, media_folder, timezone_offset):
         content = c.fetchone()
 
     # Get message history
-    c.execute("""SELECT count() FROM ZWAMESSAGE""")
+    c.execute(f"""SELECT count() FROM ZWAMESSAGE {f'WHERE ZMESSAGEDATE {range}' if range is not None else ''}""")
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
-
-    c.execute("""SELECT ZCONTACTJID,
+    c.execute(f"""SELECT ZCONTACTJID,
                         ZWAMESSAGE.Z_PK,
                         ZISFROMME,
                         ZMESSAGEDATE,
@@ -86,6 +85,7 @@ def messages(db, data, media_folder, timezone_offset):
 						ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE
                     INNER JOIN ZWACHATSESSION
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                 {f'WHERE ZMESSAGEDATE {range}' if range is not None else ''}
                  ORDER BY ZMESSAGEDATE ASC;""")
     i = 0
     content = c.fetchone()
@@ -188,14 +188,18 @@ def messages(db, data, media_folder, timezone_offset):
         f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder):
+def media(db, data, media_folder, range):
     c = db.cursor()
     # Get media
-    c.execute("""SELECT count() FROM ZWAMEDIAITEM""")
+    c.execute(f"""SELECT count()
+                  FROM ZWAMEDIAITEM
+                    INNER JOIN ZWAMESSAGE
+                        ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
+                  {f'WHERE ZMESSAGEDATE {range}' if range is not None else ''}""")
     total_row_number = c.fetchone()[0]
     print(f"\nProcessing media...(0/{total_row_number})", end="\r")
     i = 0
-    c.execute("""SELECT ZCONTACTJID,
+    c.execute(f"""SELECT ZCONTACTJID,
                         ZMESSAGE,
                         ZMEDIALOCALPATH,
                         ZMEDIAURL,
@@ -208,6 +212,7 @@ def media(db, data, media_folder):
                     INNER JOIN ZWACHATSESSION
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                  WHERE ZMEDIALOCALPATH IS NOT NULL
+                 {f'AND ZWAMESSAGE.ZMESSAGEDATE {range}' if range is not None else ''}
                  ORDER BY ZCONTACTJID ASC""")
     content = c.fetchone()
     mime = MimeTypes()
@@ -251,9 +256,9 @@ def media(db, data, media_folder):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data, media_folder):
+def vcard(db, data, media_folder, range):
     c = db.cursor()
-    c.execute("""SELECT DISTINCT ZWAVCARDMENTION.ZMEDIAITEM,
+    c.execute(f"""SELECT DISTINCT ZWAVCARDMENTION.ZMEDIAITEM,
                         ZWAMEDIAITEM.ZMESSAGE,
                         ZCONTACTJID,
                         ZVCARDNAME,
@@ -264,7 +269,8 @@ def vcard(db, data, media_folder):
                     INNER JOIN ZWAMESSAGE
                         ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
                     INNER JOIN ZWACHATSESSION
-                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK;""")
+                        ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                 {f'WHERE ZWAMESSAGE.ZMESSAGEDATE {range}' if range is not None else ''};""")
     contents = c.fetchall()
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")

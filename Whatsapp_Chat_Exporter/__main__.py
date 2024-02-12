@@ -10,7 +10,7 @@ import glob
 from Whatsapp_Chat_Exporter import extract_exported, extract_iphone
 from Whatsapp_Chat_Exporter import extract, extract_iphone_media
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import Crypt, DbType, check_update, import_from_json
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -250,13 +250,31 @@ def main():
             start, end = args.filter_date.split(" - ")
             start = int(datetime.strptime(start, args.filter_date_format).timestamp())
             end = int(datetime.strptime(end, args.filter_date_format).timestamp())
-            args.filter_date = f"BETWEEN {start}000 AND {end}000"
+            if start < 1009843200 or end < 1009843200:
+                print("WhatsApp was developed in 2009...")
+                exit(1)
+            if start > end:
+                print("The start date cannot be a moment after the end date.")
+                exit(1)
+            if args.android:
+                args.filter_date = f"BETWEEN {start}000 AND {end}000"
+            elif args.iphone:
+                args.filter_date = f"BETWEEN {start - APPLE_TIME} AND {end - APPLE_TIME}"
         else:
             _timestamp = int(datetime.strptime(args.filter_date[2:], args.filter_date_format).timestamp())
+            if _timestamp < 1009843200:
+                print("WhatsApp was developed in 2009...")
+                exit(1)
             if args.filter_date[:2] == "> ":
-                args.filter_date = f">= {_timestamp}000"
+                if args.android:
+                    args.filter_date = f">= {_timestamp}000"
+                elif args.iphone:
+                    args.filter_date = f">= {_timestamp - APPLE_TIME}"
             elif args.filter_date[:2] == "< ":
-                args.filter_date = f"<= {_timestamp}000"
+                if args.android:
+                    args.filter_date = f"<= {_timestamp}000"
+                elif args.iphone:
+                    args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
                 print("Unsupported date format. See https://wts.knugi.dev/filter.html")
                 exit(1)
