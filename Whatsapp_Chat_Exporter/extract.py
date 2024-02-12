@@ -203,7 +203,7 @@ def messages(db, data, media_folder):
                             group_concat(message.received_timestamp) as received_timestamp,
                             group_concat(receipt_user.read_timestamp) as read_timestamp,
                             group_concat(receipt_user.played_timestamp) as played_timestamp,
-                            group_concat(messages.read_device_timestamp) as read_device_timestamp
+                            group_concat(messages.read_device_timestamp) as read_device_timestamp,
                             group_concat(
                                 message_add_on_reaction.reaction || ':' || 
                                 CASE 
@@ -271,7 +271,7 @@ def messages(db, data, media_folder):
                             group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
                             group_concat(message.received_timestamp) as received_timestamp,
                             group_concat(receipt_user.read_timestamp) as read_timestamp,
-                            group_concat(receipt_user.played_timestamp) as played_timestamp
+                            group_concat(receipt_user.played_timestamp) as played_timestamp,
                             group_concat(
                                 message_add_on_reaction.reaction || ':' || 
                                 CASE 
