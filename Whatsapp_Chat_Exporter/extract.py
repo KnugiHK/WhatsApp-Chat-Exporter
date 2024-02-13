@@ -489,6 +489,8 @@ def media(db, data, media_folder, range):
                         ON message_media.message_row_id = messages._id
 					LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
+                    INNER JOIN jid
+                        ON messages.key_remote_jid = jid.raw_string
                 WHERE jid.type <> 7
                     {f'AND messages.timestamp {range}' if range is not None else ''}
                 ORDER BY messages.key_remote_jid ASC"""
