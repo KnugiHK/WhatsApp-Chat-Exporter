@@ -165,14 +165,14 @@ def contacts(db, data):
         row = c.fetchone()
 
 
-def messages(db, data, media_folder, timezone_offset, range, filter_chat):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
     # Get message history
     c = db.cursor()
     try:
         c.execute(f"""SELECT count()
                       FROM messages
                       WHERE 1=1
-                        {f'AND timestamp {range}' if range is not None else ''}
+                        {f'AND timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, "messages.key_remote_jid")}
                         {get_chat_condition(filter_chat[1], False, "messages.key_remote_jid")}""")
 
@@ -184,7 +184,7 @@ def messages(db, data, media_folder, timezone_offset, range, filter_chat):
                         INNER JOIN jid
                             ON jid._id = chat.jid_row_id
                       WHERE 1=1
-                        {f'AND timestamp {range}' if range is not None else ''}
+                        {f'AND timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, "jid.raw_string")}
                         {get_chat_condition(filter_chat[1], False, "jid.raw_string")}""")
     total_row_number = c.fetchone()[0]
@@ -241,7 +241,7 @@ def messages(db, data, media_folder, timezone_offset, range, filter_chat):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = messages._id
                     WHERE messages.key_remote_jid <> '-1'
-                        {f'AND messages.timestamp {range}' if range is not None else ''}
+                        {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, "messages.key_remote_jid")}
                         {get_chat_condition(filter_chat[1], False, "messages.key_remote_jid")}
                     GROUP BY messages._id
@@ -309,7 +309,7 @@ def messages(db, data, media_folder, timezone_offset, range, filter_chat):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
                     WHERE key_remote_jid <> '-1'
-                        {f'AND message.timestamp {range}' if range is not None else ''}
+                        {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, "key_remote_jid")}
                         {get_chat_condition(filter_chat[1], False, "key_remote_jid")}
                     GROUP BY message._id;"""
@@ -476,7 +476,7 @@ def messages(db, data, media_folder, timezone_offset, range, filter_chat):
     print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder, range, filter_chat):
+def media(db, data, media_folder, filter_date, filter_chat):
     # Get media
     c = db.cursor()
     try:
@@ -485,7 +485,7 @@ def media(db, data, media_folder, range, filter_chat):
                         INNER JOIN messages
                             ON message_media.message_row_id = messages._id
                     WHERE 1=1  
-                        {f'AND messages.timestamp {range}' if range is not None else ''}
+                        {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, "messages.key_remote_jid")}
                         {get_chat_condition(filter_chat[1], False, "messages.key_remote_jid")}""")
     except sqlite3.OperationalError:
@@ -498,7 +498,7 @@ def media(db, data, media_folder, range, filter_chat):
                         INNER JOIN jid
                             ON jid._id = chat.jid_row_id
                     WHERE 1=1    
-                        {f'AND message.timestamp {range}' if range is not None else ''}
+                        {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, "jid.raw_string")}
                         {get_chat_condition(filter_chat[1], False, "jid.raw_string")}""")
     total_row_number = c.fetchone()[0]
@@ -521,7 +521,7 @@ def media(db, data, media_folder, range, filter_chat):
                     INNER JOIN jid
                         ON messages.key_remote_jid = jid.raw_string
                 WHERE jid.type <> 7
-                    {f'AND messages.timestamp {range}' if range is not None else ''}
+                    {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, "messages.key_remote_jid")}
                     {get_chat_condition(filter_chat[1], False, "messages.key_remote_jid")}
                 ORDER BY messages.key_remote_jid ASC"""
@@ -545,7 +545,7 @@ def media(db, data, media_folder, range, filter_chat):
                     LEFT JOIN media_hash_thumbnail
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 WHERE jid.type <> 7
-                    {f'AND message.timestamp {range}' if range is not None else ''}
+                    {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, "key_remote_jid")}
                     {get_chat_condition(filter_chat[1], False, "key_remote_jid")}
                 ORDER BY jid.raw_string ASC"""
@@ -597,7 +597,7 @@ def media(db, data, media_folder, range, filter_chat):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data, media_folder, range, filter_chat):
+def vcard(db, data, media_folder, filter_date, filter_chat):
     c = db.cursor()
     try:
         c.execute(f"""SELECT message_row_id,
@@ -608,7 +608,7 @@ def vcard(db, data, media_folder, range, filter_chat):
                     INNER JOIN messages
                         ON messages_vcards.message_row_id = messages._id
                  WHERE 1=1
-                    {f'AND messages.timestamp {range}' if range is not None else ''}
+                    {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, "messages.key_remote_jid")}
                     {get_chat_condition(filter_chat[1], False, "messages.key_remote_jid")}
                  ORDER BY messages.key_remote_jid ASC;"""
@@ -626,7 +626,7 @@ def vcard(db, data, media_folder, range, filter_chat):
                     INNER JOIN jid
                         ON jid._id = chat.jid_row_id
                 WHERE 1=1
-                    {f'AND message.timestamp {range}' if range is not None else ''}
+                    {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, "key_remote_jid")}
                     {get_chat_condition(filter_chat[1], False, "key_remote_jid")}
                  ORDER BY message.chat_row_id ASC;"""
