@@ -288,17 +288,17 @@ def main():
                 elif args.iphone:
                     args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
-                print("Unsupported date format. See https://wts.knugi.dev/filter.html")
+                print("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
                 exit(1)
     if args.filter_chat_include is not None:
         for chat in args.filter_chat_include:
             if not chat.isnumeric():
-                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/filter.html")
+                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
                 exit(1)
     if args.filter_chat_exclude is not None:
         for chat in args.filter_chat_exclude:
             if not chat.isnumeric():
-                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/filter.html")
+                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
                 exit(1)
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
 
