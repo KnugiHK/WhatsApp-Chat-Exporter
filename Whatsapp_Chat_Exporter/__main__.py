@@ -295,6 +295,9 @@ def main():
             else:
                 print("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
                 exit(1)
+    if args.filter_chat_include is not None and args.filter_chat_exclude is not None:
+        print("Chat inclusion and exclusion filters cannot be used together.")
+        exit(1)
     if args.filter_chat_include is not None:
         for chat in args.filter_chat_include:
             if not chat.isnumeric():

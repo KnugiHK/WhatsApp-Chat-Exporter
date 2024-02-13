@@ -156,6 +156,16 @@ def get_file_name(contact: str, chat: ChatStore):
     return "".join(x for x in file_name if x.isalnum() or x in "- "), name
 
 
+def get_chat_condition(filter, include, column):
+    if filter is not None:
+        if include:
+            return f'''AND ({' OR '.join(f"{column} LIKE '%{chat}%'" for chat in filter)})'''
+        else:
+            return f'''AND ({' AND '.join(f"{column} NOT LIKE '%{chat}%'" for chat in filter)})'''
+    else:
+        return ""
+
+
 # Android Specific
 CRYPT14_OFFSETS = (
     {"iv": 67, "db": 191},
