@@ -10,7 +10,8 @@ import glob
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, check_update, import_from_json
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType
+from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
