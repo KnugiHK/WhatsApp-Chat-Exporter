@@ -218,7 +218,19 @@ def main():
         "--date-format",
         dest="filter_date_format",
         default="%Y-%m-%d %H:%M",
-        help="The date format for the date filter."
+        help="The date format for the date filter"
+    )
+    parser.add_argument(
+        "--include",
+        dest="filter_chat_include",
+        nargs='*',
+        help="Include chats that match the supplied phone number"
+    )
+    parser.add_argument(
+        "--exclude",
+        dest="filter_chat_exclude",
+        nargs='*',
+        help="Exclude chats that match the supplied phone number"
     )
     args = parser.parse_args()
 
@@ -278,6 +290,17 @@ def main():
             else:
                 print("Unsupported date format. See https://wts.knugi.dev/filter.html")
                 exit(1)
+    if args.filter_chat_include is not None:
+        for chat in args.filter_chat_include:
+            if not chat.isnumeric():
+                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/filter.html")
+                exit(1)
+    if args.filter_chat_exclude is not None:
+        for chat in args.filter_chat_exclude:
+            if not chat.isnumeric():
+                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/filter.html")
+                exit(1)
+    filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
 
 
     data = {}
@@ -385,11 +408,11 @@ def main():
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
-                messages(db, data, args.media, args.timezone_offset, args.filter_date)
-                media(db, data, args.media, args.filter_date)
-                vcard(db, data, args.media, args.filter_date)
+                messages(db, data, args.media, args.timezone_offset, args.filter_date, filter_chat)
+                media(db, data, args.media, args.filter_date, filter_chat)
+                vcard(db, data, args.media, args.filter_date, filter_chat)
                 if args.android:
-                    extract.calls(db, data, args.timezone_offset)
+                    extract.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
                 create_html(
                     data,

@@ -165,13 +165,28 @@ def contacts(db, data):
         row = c.fetchone()
 
 
-def messages(db, data, media_folder, timezone_offset, range):
+def messages(db, data, media_folder, timezone_offset, range, filter_chat):
     # Get message history
     c = db.cursor()
     try:
-        c.execute(f"""SELECT count() FROM messages {f'WHERE timestamp {range}' if range is not None else ''}""")
+        c.execute(f"""SELECT count()
+                      FROM messages
+                      WHERE 1=1
+                        {f'AND timestamp {range}' if range is not None else ''}
+                        {'AND (' + ' OR '.join(f"messages.key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                        {'AND (' + ' AND '.join(f"messages.key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}""")
+
     except sqlite3.OperationalError:
-        c.execute(f"""SELECT count() FROM message {f'WHERE timestamp {range}' if range is not None else ''}""")
+        c.execute(f"""SELECT count()
+                      FROM message
+                        LEFT JOIN chat
+                            ON chat._id = message.chat_row_id
+                        INNER JOIN jid
+                            ON jid._id = chat.jid_row_id
+                      WHERE 1=1
+                        {f'AND timestamp {range}' if range is not None else ''}
+                        {'AND (' + ' OR '.join(f"jid.raw_string LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                        {'AND (' + ' AND '.join(f"jid.raw_string NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}""")
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
 
@@ -227,6 +242,8 @@ def messages(db, data, media_folder, timezone_offset, range):
                             ON receipt_user.message_row_id = messages._id
                     WHERE messages.key_remote_jid <> '-1'
                         {f'AND messages.timestamp {range}' if range is not None else ''}
+                        {'AND (' + ' OR '.join(f"messages.key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                        {'AND (' + ' AND '.join(f"messages.key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}
                     GROUP BY messages._id
                     ORDER BY messages.timestamp ASC;"""
         )
@@ -293,6 +310,8 @@ def messages(db, data, media_folder, timezone_offset, range):
                             ON receipt_user.message_row_id = message._id
                     WHERE key_remote_jid <> '-1'
                         {f'AND message.timestamp {range}' if range is not None else ''}
+                        {'AND (' + ' OR '.join(f"key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                        {'AND (' + ' AND '.join(f"key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}
                     GROUP BY message._id;"""
             )
         except Exception as e:
@@ -457,7 +476,7 @@ def messages(db, data, media_folder, timezone_offset, range):
     print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder, range):
+def media(db, data, media_folder, range, filter_chat):
     # Get media
     c = db.cursor()
     try:
@@ -465,13 +484,23 @@ def media(db, data, media_folder, range):
                     FROM message_media
                         INNER JOIN messages
                             ON message_media.message_row_id = messages._id
-                    {f'WHERE messages.timestamp {range}' if range is not None else ''}""")
+                    WHERE 1=1  
+                        {f'AND messages.timestamp {range}' if range is not None else ''}
+                        {'AND (' + ' OR '.join(f"messages.key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                        {'AND (' + ' AND '.join(f"messages.key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}""")
     except sqlite3.OperationalError:
         c.execute(f"""SELECT count()
                     FROM message_media
                         INNER JOIN message
                             ON message_media.message_row_id = message._id
-                    {f'WHERE message.timestamp {range}' if range is not None else ''}""")
+                        LEFT JOIN chat
+                            ON chat._id = message.chat_row_id
+                        INNER JOIN jid
+                            ON jid._id = chat.jid_row_id
+                    WHERE 1=1    
+                        {f'AND message.timestamp {range}' if range is not None else ''}
+                        {'AND (' + ' OR '.join(f"jid.raw_string LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                        {'AND (' + ' AND '.join(f"jid.raw_string NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}""")
     total_row_number = c.fetchone()[0]
     print(f"\nProcessing media...(0/{total_row_number})", end="\r")
     i = 0
@@ -493,6 +522,8 @@ def media(db, data, media_folder, range):
                         ON messages.key_remote_jid = jid.raw_string
                 WHERE jid.type <> 7
                     {f'AND messages.timestamp {range}' if range is not None else ''}
+                    {'AND (' + ' OR '.join(f"messages.key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                    {'AND (' + ' AND '.join(f"messages.key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}
                 ORDER BY messages.key_remote_jid ASC"""
         )
     except sqlite3.OperationalError:
@@ -515,6 +546,8 @@ def media(db, data, media_folder, range):
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
                 WHERE jid.type <> 7
                     {f'AND message.timestamp {range}' if range is not None else ''}
+                    {'AND (' + ' OR '.join(f"key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                    {'AND (' + ' AND '.join(f"key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}
                 ORDER BY jid.raw_string ASC"""
         )
     content = c.fetchone()
@@ -564,7 +597,7 @@ def media(db, data, media_folder, range):
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data, media_folder, range):
+def vcard(db, data, media_folder, range, filter_chat):
     c = db.cursor()
     try:
         c.execute(f"""SELECT message_row_id,
@@ -574,7 +607,10 @@ def vcard(db, data, media_folder, range):
                  FROM messages_vcards
                     INNER JOIN messages
                         ON messages_vcards.message_row_id = messages._id
-                 {f'WHERE messages.timestamp {range}' if range is not None else ''}
+                 WHERE 1=1
+                    {f'AND messages.timestamp {range}' if range is not None else ''}
+                    {'AND (' + ' OR '.join(f"messages.key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                    {'AND (' + ' AND '.join(f"messages.key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}
                  ORDER BY messages.key_remote_jid ASC;"""
         )
     except sqlite3.OperationalError:
@@ -589,7 +625,10 @@ def vcard(db, data, media_folder, range):
                         ON chat._id = message.chat_row_id
                     INNER JOIN jid
                         ON jid._id = chat.jid_row_id
-                {f'WHERE message.timestamp {range}' if range is not None else ''}
+                WHERE 1=1
+                    {f'AND message.timestamp {range}' if range is not None else ''}
+                    {'AND (' + ' OR '.join(f"key_remote_jid LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                    {'AND (' + ' AND '.join(f"key_remote_jid NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}
                  ORDER BY message.chat_row_id ASC;"""
         )
 
@@ -616,14 +655,22 @@ def vcard(db, data, media_folder, range):
         print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
 
 
-def calls(db, data, timezone_offset):
+def calls(db, data, timezone_offset, filter_chat):
     c = db.cursor()
-    c.execute("""SELECT count() FROM call_log""")
+    c.execute(f"""SELECT count()
+                FROM call_log
+                    INNER JOIN jid
+                        ON call_log.jid_row_id = jid._id
+                    LEFT JOIN chat
+                        ON call_log.jid_row_id = chat.jid_row_id
+                WHERE 1=1
+                    {'AND (' + ' OR '.join(f"jid.raw_string LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                    {'AND (' + ' OR '.join(f"jid.raw_string NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}""")
     total_row_number = c.fetchone()[0]
     if total_row_number == 0:
         return
     print(f"\nProcessing calls...({total_row_number})", end="\r")
-    c.execute("""SELECT call_log._id,
+    c.execute(f"""SELECT call_log._id,
                         jid.raw_string,
                         from_me,
                         call_id,
@@ -637,7 +684,10 @@ def calls(db, data, timezone_offset):
                     INNER JOIN jid
                         ON call_log.jid_row_id = jid._id
                     LEFT JOIN chat
-                        ON call_log.jid_row_id = chat.jid_row_id"""
+                        ON call_log.jid_row_id = chat.jid_row_id
+                WHERE 1=1
+                    {'AND (' + ' OR '.join(f"jid.raw_string LIKE '%{chat}%'" for chat in filter_chat[0]) + ')' if filter_chat[0] is not None else ''}
+                    {'AND (' + ' AND '.join(f"jid.raw_string NOT LIKE '%{chat}%'" for chat in filter_chat[1]) + ')' if filter_chat[1] is not None else ''}"""
     )
     chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
     content = c.fetchone()
