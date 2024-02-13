@@ -206,30 +206,35 @@ def main():
         default=0,
         type=int,
         choices=range(-12, 15),
+        metavar="{-12 to 14}",
         help="Offset in hours (-12 to 14) for time displayed in the output"
     )
     parser.add_argument(
         "--date",
         dest="filter_date",
         default=None,
+        metavar="DATE",
         help="The date filter in specific format (inclusive)"
     )
     parser.add_argument(
         "--date-format",
         dest="filter_date_format",
         default="%Y-%m-%d %H:%M",
+        metavar="FORMAT",
         help="The date format for the date filter"
     )
     parser.add_argument(
         "--include",
         dest="filter_chat_include",
         nargs='*',
+        metavar="phone number",
         help="Include chats that match the supplied phone number"
     )
     parser.add_argument(
         "--exclude",
         dest="filter_chat_exclude",
         nargs='*',
+        metavar="phone number",
         help="Exclude chats that match the supplied phone number"
     )
     args = parser.parse_args()

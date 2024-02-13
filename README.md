@@ -117,7 +117,8 @@ Invoke the wtsexporter with --help option will show you all options available.
 usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-o OUTPUT] [-j [JSON]] [-d DB]
                    [-k KEY] [-t TEMPLATE] [-s] [-c] [--offline OFFLINE] [--size [SIZE]] [--no-html] [--check-update]
                    [--assume-first-as-me] [--no-avatar] [--import] [--business] [--preserve-timestamp] [--wab WAB]
-                   [--time-offset {-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}]
+                   [--time-offset {-12 to 14}] [--date DATE] [--date-format FORMAT] [--include [phone number ...]]
+                   [--exclude [phone number ...]]
 
 A customizable Android and iPhone WhatsApp database parser that will give you the history of your WhatsApp
 conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
@@ -155,8 +156,14 @@ options:
   --preserve-timestamp  Preserve the modification timestamp of the extracted files (iOS only)
   --wab WAB, --wa-backup WAB
                         Path to contact database in crypt15 format
-  --time-offset {-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}
+  --time-offset {-12 to 14}
                         Offset in hours (-12 to 14) for time displayed in the output
+  --date DATE           The date filter in specific format (inclusive)
+  --date-format FORMAT  The date format for the date filter
+  --include [phone number ...]
+                        Include chats that match the supplied phone number
+  --exclude [phone number ...]
+                        Exclude chats that match the supplied phone number
 
 WhatsApp Chat Exporter: 0.9.7 Licensed with MIT
 ```
