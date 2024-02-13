@@ -7,8 +7,8 @@ import shutil
 import json
 import string
 import glob
-from Whatsapp_Chat_Exporter import extract_exported, extract_iphone
-from Whatsapp_Chat_Exporter import extract, extract_iphone_media
+from Whatsapp_Chat_Exporter import exported_handler, android_handler
+from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
@@ -22,7 +22,7 @@ except ImportError:
 
 def main():
     parser = ArgumentParser(
-        description = 'A customizable Android and iPhone WhatsApp database parser that '
+        description = 'A customizable Android and iOS WhatsApp database parser that '
                       'will give you the history of your WhatsApp conversations in HTML '
                       'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
         epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT'
@@ -38,7 +38,7 @@ def main():
         '-i',
         '--ios',
         '--iphone',
-        dest='iphone',
+        dest='ios',
         default=False,
         action='store_true',
         help="Define the target as iPhone/iPad")
@@ -67,7 +67,7 @@ def main():
         dest="backup",
         default=None,
         help="Path to Android (must be used together "
-             "with -k)/iPhone WhatsApp backup")
+             "with -k)/iOS WhatsApp backup")
     parser.add_argument(
         "-o",
         "--output",
@@ -244,16 +244,16 @@ def main():
         exit(check_update())
 
     # Sanity checks
-    if args.android and args.iphone and args.exported and args.import_json:
+    if args.android and args.ios and args.exported and args.import_json:
         print("You must define only one device type.")
         exit(1)
-    if not args.android and not args.iphone and not args.exported and not args.import_json:
+    if not args.android and not args.ios and not args.exported and not args.import_json:
         print("You must define the device type.")
         exit(1)
     if args.no_html and not args.json:
         print("You must either specify a JSON output file or enable HTML output.")
         exit(1)
-    if args.import_json and (args.android or args.iphone or args.exported or args.no_html):
+    if args.import_json and (args.android or args.ios or args.exported or args.no_html):
         print("You can only use --import with -j and without --no-html.")
         exit(1)
     elif args.import_json and not os.path.isfile(args.json):
@@ -275,7 +275,7 @@ def main():
                 exit(1)
             if args.android:
                 args.filter_date = f"BETWEEN {start}000 AND {end}000"
-            elif args.iphone:
+            elif args.ios:
                 args.filter_date = f"BETWEEN {start - APPLE_TIME} AND {end - APPLE_TIME}"
         else:
             _timestamp = int(datetime.strptime(args.filter_date[2:], args.filter_date_format).timestamp())
@@ -285,12 +285,12 @@ def main():
             if args.filter_date[:2] == "> ":
                 if args.android:
                     args.filter_date = f">= {_timestamp}000"
-                elif args.iphone:
+                elif args.ios:
                     args.filter_date = f">= {_timestamp - APPLE_TIME}"
             elif args.filter_date[:2] == "< ":
                 if args.android:
                     args.filter_date = f"<= {_timestamp}000"
-                elif args.iphone:
+                elif args.ios:
                     args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
                 print("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
@@ -314,11 +314,11 @@ def main():
     data = {}
 
     if args.android:
-        contacts = extract.contacts
-        messages = extract.messages
-        media = extract.media
-        vcard = extract.vcard
-        create_html = extract.create_html
+        contacts = android_handler.contacts
+        messages = android_handler.messages
+        media = android_handler.media
+        vcard = android_handler.vcard
+        create_html = android_handler.create_html
         if args.db is None:
             msg_db = "msgstore.db"
         else:
@@ -345,12 +345,12 @@ def main():
             db = open(args.backup, "rb").read()
             if args.wab:
                 wab = open(args.wab, "rb").read()
-                error_wa = extract.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT)
+                error_wa = android_handler.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT)
                 if isinstance(key, io.IOBase):
                     key.seek(0)
             else:
                 error_wa = 0
-            error_message = extract.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE)               
+            error_message = android_handler.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE)               
             if error_wa != 0:
                 error = error_wa
             elif error_message != 0:
@@ -376,18 +376,18 @@ def main():
             with sqlite3.connect(contact_db) as db:
                 db.row_factory = sqlite3.Row
                 contacts(db, data)
-    elif args.iphone:
+    elif args.ios:
         import sys
         if "--iphone" in sys.argv:
             print(
                 "WARNING: The --iphone flag is deprecated and will"
                 "be removed in the future. Use --ios instead."
             )
-        contacts = extract_iphone.contacts
-        messages = extract_iphone.messages
-        media = extract_iphone.media
-        vcard = extract_iphone.vcard
-        create_html = extract.create_html
+        contacts = ios_handler.contacts
+        messages = ios_handler.messages
+        media = ios_handler.media
+        vcard = ios_handler.vcard
+        create_html = android_handler.create_html
         if args.business:
             from Whatsapp_Chat_Exporter.utility import WhatsAppBusinessIdentifier as identifiers
         else:
@@ -396,7 +396,7 @@ def main():
             args.media = identifiers.DOMAIN
         if args.backup is not None:
             if not os.path.isdir(args.media):
-                extract_iphone_media.extract_media(args.backup, identifiers, args.preserve_timestamp)
+                ios_media_handler.extract_media(args.backup, identifiers, args.preserve_timestamp)
             else:
                 print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:
@@ -420,7 +420,7 @@ def main():
                 media(db, data, args.media, args.filter_date, filter_chat)
                 vcard(db, data, args.media, args.filter_date, filter_chat)
                 if args.android:
-                    extract.calls(db, data, args.timezone_offset, filter_chat)
+                    android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
                 create_html(
                     data,
@@ -456,9 +456,9 @@ def main():
                         print("\nCannot remove original WhatsApp directory. "
                             "Perhaps the directory is opened?", end="\n")
     elif args.exported:
-        extract_exported.messages(args.exported, data, args.assume_first_as_me)
+        exported_handler.messages(args.exported, data, args.assume_first_as_me)
         if not args.no_html:
-            extract.create_html(
+            android_handler.create_html(
                 data,
                 args.output,
                 args.template,
@@ -470,7 +470,7 @@ def main():
             shutil.copy(file, args.output)
     elif args.import_json:
         import_from_json(args.json, data)
-        extract.create_html(
+        android_handler.create_html(
             data,
             args.output,
             args.template,
