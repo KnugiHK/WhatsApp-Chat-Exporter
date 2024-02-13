@@ -22,7 +22,7 @@ except ImportError:
 
 def main():
     parser = ArgumentParser(
-        description = 'A customizable Android and iOS WhatsApp database parser that '
+        description = 'A customizable Android and iOS/iPadOS WhatsApp database parser that '
                       'will give you the history of your WhatsApp conversations in HTML '
                       'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
         epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT'
