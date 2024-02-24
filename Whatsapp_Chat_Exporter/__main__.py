@@ -238,6 +238,13 @@ def main():
         metavar="phone number",
         help="Exclude chats that match the supplied phone number"
     )
+    parser.add_argument(
+        "--per-chat",
+        dest="json_per_chat",
+        default=False,
+        action='store_true',
+        help="Output the JSON file per chat"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -263,6 +270,11 @@ def main():
     if args.android and args.business:
         print("WhatsApp Business is only available on iOS for now.")
         exit(1)
+    if args.json_per_chat and (
+        (args.json[-5:] != ".json" and os.path.isfile(args.json)) or \
+        (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
+    ):
+        parser.error("When --per-chat is enabled, the destination of --json must be a directory.")
     if args.filter_date is not None:
         if " - " in args.filter_date:
             start, end = args.filter_date.split(" - ")
@@ -483,10 +495,26 @@ def main():
     if args.json and not args.import_json:
         if isinstance(data[next(iter(data))], ChatStore):
             data = {jik: chat.to_json() for jik, chat in data.items()}
-        with open(args.json, "w") as f:
-            data = json.dumps(data)
-            print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
-            f.write(data)
+        if not args.json_per_chat:
+            with open(args.json, "w") as f:
+                data = json.dumps(data)
+                print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
+                f.write(data)
+        else:
+            if args.json[-5:] == ".json":
+                args.json = args.json[:-5]
+            total = len(data.keys())
+            if not os.path.isdir(args.json):
+                os.mkdir(args.json)
+            for index, jik in enumerate(data.keys()):
+                if data[jik]["name"] is not None:
+                    contact = data[jik]["name"].replace('/', '')
+                else:
+                    contact = jik.replace('+', '')
+                with open(f"{args.json}/{contact}.json", "w") as f:
+                    f.write(json.dumps(data[jik]))
+                    print(f"Writing JSON file...({index + 1}/{total})", end="\r")
+            print()
     else:
         print()
 
