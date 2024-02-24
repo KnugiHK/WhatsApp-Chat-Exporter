@@ -253,23 +253,17 @@ def main():
 
     # Sanity checks
     if args.android and args.ios and args.exported and args.import_json:
-        print("You must define only one device type.")
-        exit(1)
+        parser.error("You must define only one device type.")
     if not args.android and not args.ios and not args.exported and not args.import_json:
-        print("You must define the device type.")
-        exit(1)
+        parser.error("You must define the device type.")
     if args.no_html and not args.json:
-        print("You must either specify a JSON output file or enable HTML output.")
-        exit(1)
+        parser.error("You must either specify a JSON output file or enable HTML output.")
     if args.import_json and (args.android or args.ios or args.exported or args.no_html):
-        print("You can only use --import with -j and without --no-html.")
-        exit(1)
+        parser.error("You can only use --import with -j and without --no-html.")
     elif args.import_json and not os.path.isfile(args.json):
-        print("JSON file not found.")
-        exit(1)
+        parser.error("JSON file not found.")
     if args.android and args.business:
-        print("WhatsApp Business is only available on iOS for now.")
-        exit(1)
+        parser.error("WhatsApp Business is only available on iOS for now.")
     if args.json_per_chat and (
         (args.json[-5:] != ".json" and os.path.isfile(args.json)) or \
         (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
@@ -281,11 +275,9 @@ def main():
             start = int(datetime.strptime(start, args.filter_date_format).timestamp())
             end = int(datetime.strptime(end, args.filter_date_format).timestamp())
             if start < 1009843200 or end < 1009843200:
-                print("WhatsApp was developed in 2009...")
-                exit(1)
+                parser.error("WhatsApp was first released in 2009...")
             if start > end:
-                print("The start date cannot be a moment after the end date.")
-                exit(1)
+                parser.error("The start date cannot be a moment after the end date.")
             if args.android:
                 args.filter_date = f"BETWEEN {start}000 AND {end}000"
             elif args.ios:
@@ -293,8 +285,7 @@ def main():
         else:
             _timestamp = int(datetime.strptime(args.filter_date[2:], args.filter_date_format).timestamp())
             if _timestamp < 1009843200:
-                print("WhatsApp was developed in 2009...")
-                exit(1)
+                parser.error("WhatsApp was first released in 2009...")
             if args.filter_date[:2] == "> ":
                 if args.android:
                     args.filter_date = f">= {_timestamp}000"
@@ -306,21 +297,17 @@ def main():
                 elif args.ios:
                     args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
-                print("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
-                exit(1)
+                parser.error("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
     if args.filter_chat_include is not None and args.filter_chat_exclude is not None:
-        print("Chat inclusion and exclusion filters cannot be used together.")
-        exit(1)
+        parser.error("Chat inclusion and exclusion filters cannot be used together.")
     if args.filter_chat_include is not None:
         for chat in args.filter_chat_include:
             if not chat.isnumeric():
-                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
-                exit(1)
+                parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
     if args.filter_chat_exclude is not None:
         for chat in args.filter_chat_exclude:
             if not chat.isnumeric():
-                print("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
-                exit(1)
+                parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
 
 
@@ -449,7 +436,7 @@ def main():
                 "The message database does not exist. You may specify the path "
                 "to database file with option -d or check your provided path."
             )
-            exit(2)
+            exit(6)
 
         if os.path.isdir(args.media):
             media_path = os.path.join(args.output, args.media)
