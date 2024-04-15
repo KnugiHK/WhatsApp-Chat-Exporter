@@ -205,7 +205,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
         f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder, filter_date, filter_chat):
+def media(db, data, media_folder, filter_date, filter_chat, separate_media=False):
     c = db.cursor()
     # Get media
     c.execute(f"""SELECT count()

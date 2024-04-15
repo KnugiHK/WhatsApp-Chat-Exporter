@@ -118,7 +118,7 @@ usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [
                    [-k KEY] [-t TEMPLATE] [-s] [-c] [--offline OFFLINE] [--size [SIZE]] [--no-html] [--check-update]
                    [--assume-first-as-me] [--no-avatar] [--import] [--business] [--preserve-timestamp] [--wab WAB]
                    [--time-offset {-12 to 14}] [--date DATE] [--date-format FORMAT] [--include [phone number ...]]
-                   [--exclude [phone number ...]]
+                   [--exclude [phone number ...]] [--create-separated-media]
 
 A customizable Android and iPhone WhatsApp database parser that will give you the history of your WhatsApp
 conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
@@ -164,8 +164,11 @@ options:
                         Include chats that match the supplied phone number
   --exclude [phone number ...]
                         Exclude chats that match the supplied phone number
+  --create-separated-media
+                        Create a copy of the media seperated per chat in <MEDIA>/separated/ directory 
+                        (Android only)
 
-WhatsApp Chat Exporter: 0.9.7 Licensed with MIT
+WhatsApp Chat Exporter: 0.10.0 Licensed with MIT
 ```
 
 # To do

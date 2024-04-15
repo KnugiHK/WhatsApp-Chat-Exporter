@@ -245,6 +245,13 @@ def main():
         action='store_true',
         help="Output the JSON file per chat"
     )
+    parser.add_argument(
+        "--create-separated-media",
+        dest="separate_media",
+        default=False,
+        action='store_true',
+        help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory (Android only)"
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -264,6 +271,8 @@ def main():
         parser.error("JSON file not found.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
+    if args.ios and args.seperate_media:
+        parser.error("Separate media is only available on Android for now.")
     if args.json_per_chat and (
         (args.json[-5:] != ".json" and os.path.isfile(args.json)) or \
         (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
@@ -309,7 +318,6 @@ def main():
             if not chat.isnumeric():
                 parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
-
 
     data = {}
 
@@ -417,7 +425,7 @@ def main():
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
                 messages(db, data, args.media, args.timezone_offset, args.filter_date, filter_chat)
-                media(db, data, args.media, args.filter_date, filter_chat)
+                media(db, data, args.media, args.filter_date, filter_chat, args.separate_media)
                 vcard(db, data, args.media, args.filter_date, filter_chat)
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
