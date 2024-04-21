@@ -251,7 +251,7 @@ def main():
         dest="separate_media",
         default=False,
         action='store_true',
-        help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory (Android only)"
+        help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
     args = parser.parse_args()
 
