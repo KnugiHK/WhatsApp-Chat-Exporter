@@ -272,7 +272,7 @@ def main():
         parser.error("JSON file not found.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
-    if args.ios and args.seperate_media:
+    if args.ios and args.separate_media:
         parser.error("Separate media is only available on Android for now.")
     if args.json_per_chat and (
         (args.json[-5:] != ".json" and os.path.isfile(args.json)) or \
