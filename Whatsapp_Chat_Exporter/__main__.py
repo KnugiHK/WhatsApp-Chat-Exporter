@@ -26,7 +26,8 @@ def main():
         description = 'A customizable Android and iOS/iPadOS WhatsApp database parser that '
                       'will give you the history of your WhatsApp conversations in HTML '
                       'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
-        epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT'
+        epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT. See'
+                  'https://wts.knugi.dev/docs?dest=osl for all open source licenses.'
     )
     parser.add_argument(
         '-a',
