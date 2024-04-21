@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 
 import os
+import shutil
 from glob import glob
 from pathlib import Path
 from mimetypes import MimeTypes
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Device, get_chat_condition
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Device, get_chat_condition, slugify
 
 
 def contacts(db, data):
@@ -256,6 +257,15 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                     message.mime = "application/octet-stream"
             else:
                 message.mime = content["ZVCARDSTRING"]
+            if separate_media:
+                chat_display_name = slugify(data[content["ZCONTACTJID"]].name or message.sender \
+                                            or content["ZCONTACTJID"].split('@')[0], True)
+                current_filename = file_path.split("/")[-1]
+                new_folder = os.path.join(media_folder, "separated", chat_display_name)
+                Path(new_folder).mkdir(parents=True, exist_ok=True)
+                new_path = os.path.join(new_folder, current_filename)
+                shutil.copy2(file_path, new_path)
+                message.data = new_path
         else:
             if False: # Block execution
                 try:
