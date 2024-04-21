@@ -571,16 +571,13 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=True)
             else:
                 message.mime = content["mime_type"]
             if separate_media:
-                chat_display_name = data[content["key_remote_jid"]].name or slugify(message.sender) or "Unknown"
-                separated_media_folder = f"{media_folder}/separated/"
-
+                chat_display_name = slugify(data[content["key_remote_jid"]].name or message.sender \
+                                            or content["key_remote_jid"].split('@')[0], True)
                 current_filename = file_path.split("/")[-1]
-                new_folder = f"{separated_media_folder}/{chat_display_name}"
+                new_folder = os.path.join(media_folder, "separated", chat_display_name)
                 Path(new_folder).mkdir(parents=True, exist_ok=True)
-                new_path = f"{new_folder}/{current_filename}"
-
+                new_path = os.path.join(new_folder, current_filename)
                 shutil.copy2(file_path, new_path)
-
                 message.data = new_path
         else:
             if False: # Block execution
