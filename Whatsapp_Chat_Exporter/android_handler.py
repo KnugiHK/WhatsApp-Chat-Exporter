@@ -4,6 +4,7 @@ import sqlite3
 import os
 import io
 import hmac
+import shutil
 from pathlib import Path
 from mimetypes import MimeTypes
 from hashlib import sha256
@@ -12,7 +13,7 @@ from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, determine_metadata, JidType
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, get_status_location
-from Whatsapp_Chat_Exporter.utility import get_chat_condition
+from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify
 
 try:
     import zlib
@@ -477,7 +478,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
     print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder, filter_date, filter_chat):
+def media(db, data, media_folder, filter_date, filter_chat, separate_media=True):
     # Get media
     c = db.cursor()
     try:
@@ -569,6 +570,15 @@ def media(db, data, media_folder, filter_date, filter_chat):
                     message.mime = "application/octet-stream"
             else:
                 message.mime = content["mime_type"]
+            if separate_media:
+                chat_display_name = slugify(data[content["key_remote_jid"]].name or message.sender \
+                                            or content["key_remote_jid"].split('@')[0], True)
+                current_filename = file_path.split("/")[-1]
+                new_folder = os.path.join(media_folder, "separated", chat_display_name)
+                Path(new_folder).mkdir(parents=True, exist_ok=True)
+                new_path = os.path.join(new_folder, current_filename)
+                shutil.copy2(file_path, new_path)
+                message.data = new_path
         else:
             if False: # Block execution
                 try:
