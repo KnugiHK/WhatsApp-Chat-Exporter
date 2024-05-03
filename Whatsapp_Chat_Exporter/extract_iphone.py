@@ -261,19 +261,30 @@ def vcard(db, data, media_folder):
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
     path = f'{media_folder}/Message/vCards'
-    if not os.path.isdir(path):
-        Path(path).mkdir(parents=True, exist_ok=True)
+    Path(path).mkdir(parents=True, exist_ok=True)
+
     for index, content in enumerate(contents):
-        file_name = "".join(x for x in content["ZVCARDNAME"] if x.isalnum())
-        file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
-        file_path = os.path.join(path, f"{file_name}.vcf")
-        if not os.path.isfile(file_path):
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(content["ZVCARDSTRING"])
+        file_paths = []
+        vcard_names = content["ZVCARDNAME"].split("_$!<Name-Separator>!$_")
+        vcard_strings = content["ZVCARDSTRING"].split("_$!<VCard-Separator>!$_")
+
+        # If this is a list of contacts
+        if len(vcard_names) > len(vcard_strings):
+            vcard_names.pop(0)  # Dismiss the first element, which is the group name
+
+        for name, vcard_string in zip(vcard_names, vcard_strings):
+            file_name = "".join(x for x in name if x.isalnum())
+            file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
+            file_path = os.path.join(path, f"{file_name}.vcf")
+            file_paths.append(file_path)
+
+            if not os.path.isfile(file_path):
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(vcard_string)
+
+        vcard_summary = " + ".join([f"{name} (See file: {os.path.basename(fp)})" for name, fp in zip(vcard_names, file_paths)])
         message = data[content["_id"]].messages[content["ZMESSAGE"]]
-        message.data = content["ZVCARDNAME"] + \
-            "The vCard file cannot be displayed here, " \
-            f"however it should be located at {file_path}"
+        message.data = vcard_summary
         message.mime = "text/x-vcard"
         message.media = True
         message.meta = True
