@@ -7,6 +7,7 @@ import hmac
 import shutil
 from pathlib import Path
 from mimetypes import MimeTypes
+from markupsafe import escape as htmle
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
@@ -658,11 +659,11 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
         message = data[row["key_remote_jid"]].messages[row["message_row_id"]]
-        message.data = media_name + \
-            "The vCard file cannot be displayed here, " \
-            f"however it should be located at {file_path}"
+        message.data = "This media include the following vCard file(s):<br>" \
+            f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
         message.mime = "text/x-vcard"
         message.meta = True
+        message.safe = True
         print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
 
 
