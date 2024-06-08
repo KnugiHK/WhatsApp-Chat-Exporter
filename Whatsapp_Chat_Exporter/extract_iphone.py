@@ -4,6 +4,7 @@ import os
 from glob import glob
 from pathlib import Path
 from mimetypes import MimeTypes
+from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Device
 
@@ -282,10 +283,12 @@ def vcard(db, data, media_folder):
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(vcard_string)
 
-        vcard_summary = " + ".join([f"{name} (See file: {os.path.basename(fp)})" for name, fp in zip(vcard_names, file_paths)])
+        vcard_summary = "This media include the following vCard file(s):<br>" 
+        vcard_summary += " | ".join([f'<a href="{htmle(fp)}">{htmle(name)}</a>' for name, fp in zip(vcard_names, file_paths)])
         message = data[content["_id"]].messages[content["ZMESSAGE"]]
         message.data = vcard_summary
         message.mime = "text/x-vcard"
         message.media = True
         message.meta = True
+        message.safe = True
         print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
