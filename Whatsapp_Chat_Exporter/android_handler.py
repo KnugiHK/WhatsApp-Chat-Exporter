@@ -651,7 +651,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
     if not os.path.isdir(path):
         Path(path).mkdir(parents=True, exist_ok=True)
     for index, row in enumerate(rows):
-        media_name = row["media_name"] if row["media_name"] is not None else ""
+        media_name = row["media_name"] if row["media_name"] is not None else "Undefined vCard File"
         file_name = "".join(x for x in media_name if x.isalnum())
         file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
         file_path = os.path.join(path, f"{file_name}.vcf")
