@@ -13,9 +13,15 @@ else:
     support_encrypted = True
 
 
-def extract_encrypted(base_dir, password, identifiers):
+def extract_encrypted(base_dir, password, identifiers, decrypt_chunk_size):
     print("Trying to decrypt the iOS backup...", end="")
-    backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
+    backup = EncryptedBackup(
+        backup_directory=base_dir,
+        passphrase=password,
+        cleanup=False,
+        check_same_thread=False,
+        decrypt_chunk_size=decrypt_chunk_size
+    )
     print("Done\nDecrypting WhatsApp database...", end="")
     try:
         backup.extract_file(
@@ -64,7 +70,7 @@ def is_encrypted(base_dir):
             return False
 
 
-def extract_media(base_dir, identifiers):
+def extract_media(base_dir, identifiers, decrypt_chunk_size):
     if is_encrypted(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
@@ -73,7 +79,7 @@ def extract_media(base_dir, identifiers):
             return False
         print("Encryption detected on the backup!")
         password = getpass.getpass("Enter the password for the backup:")
-        extract_encrypted(base_dir, password, identifiers)
+        extract_encrypted(base_dir, password, identifiers, decrypt_chunk_size)
     else:
         wts_db = os.path.join(base_dir, identifiers.MESSAGE[:2], identifiers.MESSAGE)
         contact_db = os.path.join(base_dir, identifiers.CONTACT[:2], identifiers.CONTACT)

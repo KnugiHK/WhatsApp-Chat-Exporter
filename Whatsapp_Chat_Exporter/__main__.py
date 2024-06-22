@@ -246,6 +246,13 @@ def main():
         action='store_true',
         help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
+    parser.add_argument(
+        "--decrypt-chunk-size",
+        dest="decrypt_chunk_size",
+        default=1 * 1024 * 1024,
+        type=int,
+        help="Specify the chunk size for decrypting iOS backup, which may affect the decryption speed."
+    )
     args = parser.parse_args()
 
     # Check for updates
@@ -396,7 +403,7 @@ def main():
             args.media = identifiers.DOMAIN
         if args.backup is not None:
             if not os.path.isdir(args.media):
-                ios_media_handler.extract_media(args.backup, identifiers)
+                ios_media_handler.extract_media(args.backup, identifiers, args.decrypt_chunk_size)
             else:
                 print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:
