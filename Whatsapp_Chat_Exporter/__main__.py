@@ -189,13 +189,6 @@ def main():
         help="Use Whatsapp Business default files (iOS only)"
     )
     parser.add_argument(
-        "--preserve-timestamp",
-        dest="preserve_timestamp",
-        default=False,
-        action='store_true',
-        help="Preserve the modification timestamp of the extracted files (iOS only)"
-    )
-    parser.add_argument(
         "--wab",
         "--wa-backup",
         dest="wab",
@@ -403,7 +396,7 @@ def main():
             args.media = identifiers.DOMAIN
         if args.backup is not None:
             if not os.path.isdir(args.media):
-                ios_media_handler.extract_media(args.backup, identifiers, args.preserve_timestamp)
+                ios_media_handler.extract_media(args.backup, identifiers)
             else:
                 print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:

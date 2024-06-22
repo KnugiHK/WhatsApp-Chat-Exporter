@@ -3,55 +3,49 @@
 import shutil
 import sqlite3
 import os
-import time
 import getpass
-import threading
 from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
-    from iphone_backup_decrypt import FailedToDecryptError
 except ModuleNotFoundError:
     support_encrypted = False
 else:
     support_encrypted = True
 
 
-def extract_encrypted(base_dir, password, identifiers, bplist_reader=None):
+def extract_encrypted(base_dir, password, identifiers):
+    print("Trying to decrypt the iOS backup...", end="")
     backup = EncryptedBackup(backup_directory=base_dir, passphrase=password, cleanup=False, check_same_thread=False)
-    print("Decrypting WhatsApp database...", end="")
+    print("Done\nDecrypting WhatsApp database...", end="")
     try:
         backup.extract_file(
             relative_path=RelativePath.WHATSAPP_MESSAGES,
-            domain=identifiers.DOMAIN,
+            domain_like=identifiers.DOMAIN,
             output_filename=identifiers.MESSAGE
         )
         backup.extract_file(
             relative_path=RelativePath.WHATSAPP_CONTACTS,
-            domain=identifiers.DOMAIN,
+            domain_like=identifiers.DOMAIN,
             output_filename=identifiers.CONTACT
         )
-    except FailedToDecryptError:
+    except ValueError:
         print("Failed to decrypt backup: incorrect password?")
         exit()
     else:
         print("Done")
-    extract_thread = threading.Thread(
-        target=backup.extract_files_by_domain,
-        args=(identifiers.DOMAIN, identifiers.DOMAIN, bplist_reader)
+
+    def extract_progress_handler(file_id, domain, relative_path, n, total_files):
+        if n % 100 == 0:
+            print(f"Decrypting and extracting files...({n}/{total_files})", end="\r")   
+        return True
+
+    backup.extract_files(
+        domain_like=identifiers.DOMAIN,
+        output_folder=identifiers.DOMAIN,
+        preserve_folders=True,
+        filter_callback=extract_progress_handler
     )
-    extract_thread.daemon = True
-    extract_thread.start()
-    dot = 0
-    while extract_thread.is_alive():
-        print(f"Decrypting and extracting files{'.' * dot}{' ' * (3 - dot)}", end="\r")
-        if dot < 3:
-            dot += 1
-            time.sleep(0.5)
-        else:
-            dot = 0
-            time.sleep(0.4)
-    print(f"All required files decrypted and extracted.", end="\n")
-    extract_thread.handled = True
+    print(f"All required files are decrypted and extracted.          ", end="\n")
     return backup
 
 
@@ -70,10 +64,7 @@ def is_encrypted(base_dir):
             return False
 
 
-def extract_media(base_dir, identifiers, preserve_timestamp=False):
-    if preserve_timestamp:
-        from Whatsapp_Chat_Exporter.bplist import BPListReader 
-        preserve_timestamp = BPListReader
+def extract_media(base_dir, identifiers):
     if is_encrypted(base_dir):
         if not support_encrypted:
             print("You don't have the dependencies to handle encrypted backup.")
@@ -82,7 +73,7 @@ def extract_media(base_dir, identifiers, preserve_timestamp=False):
             return False
         print("Encryption detected on the backup!")
         password = getpass.getpass("Enter the password for the backup:")
-        extract_encrypted(base_dir, password, identifiers, preserve_timestamp)
+        extract_encrypted(base_dir, password, identifiers)
     else:
         wts_db = os.path.join(base_dir, identifiers.MESSAGE[:2], identifiers.MESSAGE)
         contact_db = os.path.join(base_dir, identifiers.CONTACT[:2], identifiers.CONTACT)
