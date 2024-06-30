@@ -5,6 +5,7 @@ import sqlite3
 import os
 import getpass
 from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
+from bplist import BPListReader
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
 except ModuleNotFoundError:
@@ -133,11 +134,10 @@ def extract_media(base_dir, identifiers, decrypt_chunk_size):
                         pass
                 elif flags == 1:
                     shutil.copyfile(os.path.join(base_dir, folder, hashes), destination)
-                    if preserve_timestamp:
-                        metadata = BPListReader(row["metadata"]).parse()
-                        creation = metadata["$objects"][1]["Birth"]
-                        modification = metadata["$objects"][1]["LastModified"]
-                        os.utime(destination, (modification, modification))
+                    metadata = BPListReader(row["metadata"]).parse()
+                    creation = metadata["$objects"][1]["Birth"]
+                    modification = metadata["$objects"][1]["LastModified"]
+                    os.utime(destination, (modification, modification))
                 if row["_index"] % 100 == 0:
                     print(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})", end="\r")
                 row = c.fetchone()
