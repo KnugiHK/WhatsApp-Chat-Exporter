@@ -34,6 +34,7 @@ class ChatStore():
         self.their_avatar = None
         self.their_avatar_thumb = None
         self.status = None
+        self.media_base = ""
     
     def add_message(self, id, message):
         if not isinstance(message, Message):

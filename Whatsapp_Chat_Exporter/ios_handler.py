@@ -246,10 +246,13 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
     while content is not None:
         file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
         ZMESSAGE = content["ZMESSAGE"]
-        message = data[content["ZCONTACTJID"]].messages[ZMESSAGE]
+        contact = data[content["ZCONTACTJID"]]
+        message = contact.messages[ZMESSAGE]
         message.media = True
+        if contact.media_base == "":
+            contact.media_base = media_folder + "/"
         if os.path.isfile(file_path):
-            message.data = file_path
+            message.data = '/'.join(file_path.split("/")[1:])
             if content["ZVCARDSTRING"] is None:
                 guess = mime.guess_type(file_path)[0]
                 if guess is not None:
@@ -259,7 +262,7 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
             else:
                 message.mime = content["ZVCARDSTRING"]
             if separate_media:
-                chat_display_name = slugify(data[content["ZCONTACTJID"]].name or message.sender \
+                chat_display_name = slugify(contact.name or message.sender \
                                             or content["ZCONTACTJID"].split('@')[0], True)
                 current_filename = file_path.split("/")[-1]
                 new_folder = os.path.join(media_folder, "separated", chat_display_name)
