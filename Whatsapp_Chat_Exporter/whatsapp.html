@@ -143,7 +143,7 @@
 								{% else %}
 									{% if "image/" in msg.mime %}
 									<a href="{{ msg.data }}">
-										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} />
+										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} loading="lazy"/>
 									</a>
 									{% elif "audio/" in msg.mime %}
 									<audio controls="controls" autobuffer="autobuffer">
@@ -171,7 +171,7 @@
 						{% if not no_avatar and my_avatar is not none %}
 						<div class="w3-col m2 l2 pad-left-10">
 							<a href="{{ my_avatar }}">
-								<img src="{{ my_avatar }}" onerror="this.style.display='none'" class="avatar">
+								<img src="{{ my_avatar }}" onerror="this.style.display='none'" class="avatar" loading="lazy">
 							</a>
 						</div>
 						{% endif %}
@@ -191,9 +191,9 @@
 						{% if not no_avatar %}
 						<div class="w3-col m2 l2">
 								{% if their_avatar is not none %}
-								<a href="{{ their_avatar }}"><img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar"></a>
+								<a href="{{ their_avatar }}"><img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar" loading="lazy"></a>
 								{% else %}
-								<img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar">
+								<img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar" loading="lazy">
 								{% endif %}
 						</div>
 						<div class="w3-col m10 l10">
@@ -227,7 +227,7 @@
 								{% else %}
 									{% if "image/" in msg.mime %}
 									<a href="{{ msg.data }}">
-										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} />
+										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} loading="lazy"/>
 									</a>
 									{% elif "audio/" in msg.mime %}
 									<audio controls="controls" autobuffer="autobuffer">
