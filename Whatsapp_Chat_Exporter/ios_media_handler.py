@@ -5,7 +5,7 @@ import sqlite3
 import os
 import getpass
 from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
-from bplist import BPListReader
+from Whatsapp_Chat_Exporter.bplist import BPListReader
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
 except ModuleNotFoundError:
