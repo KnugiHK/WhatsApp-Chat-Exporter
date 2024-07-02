@@ -37,7 +37,10 @@ def extract_encrypted(base_dir, password, identifiers, decrypt_chunk_size):
         )
     except ValueError:
         print("Failed to decrypt backup: incorrect password?")
-        exit()
+        exit(7)
+    except FileNotFoundError:
+        print("Essential WhatsApp files are missing from the iOS backup.")
+        exit(6)
     else:
         print("Done")
 
