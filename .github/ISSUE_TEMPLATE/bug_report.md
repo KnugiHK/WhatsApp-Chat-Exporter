@@ -8,7 +8,8 @@ assignees: ''
 ---
 
 # Must have
-- WhatsApp version: [WhatsApp version] - [Android/iOS]
+- WhatsApp version: [WhatsApp version]
+- OS: [Android/iOS] - [version]
 - Platform: [Linux/Windows/MacOS]
 - Branch and version: [main/dev] - [exporter version]
 
