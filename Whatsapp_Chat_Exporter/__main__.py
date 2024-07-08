@@ -7,10 +7,17 @@ import shutil
 import json
 import string
 import glob
+try:
+    import vobject
+except ModuleNotFoundError:
+    vcards_deps_installed = False
+else:
+    vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
+from Whatsapp_Chat_Exporter.contacts_names_from_vcards import ContactsNamesFromVCards, readVCardsFile
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, is_chat_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
@@ -85,6 +92,18 @@ def main():
         type=str,
         const="result.json",
         help="Save the result to a single JSON file (default if present: result.json)")
+    parser.add_argument(
+        '--avoidJSONEnsureAscii',
+        dest='avoid_json_ensure_ascii',
+        default=False,
+        action='store_true',
+        help="Don't encode non-ascii chars in the output json files")
+    parser.add_argument(
+        '--prettyPrintJson',
+        dest='pretty_print_json',
+        default=False,
+        action='store_true',
+        help="Pretty print the output json")
     parser.add_argument(
         '-d',
         '--db',
@@ -240,6 +259,13 @@ def main():
         help="Exclude chats that match the supplied phone number"
     )
     parser.add_argument(
+        "--filter-empty",
+        dest="filter_empty",
+        default=False,
+        action='store_true',
+        help="Exclude empty chats or with zero messages with content"
+    )
+    parser.add_argument(
         "--per-chat",
         dest="json_per_chat",
         default=False,
@@ -253,6 +279,20 @@ def main():
         action='store_true',
         help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
+    parser.add_argument(
+        "--enrich-names-from-vcards",
+        dest="enrich_names_from_vcards",
+        default=None,
+        help="Path to an exported vcf file from google contacts export, add names missing from wab database"
+    )
+    
+    parser.add_argument(
+        "--default-country-code-for-enrich-names-from-vcards",
+        dest="default_country_code_for_enrich_names_from_vcards",
+        default=None,
+        help="When numbers in enrich-names-from-vcards does not have country code, this will be used. 1 is for US, 66 for Thailand etc. most likely use the number of your own country"
+    )
+    
     args = parser.parse_args()
 
     # Check for updates
@@ -317,8 +357,18 @@ def main():
             if not chat.isnumeric():
                 parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
+    if args.enrich_names_from_vcards is not None and args.default_country_code_for_enrich_names_from_vcards is None:
+        parser.error("When --enrich-names-from-vcards is provided, you must also set --default-country-code-for-enrich-names-from-vcards")
 
     data = {}
+
+    contacts_names_from_vcards_enricher = ContactsNamesFromVCards()
+
+    if args.enrich_names_from_vcards is not None:
+        if not vcards_deps_installed:
+            parser.error("To use --enrich-names-from-vcards, you must install whatsapp-chat-exporter[vcards]")
+
+        contacts_names_from_vcards_enricher.load_vcf_file(args.enrich_names_from_vcards, args.default_country_code_for_enrich_names_from_vcards)
 
     if args.android:
         contacts = android_handler.contacts
@@ -429,6 +479,12 @@ def main():
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
+                if contacts_names_from_vcards_enricher.should_enrich_names_from_vCards():
+                    contacts_names_from_vcards_enricher.enrich_names_from_vCards(data)
+                
+                if (args.filter_empty):
+                    data = {k: v for k, v in data.items() if not is_chat_empty(v)}
+
                 create_html(
                     data,
                     args.output,
@@ -487,11 +543,18 @@ def main():
         )
 
     if args.json and not args.import_json:
+        if (args.filter_empty):
+            data = {k: v for k, v in data.items() if not is_chat_empty(v)}
+
+        if contacts_names_from_vcards_enricher.should_enrich_names_from_vCards():
+            contacts_names_from_vcards_enricher.enrich_names_from_vCards(data)
+
         if isinstance(data[next(iter(data))], ChatStore):
             data = {jik: chat.to_json() for jik, chat in data.items()}
+            
         if not args.json_per_chat:
             with open(args.json, "w") as f:
-                data = json.dumps(data)
+                data = json.dumps(data, ensure_ascii=not args.avoid_json_ensure_ascii, indent=2 if args.pretty_print_json else None)
                 print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
                 f.write(data)
         else:
@@ -506,7 +569,8 @@ def main():
                 else:
                     contact = jik.replace('+', '')
                 with open(f"{args.json}/{contact}.json", "w") as f:
-                    f.write(json.dumps(data[jik]))
+                    file_content_to_write = json.dumps(data[jik], ensure_ascii=not args.avoid_json_ensure_ascii, indent=2 if args.pretty_print_json else None)
+                    f.write(file_content_to_write)
                     print(f"Writing JSON file...({index + 1}/{total})", end="\r")
             print()
     else:

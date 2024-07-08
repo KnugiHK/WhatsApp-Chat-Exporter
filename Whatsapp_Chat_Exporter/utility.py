@@ -344,3 +344,10 @@ class JidType(IntEnum):
     GROUP = 1
     SYSTEM_BROADCAST = 5
     STATUS = 11
+
+def _is_message_empty(message):
+    return (message.data is None or message.data == "") and not message.media
+
+def is_chat_empty(chat: ChatStore):
+    is_empty = len(chat.messages) == 0 or all(_is_message_empty(f) for f in chat.messages.values())
+    return is_empty
