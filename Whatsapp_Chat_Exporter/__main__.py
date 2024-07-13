@@ -93,17 +93,19 @@ def main():
         const="result.json",
         help="Save the result to a single JSON file (default if present: result.json)")
     parser.add_argument(
-        '--avoidJSONEnsureAscii',
-        dest='avoid_json_ensure_ascii',
+        '--avoid_encoding_json',
+        dest='avoid_encoding_json',
         default=False,
         action='store_true',
-        help="Don't encode non-ascii chars in the output json files")
+        help="Don't encode non-ascii characters in the output JSON files")
     parser.add_argument(
-        '--prettyPrintJson',
+        '--pretty-print-json',
         dest='pretty_print_json',
-        default=False,
-        action='store_true',
-        help="Pretty print the output json")
+        default=None,
+        nargs='?',
+        const=2,
+        type=int,
+        help="Pretty print the output JSON.")
     parser.add_argument(
         '-d',
         '--db',
@@ -554,7 +556,11 @@ def main():
             
         if not args.json_per_chat:
             with open(args.json, "w") as f:
-                data = json.dumps(data, ensure_ascii=not args.avoid_json_ensure_ascii, indent=2 if args.pretty_print_json else None)
+                data = json.dumps(
+                    data,
+                    ensure_ascii=not args.avoid_encoding_json,
+                    indent=args.pretty_print_json
+                )
                 print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
                 f.write(data)
         else:
@@ -569,7 +575,7 @@ def main():
                 else:
                     contact = jik.replace('+', '')
                 with open(f"{args.json}/{contact}.json", "w") as f:
-                    file_content_to_write = json.dumps(data[jik], ensure_ascii=not args.avoid_json_ensure_ascii, indent=2 if args.pretty_print_json else None)
+                    file_content_to_write = json.dumps(data[jik], ensure_ascii=not args.avoid_encoding_json, indent=2 if args.pretty_print_json else None)
                     f.write(file_content_to_write)
                     print(f"Writing JSON file...({index + 1}/{total})", end="\r")
             print()
