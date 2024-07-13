@@ -1,14 +1,12 @@
 # from contacts_names_from_vcards import readVCardsFile
 
-from Whatsapp_Chat_Exporter.contacts_names_from_vcards import normalize_number, readVCardsFile
+from Whatsapp_Chat_Exporter.contacts_names_from_vcards import normalize_number, read_vcards_file
 
 
 def test_readVCardsFile():
-    l = readVCardsFile("contacts.vcf", "973")
-    
-    assert len(l) > 0
+    assert len(read_vcards_file("contacts.vcf", "973")) > 0
 
-def test_createNumberToNameDicts():
+def test_create_number_to_name_dicts():
     pass
 
 def test_fuzzy_match_numbers():

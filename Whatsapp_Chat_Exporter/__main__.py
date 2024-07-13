@@ -15,7 +15,7 @@ else:
     vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.contacts_names_from_vcards import ContactsNamesFromVCards, readVCardsFile
+from Whatsapp_Chat_Exporter.contacts_names_from_vcards import ContactsFromVCards, read_vcards_file
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, is_chat_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
@@ -364,7 +364,7 @@ def main():
 
     data = {}
 
-    contacts_names_from_vcards_enricher = ContactsNamesFromVCards()
+    contacts_names_from_vcards_enricher = ContactsFromVCards()
 
     if args.enrich_names_from_vcards is not None:
         if not vcards_deps_installed:
@@ -482,7 +482,7 @@ def main():
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
                 if contacts_names_from_vcards_enricher.should_enrich_names_from_vCards():
-                    contacts_names_from_vcards_enricher.enrich_names_from_vCards(data)
+                    contacts_names_from_vcards_enricher.enrich_from_vcards(data)
                 
                 if (args.filter_empty):
                     data = {k: v for k, v in data.items() if not is_chat_empty(v)}
@@ -548,7 +548,7 @@ def main():
         if (args.filter_empty):
             data = {k: v for k, v in data.items() if not is_chat_empty(v)}
 
-            contacts_names_from_vcards_enricher.enrich_names_from_vCards(data)
+            contacts_names_from_vcards_enricher.enrich_from_vcards(data)
         if contact_store.should_enrich_from_vcards():
 
         if isinstance(data[next(iter(data))], ChatStore):
