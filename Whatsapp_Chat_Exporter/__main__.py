@@ -262,7 +262,7 @@ def main():
     )
     parser.add_argument(
         "--dont-filter-empty",
-        dest="disable_filter_empty",
+        dest="filter_empty",
         default=True,
         action='store_false',
         help="By default, the exporter will not render chats with no valid message. Setting this flag will cause the exporter to render those."
@@ -494,7 +494,7 @@ def main():
                     args.offline,
                     args.size,
                     args.no_avatar,
-                    args.disable_filter_empty
+                    args.filter_empty
                 )
         else:
             print(
@@ -531,7 +531,7 @@ def main():
                 args.offline,
                 args.size,
                 args.no_avatar,
-                args.disable_filter_empty
+                args.filter_empty
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
@@ -545,11 +545,11 @@ def main():
             args.offline,
             args.size,
             args.no_avatar,
-            args.disable_filter_empty
+            args.filter_empty
         )
 
     if args.json and not args.import_json:
-        if args.disable_filter_empty:
+        if args.filter_empty:
             data = {k: v for k, v in data.items() if not chat_is_empty(v)}
 
         if contact_store.is_empty():
