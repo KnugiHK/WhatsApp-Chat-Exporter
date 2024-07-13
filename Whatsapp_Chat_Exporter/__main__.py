@@ -93,7 +93,7 @@ def main():
         const="result.json",
         help="Save the result to a single JSON file (default if present: result.json)")
     parser.add_argument(
-        '--avoid_encoding_json',
+        '--avoid-encoding-json',
         dest='avoid_encoding_json',
         default=False,
         action='store_true',
