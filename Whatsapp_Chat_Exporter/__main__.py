@@ -15,7 +15,7 @@ else:
     vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.contacts_names_from_vcards import ContactsFromVCards, read_vcards_file
+from Whatsapp_Chat_Exporter.contacts_names_from_vcards import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, is_chat_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
@@ -282,17 +282,16 @@ def main():
         help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
     parser.add_argument(
-        "--enrich-names-from-vcards",
-        dest="enrich_names_from_vcards",
+        "--enrich-from-vcards",
+        dest="enrich_from_vcards",
         default=None,
-        help="Path to an exported vcf file from google contacts export, add names missing from wab database"
+        help="Path to an exported vcf file from Google contacts export. Add names missing from WhatsApp's default database"
     )
-    
     parser.add_argument(
-        "--default-country-code-for-enrich-names-from-vcards",
-        dest="default_country_code_for_enrich_names_from_vcards",
+        "--default-country-code",
+        dest="default_contry_code",
         default=None,
-        help="When numbers in enrich-names-from-vcards does not have country code, this will be used. 1 is for US, 66 for Thailand etc. most likely use the number of your own country"
+        help="Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country"
     )
     
     args = parser.parse_args()
@@ -319,6 +318,8 @@ def main():
         (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
     ):
         parser.error("When --per-chat is enabled, the destination of --json must be a directory.")
+    if args.enrich_from_vcards is not None and args.default_contry_code is None:
+        parser.error("When --enrich-from-vcards is provided, you must also set --default-country-code")
     if args.filter_date is not None:
         if " - " in args.filter_date:
             start, end = args.filter_date.split(" - ")
@@ -359,18 +360,19 @@ def main():
             if not chat.isnumeric():
                 parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
-    if args.enrich_names_from_vcards is not None and args.default_country_code_for_enrich_names_from_vcards is None:
-        parser.error("When --enrich-names-from-vcards is provided, you must also set --default-country-code-for-enrich-names-from-vcards")
 
     data = {}
 
-    contacts_names_from_vcards_enricher = ContactsFromVCards()
+    contact_store = ContactsFromVCards()
 
-    if args.enrich_names_from_vcards is not None:
+    if args.enrich_from_vcards is not None:
         if not vcards_deps_installed:
-            parser.error("To use --enrich-names-from-vcards, you must install whatsapp-chat-exporter[vcards]")
-
-        contacts_names_from_vcards_enricher.load_vcf_file(args.enrich_names_from_vcards, args.default_country_code_for_enrich_names_from_vcards)
+            parser.error(
+                "You don't have the dependency to enrich contacts with vCard.\n"
+                "Read more on how to deal with enriching contacts:\n"
+                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
+            )
+        contact_store.load_vcf_file(args.enrich_from_vcards, args.default_contry_code)
 
     if args.android:
         contacts = android_handler.contacts
@@ -481,8 +483,8 @@ def main():
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
-                if contacts_names_from_vcards_enricher.should_enrich_names_from_vCards():
-                    contacts_names_from_vcards_enricher.enrich_from_vcards(data)
+                if contact_store.should_enrich_from_vcards():
+                    contact_store.enrich_from_vcards(data)
                 
                 if (args.filter_empty):
                     data = {k: v for k, v in data.items() if not is_chat_empty(v)}
@@ -548,8 +550,8 @@ def main():
         if (args.filter_empty):
             data = {k: v for k, v in data.items() if not is_chat_empty(v)}
 
-            contacts_names_from_vcards_enricher.enrich_from_vcards(data)
         if contact_store.should_enrich_from_vcards():
+            contact_store.enrich_from_vcards(data)
 
         if isinstance(data[next(iter(data))], ChatStore):
             data = {jik: chat.to_json() for jik, chat in data.items()}
