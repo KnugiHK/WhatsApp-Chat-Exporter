@@ -17,7 +17,7 @@ from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.contacts_from_vcards import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, is_chat_empty
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
@@ -261,11 +261,11 @@ def main():
         help="Exclude chats that match the supplied phone number"
     )
     parser.add_argument(
-        "--filter-empty",
+        "--dont-filter-empty",
         dest="filter_empty",
         default=False,
         action='store_true',
-        help="Exclude empty chats or with zero messages with content"
+        help="By default, the exporter will not render chats with no valid message. Setting this flag will cause the exporter to render those."
     )
     parser.add_argument(
         "--per-chat",
@@ -485,9 +485,6 @@ def main():
             if not args.no_html:
                 if contact_store.should_enrich_from_vcards():
                     contact_store.enrich_from_vcards(data)
-                
-                if (args.filter_empty):
-                    data = {k: v for k, v in data.items() if not is_chat_empty(v)}
 
                 create_html(
                     data,
@@ -496,7 +493,8 @@ def main():
                     args.embedded,
                     args.offline,
                     args.size,
-                    args.no_avatar
+                    args.no_avatar,
+                    not args.filter_empty
                 )
         else:
             print(
@@ -531,7 +529,9 @@ def main():
                 args.template,
                 args.embedded,
                 args.offline,
-                args.size
+                args.size,
+                args.no_avatar,
+                not args.filter_empty
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
@@ -543,12 +543,14 @@ def main():
             args.template,
             args.embedded,
             args.offline,
-            args.size
+            args.size,
+            args.no_avatar,
+            not args.filter_empty
         )
 
     if args.json and not args.import_json:
-        if (args.filter_empty):
-            data = {k: v for k, v in data.items() if not is_chat_empty(v)}
+        if not args.filter_empty:
+            data = {k: v for k, v in data.items() if not chat_is_empty(v)}
 
         if contact_store.should_enrich_from_vcards():
             contact_store.enrich_from_vcards(data)

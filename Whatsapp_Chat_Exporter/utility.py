@@ -170,7 +170,7 @@ def get_chat_condition(filter, include, column):
 def _is_message_empty(message):
     return (message.data is None or message.data == "") and not message.media
 
-def is_chat_empty(chat: ChatStore):
+def chat_is_empty(chat: ChatStore):
     return len(chat.messages) == 0 or all(_is_message_empty(message) for message in chat.messages.values())
 
 
