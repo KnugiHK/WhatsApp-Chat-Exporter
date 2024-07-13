@@ -15,7 +15,7 @@ else:
     vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.contacts_names_from_vcards import ContactsFromVCards
+from Whatsapp_Chat_Exporter.contacts_from_vcards import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, is_chat_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
