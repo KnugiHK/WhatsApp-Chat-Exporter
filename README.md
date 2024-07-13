@@ -35,6 +35,13 @@ Simply invoke the following command from shell.
 ```sh
 wtsexporter -a
 ```
+#### Enriching Contact from vCard
+Usually, the default WhatsApp contact database extracted from your phone will contains the contact names and the exporter will use it to map your chats. However, some reported cases showed that the database could has never been populated. 
+In this case, you can export your contacts to a vCard file from your phone or a cloud provider like Google Contacts. Then, install the necessary dependency and run the following command from the shell:
+```sh
+pip install whatsapp-chat-exporter["vcards"]
+wtsexporter -a --enrich-from-vcard contacts.vcf --default-country-code 852
+```
 
 ### Encrypted Android WhatsApp Backup
 In order to support the decryption, install pycryptodome if it is not installed
