@@ -1,23 +1,15 @@
 import itertools
 from typing import List, TypedDict
-
-try:
-    import vobject
-except ModuleNotFoundError:
-    vcards_deps_installed = False
-else:
-    vcards_deps_installed = True
+import vobject
 
 class ContactsNamesFromVCards:
     def __init__(self) -> None:
         self.l = []
         
-    def should_enrich_names_from_vCards(self):
+    def should_enrich_from_vcards(self):
         return len(self.l) > 0
     
     def load_vcf_file(self, vcfFilePath: str, default_country_calling_code: str):
-        if not vcards_deps_installed:
-            raise Exception('Invariant: vobject is missing')
         self.l = readVCardsFile(vcfFilePath, default_country_calling_code)
     
     def enrich_names_from_vCards(self, chats):

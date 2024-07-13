@@ -546,8 +546,8 @@ def main():
         if (args.filter_empty):
             data = {k: v for k, v in data.items() if not is_chat_empty(v)}
 
-        if contacts_names_from_vcards_enricher.should_enrich_names_from_vCards():
             contacts_names_from_vcards_enricher.enrich_names_from_vCards(data)
+        if contact_store.should_enrich_from_vcards():
 
         if isinstance(data[next(iter(data))], ChatStore):
             data = {jik: chat.to_json() for jik, chat in data.items()}
