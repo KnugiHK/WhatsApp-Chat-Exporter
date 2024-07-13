@@ -167,6 +167,12 @@ def get_chat_condition(filter, include, column):
     else:
         return ""
 
+def _is_message_empty(message):
+    return (message.data is None or message.data == "") and not message.media
+
+def is_chat_empty(chat: ChatStore):
+    return len(chat.messages) == 0 or all(_is_message_empty(message) for message in chat.messages.values())
+
 
 # Android Specific
 CRYPT14_OFFSETS = (
@@ -344,10 +350,3 @@ class JidType(IntEnum):
     GROUP = 1
     SYSTEM_BROADCAST = 5
     STATUS = 11
-
-def _is_message_empty(message):
-    return (message.data is None or message.data == "") and not message.media
-
-def is_chat_empty(chat: ChatStore):
-    is_empty = len(chat.messages) == 0 or all(_is_message_empty(f) for f in chat.messages.values())
-    return is_empty
