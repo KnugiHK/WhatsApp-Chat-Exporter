@@ -13,12 +13,12 @@ class ContactsNamesFromVCards:
         self.l = readVCardsFile(vcfFilePath, default_country_calling_code)
     
     def enrich_names_from_vCards(self, chats):
-        for counter, (number, name) in enumerate(self.l):
+        for number, name in self.l:
             # short number must be a bad contact, lets skip it
             if len(number) <= 5:
                 continue
 
-            for counter, chat in enumerate(filter_dict_by_prefix(chats, number).values()):
+            for chat in filter_dict_by_prefix(chats, number).values():
                 if not hasattr(chat, 'name') or (hasattr(chat, 'name') and chat.name is None):
                     setattr(chat, 'name', name)
 
