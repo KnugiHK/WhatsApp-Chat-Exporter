@@ -12,7 +12,7 @@ class ContactsFromVCards:
     def __init__(self) -> None:
         self.contact_mapping = []
 
-    def should_enrich_from_vcards(self):
+    def is_empty(self):
         return len(self.contact_mapping) > 0
 
     def load_vcf_file(self, vcf_file_path: str, default_country_code: str):

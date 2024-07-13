@@ -1,6 +1,6 @@
 # from contacts_names_from_vcards import readVCardsFile
 
-from Whatsapp_Chat_Exporter.contacts_from_vcards import normalize_number, read_vcards_file
+from Whatsapp_Chat_Exporter.vcards_contacts import normalize_number, read_vcards_file
 
 
 def test_readVCardsFile():

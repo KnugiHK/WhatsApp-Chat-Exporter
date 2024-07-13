@@ -15,7 +15,7 @@ else:
     vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.contacts_from_vcards import ContactsFromVCards
+from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
@@ -483,7 +483,7 @@ def main():
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
-                if contact_store.should_enrich_from_vcards():
+                if contact_store.is_empty():
                     contact_store.enrich_from_vcards(data)
 
                 create_html(
@@ -552,7 +552,7 @@ def main():
         if not args.filter_empty:
             data = {k: v for k, v in data.items() if not chat_is_empty(v)}
 
-        if contact_store.should_enrich_from_vcards():
+        if contact_store.is_empty():
             contact_store.enrich_from_vcards(data)
 
         if isinstance(data[next(iter(data))], ChatStore):
