@@ -157,9 +157,11 @@ def contacts(db, data):
     c = db.cursor()
     c.execute("""SELECT count() FROM wa_contacts""")
     total_row_number = c.fetchone()[0]
-    print(f"Processing contacts...({total_row_number})")
     if total_row_number == 0:
-        print("No contacts profiles found in database, consider using --enrich-names-from-vcards when exported contacts from google")
+        print("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
+        return False
+    else:
+        print(f"Processing contacts...({total_row_number})")
 
     c.execute("""SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts; """)
     row = c.fetchone()
