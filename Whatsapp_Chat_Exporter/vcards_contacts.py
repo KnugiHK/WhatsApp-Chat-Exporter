@@ -13,7 +13,7 @@ class ContactsFromVCards:
         self.contact_mapping = []
 
     def is_empty(self):
-        return len(self.contact_mapping) > 0
+        return self.contact_mapping == []
 
     def load_vcf_file(self, vcf_file_path: str, default_country_code: str):
         self.contact_mapping = read_vcards_file(vcf_file_path, default_country_code)
