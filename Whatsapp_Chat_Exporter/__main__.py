@@ -483,7 +483,7 @@ def main():
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
-                if contact_store.is_empty():
+                if not contact_store.is_empty():
                     contact_store.enrich_from_vcards(data)
 
                 create_html(
@@ -552,7 +552,7 @@ def main():
         if args.filter_empty:
             data = {k: v for k, v in data.items() if not chat_is_empty(v)}
 
-        if contact_store.is_empty():
+        if not contact_store.is_empty():
             contact_store.enrich_from_vcards(data)
 
         if isinstance(data[next(iter(data))], ChatStore):
