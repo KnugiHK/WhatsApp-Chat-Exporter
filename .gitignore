@@ -134,3 +134,14 @@ dmypy.json
 *.onefile-build/
 *.exe
 __main__
+
+
+# Dev time intermidiates & temp files
+result/
+WhatsApp/
+/*.db
+/*.db-*
+/myout
+/msgstore.db
+/myout-json
+.vscode/

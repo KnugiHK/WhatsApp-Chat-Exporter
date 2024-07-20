@@ -11,7 +11,7 @@ from markupsafe import escape as htmle
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, determine_metadata, JidType
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, determine_metadata, JidType, chat_is_empty
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, get_status_location
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify
@@ -157,7 +157,11 @@ def contacts(db, data):
     c = db.cursor()
     c.execute("""SELECT count() FROM wa_contacts""")
     total_row_number = c.fetchone()[0]
-    print(f"Processing contacts...({total_row_number})")
+    if total_row_number == 0:
+        print("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
+        return False
+    else:
+        print(f"Processing contacts...({total_row_number})")
 
     c.execute("""SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts; """)
     row = c.fetchone()
@@ -745,7 +749,8 @@ def create_html(
         embedded=False,
         offline_static=False,
         maximum_size=None,
-        no_avatar=False
+        no_avatar=False,
+        filter_empty=True
     ):
     template = setup_template(template, no_avatar)
 
@@ -759,7 +764,7 @@ def create_html(
 
     for current, contact in enumerate(data):
         chat = data[contact]
-        if len(chat.messages) == 0:
+        if filter_empty and chat_is_empty(chat):
             continue
         safe_file_name, name = get_file_name(contact, chat)
 

@@ -55,9 +55,10 @@ setuptools.setup(
         'crypt12':  ["pycryptodome"],
         'crypt14':  ["pycryptodome"],
         'crypt15':  ["pycryptodome", "javaobj-py3"],
-        'all': ["pycryptodome", "javaobj-py3"],
-        'everything': ["pycryptodome", "javaobj-py3"],
-        'backup': ["pycryptodome", "javaobj-py3"]
+        'all': ["pycryptodome", "javaobj-py3", "vobject"],
+        'everything': ["pycryptodome", "javaobj-py3", "vobject"],
+        'backup': ["pycryptodome", "javaobj-py3"],
+        'vcards': ["vobject", "pycryptodome", "javaobj-py3"],
     },
     entry_points={
         "console_scripts": [

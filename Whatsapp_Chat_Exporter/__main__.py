@@ -7,10 +7,17 @@ import shutil
 import json
 import string
 import glob
+try:
+    import vobject
+except ModuleNotFoundError:
+    vcards_deps_installed = False
+else:
+    vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
+from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
@@ -85,6 +92,20 @@ def main():
         type=str,
         const="result.json",
         help="Save the result to a single JSON file (default if present: result.json)")
+    parser.add_argument(
+        '--avoid-encoding-json',
+        dest='avoid_encoding_json',
+        default=False,
+        action='store_true',
+        help="Don't encode non-ascii characters in the output JSON files")
+    parser.add_argument(
+        '--pretty-print-json',
+        dest='pretty_print_json',
+        default=None,
+        nargs='?',
+        const=2,
+        type=int,
+        help="Pretty print the output JSON.")
     parser.add_argument(
         '-d',
         '--db',
@@ -233,6 +254,13 @@ def main():
         help="Exclude chats that match the supplied phone number"
     )
     parser.add_argument(
+        "--dont-filter-empty",
+        dest="filter_empty",
+        default=True,
+        action='store_false',
+        help="By default, the exporter will not render chats with no valid message. Setting this flag will cause the exporter to render those."
+    )
+    parser.add_argument(
         "--per-chat",
         dest="json_per_chat",
         default=False,
@@ -253,6 +281,19 @@ def main():
         type=int,
         help="Specify the chunk size for decrypting iOS backup, which may affect the decryption speed."
     )
+    parser.add_argument(
+        "--enrich-from-vcards",
+        dest="enrich_from_vcards",
+        default=None,
+        help="Path to an exported vcf file from Google contacts export. Add names missing from WhatsApp's default database"
+    )
+    parser.add_argument(
+        "--default-country-code",
+        dest="default_contry_code",
+        default=None,
+        help="Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country"
+    )
+
     args = parser.parse_args()
 
     # Check for updates
@@ -277,6 +318,8 @@ def main():
         (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
     ):
         parser.error("When --per-chat is enabled, the destination of --json must be a directory.")
+    if args.enrich_from_vcards is not None and args.default_contry_code is None:
+        parser.error("When --enrich-from-vcards is provided, you must also set --default-country-code")
     if args.filter_date is not None:
         if " - " in args.filter_date:
             start, end = args.filter_date.split(" - ")
@@ -319,6 +362,17 @@ def main():
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
 
     data = {}
+
+    contact_store = ContactsFromVCards()
+
+    if args.enrich_from_vcards is not None:
+        if not vcards_deps_installed:
+            parser.error(
+                "You don't have the dependency to enrich contacts with vCard.\n"
+                "Read more on how to deal with enriching contacts:\n"
+                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
+            )
+        contact_store.load_vcf_file(args.enrich_from_vcards, args.default_contry_code)
 
     if args.android:
         contacts = android_handler.contacts
@@ -429,6 +483,9 @@ def main():
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
+                if not contact_store.is_empty():
+                    contact_store.enrich_from_vcards(data)
+
                 create_html(
                     data,
                     args.output,
@@ -436,7 +493,8 @@ def main():
                     args.embedded,
                     args.offline,
                     args.size,
-                    args.no_avatar
+                    args.no_avatar,
+                    args.filter_empty
                 )
         else:
             print(
@@ -471,7 +529,9 @@ def main():
                 args.template,
                 args.embedded,
                 args.offline,
-                args.size
+                args.size,
+                args.no_avatar,
+                args.filter_empty
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
@@ -483,15 +543,28 @@ def main():
             args.template,
             args.embedded,
             args.offline,
-            args.size
+            args.size,
+            args.no_avatar,
+            args.filter_empty
         )
 
     if args.json and not args.import_json:
+        if args.filter_empty:
+            data = {k: v for k, v in data.items() if not chat_is_empty(v)}
+
+        if not contact_store.is_empty():
+            contact_store.enrich_from_vcards(data)
+
         if isinstance(data[next(iter(data))], ChatStore):
             data = {jik: chat.to_json() for jik, chat in data.items()}
+            
         if not args.json_per_chat:
             with open(args.json, "w") as f:
-                data = json.dumps(data)
+                data = json.dumps(
+                    data,
+                    ensure_ascii=not args.avoid_encoding_json,
+                    indent=args.pretty_print_json
+                )
                 print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
                 f.write(data)
         else:
@@ -506,7 +579,8 @@ def main():
                 else:
                     contact = jik.replace('+', '')
                 with open(f"{args.json}/{contact}.json", "w") as f:
-                    f.write(json.dumps(data[jik]))
+                    file_content_to_write = json.dumps(data[jik], ensure_ascii=not args.avoid_encoding_json, indent=2 if args.pretty_print_json else None)
+                    f.write(file_content_to_write)
                     print(f"Writing JSON file...({index + 1}/{total})", end="\r")
             print()
     else:
