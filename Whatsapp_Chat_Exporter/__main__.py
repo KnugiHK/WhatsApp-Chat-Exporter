@@ -210,13 +210,6 @@ def main():
         help="Use Whatsapp Business default files (iOS only)"
     )
     parser.add_argument(
-        "--preserve-timestamp",
-        dest="preserve_timestamp",
-        default=False,
-        action='store_true',
-        help="Preserve the modification timestamp of the extracted files (iOS only)"
-    )
-    parser.add_argument(
         "--wab",
         "--wa-backup",
         dest="wab",
@@ -282,6 +275,13 @@ def main():
         help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
     parser.add_argument(
+        "--decrypt-chunk-size",
+        dest="decrypt_chunk_size",
+        default=1 * 1024 * 1024,
+        type=int,
+        help="Specify the chunk size for decrypting iOS backup, which may affect the decryption speed."
+    )
+    parser.add_argument(
         "--enrich-from-vcards",
         dest="enrich_from_vcards",
         default=None,
@@ -293,7 +293,7 @@ def main():
         default=None,
         help="Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country"
     )
-    
+
     args = parser.parse_args()
 
     # Check for updates
@@ -457,7 +457,7 @@ def main():
             args.media = identifiers.DOMAIN
         if args.backup is not None:
             if not os.path.isdir(args.media):
-                ios_media_handler.extract_media(args.backup, identifiers, args.preserve_timestamp)
+                ios_media_handler.extract_media(args.backup, identifiers, args.decrypt_chunk_size)
             else:
                 print("WhatsApp directory already exists, skipping WhatsApp file extraction.")
         if args.db is None:

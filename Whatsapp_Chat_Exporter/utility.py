@@ -93,6 +93,7 @@ def rendering(
                 w3css=w3css,
                 next=next,
                 status=chat.status,
+                media_base=chat.media_base
             )
         )
 
