@@ -1,10 +1,11 @@
 import jinja2
 import json
 import os
-from bleach import clean as sanitize
-from markupsafe import Markup
 import unicodedata
 import re
+import math
+from bleach import clean as sanitize
+from markupsafe import Markup
 from datetime import datetime
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatStore
@@ -21,6 +22,21 @@ except ImportError:
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
+
+
+def convert_size(size_bytes):
+    """From https://stackoverflow.com/a/14822210/9478891 
+    Authors: james-sapam & other contributors
+    Licensed under CC BY-SA 3.0
+    See git commit logs for changes, if any.
+    """
+    if size_bytes == 0:
+       return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
 
 
 def sanitize_except(html):
