@@ -449,9 +449,9 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         msg = content["data"]
                         if msg is not None:
                             if "\r\n" in msg:
-                                msg = msg.replace("\r\n", "<br>")
+                                msg = msg.replace("\r\n", " <br>")
                             if "\n" in msg:
-                                msg = msg.replace("\n", "<br>")
+                                msg = msg.replace("\n", " <br>")
             else:
                 if content["status"] == 0 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
                     msg = "Message deleted"
@@ -464,9 +464,9 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         msg = content["data"]
                         if msg is not None:
                             if "\r\n" in msg:
-                                msg = msg.replace("\r\n", "<br>")
+                                msg = msg.replace("\r\n", " <br>")
                             if "\n" in msg:
-                                msg = msg.replace("\n", "<br>")
+                                msg = msg.replace("\n", " <br>")
             message.data = msg
 
         data[content["key_remote_jid"]].add_message(content["_id"], message)
