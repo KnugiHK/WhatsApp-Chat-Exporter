@@ -579,7 +579,7 @@ def main():
                 else:
                     contact = jik.replace('+', '')
                 with open(f"{args.json}/{contact}.json", "w") as f:
-                    file_content_to_write = json.dumps(data[jik], ensure_ascii=not args.avoid_encoding_json, indent=2 if args.pretty_print_json else None)
+                    file_content_to_write = json.dumps({jik: data[jik]}, ensure_ascii=not args.avoid_encoding_json, indent=2 if args.pretty_print_json else None)
                     f.write(file_content_to_write)
                     print(f"Writing JSON file...({index + 1}/{total})", end="\r")
             print()
