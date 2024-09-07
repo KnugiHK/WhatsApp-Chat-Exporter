@@ -6,7 +6,7 @@ import re
 import math
 from bleach import clean as sanitize
 from markupsafe import Markup
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 try:
@@ -22,6 +22,26 @@ except ImportError:
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
+
+
+def convert_time_unit(time_second: int):
+    time = str(timedelta(seconds=time_second))
+    if "day" not in time:
+        if time_second < 1:
+            time = "less than a second"
+        elif time_second == 1:
+            time = "a second"
+        elif time_second < 60:
+            time = time[5:][1 if time_second < 10 else 0:] + " seconds"
+        elif time_second == 60:
+            time = "a minute"
+        elif time_second < 3600:
+            time = time[2:] + " minutes"
+        elif time_second == 3600:
+            time = "an hour"
+        else:
+            time += " hour"
+    return time
 
 
 def convert_size(size_bytes):
