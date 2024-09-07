@@ -11,7 +11,7 @@ from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType
-from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
+from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, find_contact_hash_ios
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -401,6 +401,11 @@ def main():
             from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier as identifiers
         if args.media is None:
             args.media = identifiers.DOMAIN
+        
+        found_hash = find_contact_hash_ios(args.backup)
+        if found_hash:
+            identifiers.CONTACT = found_hash
+
         if args.backup is not None:
             if not os.path.isdir(args.media):
                 ios_media_handler.extract_media(args.backup, identifiers, args.preserve_timestamp)

@@ -134,3 +134,5 @@ dmypy.json
 *.onefile-build/
 *.exe
 __main__
+
+AppDomainGroup-group.net.whatsapp.WhatsApp.shared/

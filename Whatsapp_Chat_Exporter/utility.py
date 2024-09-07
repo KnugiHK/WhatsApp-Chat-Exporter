@@ -259,7 +259,7 @@ def determine_metadata(content, init_msg):
     elif content["action_type"] == 50:
         msg = "The contact's account type changed from business to standard"
     elif content["action_type"] == 56:
-        msg = "Messgae timer was enabled/updated/disabled"
+        msg = "Message timer was enabled/updated/disabled"
     elif content["action_type"] == 57:
         if msg != "You":
             msg = f"The security code between you and {msg} changed"
@@ -328,7 +328,73 @@ def slugify(value, allow_unicode=False):
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 
-class WhatsAppIdentifier(StrEnum):
+def find_contact_hash_ios(backup_location):
+    """
+    Find the contact hash for iOS
+    :param backup_location: The location of the backup (string)
+    :return: The contact hash (string)
+    """
+
+    manifest = os.path.join(backup_location, "Manifest.db")
+    if not os.path.isfile(manifest):
+        raise FileNotFoundError("Manifest.db not found")
+    import sqlite3
+
+    # we have to search for AppDomainGroup-group.net.whatsapp.WhatsApp.sharedMessage/Media/<Some arbitrary number>@s.whatsapp.net
+    # find a line containing AppDomainGroup-group.net.whatsapp.WhatsApp.sharedMessage/Media/
+    # SQLite format 3
+
+    # Connect to the SQLite database
+    conn = sqlite3.connect(manifest)
+    cursor = conn.cursor()
+    # Get all table names
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cursor.fetchall()
+
+    # Strings to search for
+    domain_search_string = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
+    relative_path_search_string = "%.opus"  # Search for .opus at the end of the relative path
+    binary_plist_signature = b'62706c6973743030'  # Binary plist signature in hex, in text its bplist00
+
+    # Iterate over all tables and columns
+    for table in tables:
+        table_name = table[0]
+        cursor.execute(f"PRAGMA table_info({table_name});")
+        columns = cursor.fetchall()
+
+        # Check if the table has the required columns
+        column_names = [column[1] for column in columns]
+        if 'domain' in column_names and 'relativePath' in column_names and 'fileID' in column_names and 'file' in column_names:
+            try:
+                # Query to get the relevant blobs
+                query = f"""
+                SELECT fileID, domain, relativePath, file 
+                FROM {table_name} 
+                WHERE domain = ? AND relativePath LIKE ?
+                """
+                cursor.execute(query, (domain_search_string, relative_path_search_string))
+                rows = cursor.fetchall()
+
+                # Process each row
+                for row in rows:
+                    file_id, domain, relative_path, blob_data = row
+                    # Check if the blob starts with the binary plist signature
+                    if blob_data.startswith(bytes.fromhex(binary_plist_signature.decode('utf-8'))):
+                        # Construct the contact_db path
+                        contact_db = os.path.join(backup_location, file_id[:2], file_id)
+                        return file_id
+
+            except sqlite3.OperationalError as e:
+                print(f"Skipping table '{table_name}' due to error: {e}")
+
+
+    # Close the connection
+    conn.close()
+    print('No matching entry found')
+    return None
+
+
+class WhatsAppIdentifier():
     MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
     CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
     DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
