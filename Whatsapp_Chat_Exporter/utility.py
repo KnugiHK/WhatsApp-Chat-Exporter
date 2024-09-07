@@ -380,8 +380,6 @@ def find_contact_hash_ios(backup_location):
                     file_id, domain, relative_path, blob_data = row
                     # Check if the blob starts with the binary plist signature
                     if blob_data.startswith(bytes.fromhex(binary_plist_signature.decode('utf-8'))):
-                        # Construct the contact_db path
-                        contact_db = os.path.join(backup_location, file_id[:2], file_id)
                         return file_id
 
             except sqlite3.OperationalError as e:
