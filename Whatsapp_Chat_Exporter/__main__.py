@@ -308,7 +308,7 @@ def main():
     if args.no_html and not args.json:
         parser.error("You must either specify a JSON output file or enable HTML output.")
     if args.import_json and (args.android or args.ios or args.exported or args.no_html):
-        parser.error("You can only use --import with -j and without --no-html.")
+        parser.error("You can only use --import with -j and without --no-html, -a, -i, -e.")
     elif args.import_json and not os.path.isfile(args.json):
         parser.error("JSON file not found.")
     if args.android and args.business:
