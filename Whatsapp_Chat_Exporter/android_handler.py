@@ -796,6 +796,7 @@ def create_html(
                     current_size = 0
                     current_page += 1
                 else:
+                    render_box.append(message)
                     if message.key_id == last_msg:
                         if current_page == 1:
                             output_file_name = f"{output_folder}/{safe_file_name}.html"
@@ -811,8 +812,6 @@ def create_html(
                             False,
                             chat
                         )
-                    else:
-                        render_box.append(message)
         else:
             output_file_name = f"{output_folder}/{safe_file_name}.html"
             rendering(
