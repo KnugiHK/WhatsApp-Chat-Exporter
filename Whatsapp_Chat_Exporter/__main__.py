@@ -18,7 +18,7 @@ from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty
-from Whatsapp_Chat_Exporter.utility import check_update, import_from_json
+from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -578,7 +578,7 @@ def main():
                     contact = data[jik]["name"].replace('/', '')
                 else:
                     contact = jik.replace('+', '')
-                with open(f"{args.json}/{contact}.json", "w") as f:
+                with open(f"{args.json}/{sanitize_filename(contact)}.json", "w") as f:
                     file_content_to_write = json.dumps({jik: data[jik]}, ensure_ascii=not args.avoid_encoding_json, indent=2 if args.pretty_print_json else None)
                     f.write(file_content_to_write)
                     print(f"Writing JSON file...({index + 1}/{total})", end="\r")

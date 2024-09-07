@@ -139,6 +139,10 @@ def import_from_json(json_file, data):
         print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
 
 
+def sanitize_filename(file_name: str):
+    return "".join(x for x in file_name if x.isalnum() or x in "- ")
+
+
 def get_file_name(contact: str, chat: ChatStore):
     if "@" not in contact and contact not in ("000000000000000", "000000000000001", "ExportedChat"):
         raise ValueError("Unexpected contact format: " + contact)
@@ -156,7 +160,7 @@ def get_file_name(contact: str, chat: ChatStore):
     else:
         name = phone_number
 
-    return "".join(x for x in file_name if x.isalnum() or x in "- "), name
+    return sanitize_filename(file_name), name
 
 
 def get_chat_condition(filter, include, column):
