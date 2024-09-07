@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import datetime
 import sqlite3
 import os
 import io
@@ -11,10 +12,10 @@ from markupsafe import escape as htmle
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, determine_metadata, JidType, chat_is_empty
+from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, determine_metadata, JidType
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, get_status_location
-from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify
+from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, convert_size, chat_is_empty
 
 try:
     import zlib
@@ -733,9 +734,13 @@ def calls(db, data, timezone_offset, filter_chat):
         elif content['call_result'] == 3:
             call.data += "unavailable."
         elif content['call_result'] == 5:
+            call_time = str(datetime.timedelta(seconds=content['duration']))
+            if "day" not in call_time and call_time.startswith("0:"):
+                call_time = call_time[2:]
+            call_bytes = convert_size(content['bytes_transferred'])
             call.data += (
-                f"initiated and lasted for {content['duration']} second(s) "
-                f"with {content['bytes_transferred']} bytes transferred."
+                f"initiated and lasted for {call_time} "
+                f"with {call_bytes} transferred."
             )
         chat.add_message(content["_id"], call)
         content = c.fetchone()
