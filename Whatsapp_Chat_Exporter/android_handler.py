@@ -10,6 +10,7 @@ from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from hashlib import sha256
 from base64 import b64decode, b64encode
+from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, convert_time_unit, determine_metadata
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template, JidType
@@ -830,3 +831,38 @@ def create_html(
             print(f"Generating chats...({current}/{total_row_number})", end="\r")
 
     print(f"Generating chats...({total_row_number}/{total_row_number})", end="\r")
+
+
+def create_txt(data, output):
+    os.makedirs(output, exist_ok=True)
+    for jik, chat in data.items():
+        if chat.name is not None:
+            contact = chat.name.replace('/', '')
+        else:
+            contact = jik.replace('+', '')
+        output_file = os.path.join(output, f"{contact}.txt")
+        with open(output_file, "w", encoding="utf8") as f:
+            for message in chat.messages.values():
+                date = datetime.fromtimestamp(message.timestamp).date()
+                if message.meta and message.mime != "media":
+                    continue  # Skip any metadata in text format
+                if message.from_me:
+                    name = "You"
+                else:
+                    name = message.sender if message.sender else contact
+                prefix = f"[{date} {message.time}] {name}: "
+                prefix_length = len(prefix)
+                if message.media and ("/" in message.mime or message.mime == "media"):
+                    if message.data == "The media is missing":
+                        message_text = "<The media is missing>"
+                    else:
+                        message_text = f"<media file in {message.data}>"
+                else:
+                    if message.data is None:
+                        message_text = ""
+                    else:
+                        message_text = message.data.replace('<br>', f'\n{" " * prefix_length}')
+                if message.caption is not None:
+                    message_text += "\n" + ' ' * len(prefix) + message.caption.replace('<br>', f'\n{" " * prefix_length}')
+                f.write(f"{prefix}{message_text}\n")
+

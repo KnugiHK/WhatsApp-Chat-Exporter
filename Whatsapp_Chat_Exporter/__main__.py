@@ -293,6 +293,14 @@ def main():
         default=None,
         help="Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country"
     )
+    parser.add_argument(
+        "--txt",
+        dest="text_format",
+        nargs='?',
+        default=None,
+        type=str,
+        const="result",
+        help="Export chats in text format similar to what WhatsApp officially provided (default if present: result/)")
 
     args = parser.parse_args()
 
@@ -305,8 +313,8 @@ def main():
         parser.error("You must define only one device type.")
     if not args.android and not args.ios and not args.exported and not args.import_json:
         parser.error("You must define the device type.")
-    if args.no_html and not args.json:
-        parser.error("You must either specify a JSON output file or enable HTML output.")
+    if args.no_html and not args.json and not args.text_format:
+        parser.error("You must either specify a JSON output file, text file output directory or enable HTML output.")
     if args.import_json and (args.android or args.ios or args.exported or args.no_html):
         parser.error("You can only use --import with -j and without --no-html, -a, -i, -e.")
     elif args.import_json and not os.path.isfile(args.json):
@@ -547,6 +555,10 @@ def main():
             args.no_avatar,
             args.filter_empty
         )
+
+    if args.text_format:
+        print("Writing text file...")
+        android_handler.create_txt(data, args.text_format)
 
     if args.json and not args.import_json:
         if args.filter_empty:
