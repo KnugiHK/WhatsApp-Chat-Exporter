@@ -33,11 +33,16 @@ def read_vcards_file(vcf_file_path, default_country_code: str):
     with open(vcf_file_path, mode="r", encoding="utf-8") as f:
         reader = vobject.readComponents(f)
         for row in reader:
-            if not hasattr(row, 'fn') or not hasattr(row, 'tel'):
+            if hasattr(row, 'fn'):
+                name = str(row.fn.value)
+            elif hasattr(row, 'n'):
+                name = str(row.n.value)
+            else:
+                name = None
+            if not hasattr(row, 'tel') or name is None:
                 continue
-
             contact: ExportedContactNumbers = {
-                "full_name": row.fn.value,
+                "full_name": name,
                 "numbers": list(map(lambda tel: tel.value, row.tel_list)),
             }
             contacts.append(contact)
