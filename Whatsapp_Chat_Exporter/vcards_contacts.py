@@ -1,6 +1,5 @@
-import itertools
-from typing import List, TypedDict
 import vobject
+from typing import List, TypedDict
 
 
 class ExportedContactNumbers(TypedDict):

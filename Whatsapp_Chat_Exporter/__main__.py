@@ -12,10 +12,10 @@ try:
 except ModuleNotFoundError:
     vcards_deps_installed = False
 else:
+    from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
     vcards_deps_installed = True
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename
@@ -371,8 +371,6 @@ def main():
 
     data = {}
 
-    contact_store = ContactsFromVCards()
-
     if args.enrich_from_vcards is not None:
         if not vcards_deps_installed:
             parser.error(
@@ -380,6 +378,7 @@ def main():
                 "Read more on how to deal with enriching contacts:\n"
                 "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
             )
+        contact_store = ContactsFromVCards()
         contact_store.load_vcf_file(args.enrich_from_vcards, args.default_contry_code)
 
     if args.android:
@@ -491,7 +490,7 @@ def main():
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
             if not args.no_html:
-                if not contact_store.is_empty():
+                if args.enrich_from_vcards is not None and not contact_store.is_empty():
                     contact_store.enrich_from_vcards(data)
 
                 create_html(
@@ -564,7 +563,7 @@ def main():
         if args.filter_empty:
             data = {k: v for k, v in data.items() if not chat_is_empty(v)}
 
-        if not contact_store.is_empty():
+        if args.enrich_from_vcards is not None and not contact_store.is_empty():
             contact_store.enrich_from_vcards(data)
 
         if isinstance(data[next(iter(data))], ChatStore):
