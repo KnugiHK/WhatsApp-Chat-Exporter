@@ -354,37 +354,27 @@ def find_contact_hash_ios(backup_location):
     # Strings to search for
     domain_search_string = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
     relative_path_search_string = "%.opus"  # Search for .opus at the end of the relative path
-    binary_plist_signature = b'62706c6973743030'  # Binary plist signature in hex, in text its bplist00
+    binary_plist_signature = b'62706c6973743030'  # Binary plist signature in hex, in text it's bplist00
 
-    # Iterate over all tables and columns
-    for table in tables:
-        table_name = table[0]
-        cursor.execute(f"PRAGMA table_info({table_name});")
-        columns = cursor.fetchall()
+    try:
+        # Query the Files table directly
+        query = """
+        SELECT fileID, domain, relativePath, file 
+        FROM Files 
+        WHERE domain = ? AND relativePath LIKE ?
+        """
+        cursor.execute(query, (domain_search_string, relative_path_search_string))
+        rows = cursor.fetchall()
 
-        # Check if the table has the required columns
-        column_names = [column[1] for column in columns]
-        if 'domain' in column_names and 'relativePath' in column_names and 'fileID' in column_names and 'file' in column_names:
-            try:
-                # Query to get the relevant blobs
-                query = f"""
-                SELECT fileID, domain, relativePath, file 
-                FROM {table_name} 
-                WHERE domain = ? AND relativePath LIKE ?
-                """
-                cursor.execute(query, (domain_search_string, relative_path_search_string))
-                rows = cursor.fetchall()
+        # Process each row
+        for row in rows:
+            file_id, domain, relative_path, blob_data = row
+            # Check if the blob starts with the binary plist signature
+            if blob_data.startswith(bytes.fromhex(binary_plist_signature.decode('utf-8'))):
+                return file_id
 
-                # Process each row
-                for row in rows:
-                    file_id, domain, relative_path, blob_data = row
-                    # Check if the blob starts with the binary plist signature
-                    if blob_data.startswith(bytes.fromhex(binary_plist_signature.decode('utf-8'))):
-                        return file_id
-
-            except sqlite3.OperationalError as e:
-                print(f"Skipping table '{table_name}' due to error: {e}")
-
+    except sqlite3.OperationalError as e:
+        print(f"Error accessing the 'Files' table: {e}")
 
     # Close the connection
     conn.close()
