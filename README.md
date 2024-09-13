@@ -6,6 +6,8 @@
 A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
 **If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops**
 
+If you would like to support this project, all you need to do is to contribute or share this project! If you think otherwise and want to make a donation, please refer to the [Donation Guide](https://blog.knugi.com/DONATE.html).
+
 # Usage
 **Usage in README may be removed in the future. Check the usage in [Wiki](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/wiki)**.
 
