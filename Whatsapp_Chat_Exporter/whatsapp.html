@@ -138,6 +138,11 @@
 									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 									{% endif %}
 								</div>
+								{% if msg.caption is not none %}
+								<div class="w3-container">
+								{{ msg.caption | urlize(none, true, '_blank') }}
+								</div>
+								{% endif %}
 							{% else %}
 								{% if msg.media == false %}
 								{{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
@@ -222,6 +227,11 @@
 									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
 									{% endif %}
 								</div>
+								{% if msg.caption is not none %}
+								<div class="w3-container">
+								{{ msg.caption | urlize(none, true, '_blank') }}
+								</div>
+								{% endif %}
 							{% else %}
 								{% if msg.media == false %}
 								{{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
