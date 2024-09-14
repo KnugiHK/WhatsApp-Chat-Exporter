@@ -96,8 +96,7 @@ def extract_media(base_dir, identifiers, decrypt_chunk_size):
         else:
             shutil.copyfile(wts_db, identifiers.MESSAGE)
         if not os.path.isfile(contact_db):
-            print("Contact database not found.")
-            exit()
+            print("Contact database not found. Skipping...")
         else:
             shutil.copyfile(contact_db, identifiers.CONTACT)
         _wts_id = identifiers.DOMAIN
