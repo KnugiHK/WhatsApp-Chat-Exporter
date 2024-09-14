@@ -199,12 +199,19 @@ def get_file_name(contact: str, chat: ChatStore):
     return sanitize_filename(file_name), name
 
 
-def get_chat_condition(filter, include, column):
+def get_chat_condition(filter, include, columns, jid=None):
     if filter is not None:
-        if include:
-            return f'''AND ({' OR '.join(f"{column} LIKE '%{chat}%'" for chat in filter)})'''
-        else:
-            return f'''AND ({' AND '.join(f"{column} NOT LIKE '%{chat}%'" for chat in filter)})'''
+        conditions = []
+        for index, chat in enumerate(filter):
+            if include:
+                conditions.append(f"{' OR' if index > 0 else ''} {columns[0]} LIKE '%{chat}%'")
+                if len(columns) > 1:
+                    conditions.append(f" OR ({columns[1]} LIKE '%{chat}%' AND {jid}.type == 1)")
+            else:
+                conditions.append(f"{' AND' if index > 0 else ''} {columns[0]} NOT LIKE '%{chat}%'")
+                if len(columns) > 1:
+                    conditions.append(f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {jid}.type == 1)")
+        return f"AND ({' '.join(conditions)})"
     else:
         return ""
 

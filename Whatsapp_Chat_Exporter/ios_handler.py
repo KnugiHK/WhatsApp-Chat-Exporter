@@ -32,8 +32,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
     c.execute(f"""SELECT count()
                 FROM ZWACHATSESSION
                 WHERE 1=1
-                    {get_chat_condition(filter_chat[0], True, "ZWACHATSESSION.ZCONTACTJID")}
-                    {get_chat_condition(filter_chat[1], False, "ZWACHATSESSION.ZCONTACTJID")}""")
+                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])}""")
     total_row_number = c.fetchone()[0]
     print(f"Processing contacts...({total_row_number})")
 
@@ -45,8 +45,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                 LEFT JOIN ZWAPROFILEPUSHNAME
                     ON ZWACHATSESSION.ZCONTACTJID = ZWAPROFILEPUSHNAME.ZJID
            WHERE 1=1
-                {get_chat_condition(filter_chat[0], True, "ZWACHATSESSION.ZCONTACTJID")}
-                {get_chat_condition(filter_chat[1], False, "ZWACHATSESSION.ZCONTACTJID")};"""
+                {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
+                {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])};"""
     )
     content = c.fetchone()
     while content is not None:
@@ -80,8 +80,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                             ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                   WHERE 1=1
                     {f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, "ZWACHATSESSION.ZCONTACTJID")}
-                    {get_chat_condition(filter_chat[1], False, "ZWACHATSESSION.ZCONTACTJID")}""")
+                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])}""")
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
     c.execute(f"""SELECT ZCONTACTJID,
@@ -103,8 +103,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                  WHERE 1=1   
                     {f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, "ZCONTACTJID")}
-                    {get_chat_condition(filter_chat[1], False, "ZCONTACTJID")}
+                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID"])}
                  ORDER BY ZMESSAGEDATE ASC;""")
     i = 0
     content = c.fetchone()
@@ -218,8 +218,8 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                   WHERE 1=1
                     {f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, "ZWACHATSESSION.ZCONTACTJID")}
-                    {get_chat_condition(filter_chat[1], False, "ZWACHATSESSION.ZCONTACTJID")}
+                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])}
                 """)
     total_row_number = c.fetchone()[0]
     print(f"\nProcessing media...(0/{total_row_number})", end="\r")
@@ -238,8 +238,8 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                  WHERE ZMEDIALOCALPATH IS NOT NULL
                     {f'AND ZWAMESSAGE.ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, "ZCONTACTJID")}
-                    {get_chat_condition(filter_chat[1], False, "ZCONTACTJID")}
+                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID"])}
                  ORDER BY ZCONTACTJID ASC""")
     content = c.fetchone()
     mime = MimeTypes()
@@ -311,8 +311,8 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                  WHERE 1=1
                     {f'AND ZWAMESSAGE.ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, "ZCONTACTJID")}
-                    {get_chat_condition(filter_chat[1], False, "ZCONTACTJID")};""")
+                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID"])};""")
     contents = c.fetchall()
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
