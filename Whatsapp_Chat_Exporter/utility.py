@@ -59,6 +59,25 @@ def convert_size(size_bytes):
     return "%s %s" % (s, size_name[i])
 
 
+def convert_size_reverse(size_str):
+    SIZE_UNITS = {
+        'B': 1,
+        'KB': 1024,
+        'MB': 1024**2,
+        'GB': 1024**3,
+        'TB': 1024**4,
+        'PB': 1024**5,
+        'EB': 1024**6,
+        'ZB': 1024**7, 
+        'YB': 1024**8
+    }
+    size_str = size_str.upper().strip()
+    number, unit = size_str[:-2].strip(), size_str[-2:].strip()
+    if unit not in SIZE_UNITS or not number.isnumeric():
+        raise ValueError("Invalid input for size_str. Example: 1024GB")
+    return int(number) * SIZE_UNITS[unit]
+
+
 def sanitize_except(html):
     return Markup(sanitize(html, tags=["br"]))
 

@@ -17,7 +17,7 @@ else:
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty, convert_size_reverse
 from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
@@ -162,7 +162,6 @@ def main():
         "--split",
         dest="size",
         nargs='?',
-        type=int,
         const=0,
         default=None,
         help="Maximum (rough) size of a single output file in bytes, 0 for auto"
@@ -328,6 +327,11 @@ def main():
         parser.error("When --per-chat is enabled, the destination of --json must be a directory.")
     if args.enrich_from_vcards is not None and args.default_contry_code is None:
         parser.error("When --enrich-from-vcards is provided, you must also set --default-country-code")
+    if args.size is not None and not isinstance(args.size, int) and not args.size.isnumeric():
+        try:
+            args.size = convert_size_reverse(args.size)
+        except ValueError:
+            parser.error("The value for --split must be ended in pure bytes or with a proper unit (e.g., 1048576 or 1MB)")
     if args.filter_date is not None:
         if " - " in args.filter_date:
             start, end = args.filter_date.split(" - ")
