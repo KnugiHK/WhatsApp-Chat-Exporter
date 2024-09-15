@@ -202,7 +202,7 @@ def get_file_name(contact: str, chat: ChatStore):
     if "@" not in contact and contact not in ("000000000000000", "000000000000001", "ExportedChat"):
         raise ValueError("Unexpected contact format: " + contact)
     phone_number = contact.split('@')[0]
-    if "-" in contact:
+    if "-" in contact and chat.name is not None:
         file_name = ""
     else:
         file_name = phone_number
@@ -210,7 +210,7 @@ def get_file_name(contact: str, chat: ChatStore):
     if chat.name is not None:
         if file_name != "":
             file_name += "-"
-        file_name += chat.name.replace("/", "-")
+        file_name += chat.name.replace("/", "-").replace("\\", "-")
         name = chat.name
     else:
         name = phone_number
