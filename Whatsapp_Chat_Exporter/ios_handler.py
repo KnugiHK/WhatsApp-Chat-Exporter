@@ -29,24 +29,41 @@ def contacts(db, data):
 def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
     c = db.cursor()
     # Get contacts
-    c.execute(f"""SELECT count()
-                FROM ZWACHATSESSION
-                WHERE 1=1
-                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
-                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])}""")
+    c.execute(
+        f"""SELECT count() 
+            FROM (SELECT DISTINCT ZCONTACTJID,
+                ZPARTNERNAME,
+                ZWAPROFILEPUSHNAME.ZPUSHNAME
+            FROM ZWACHATSESSION
+                INNER JOIN ZWAMESSAGE
+                    ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                LEFT JOIN ZWAPROFILEPUSHNAME
+                    ON ZWACHATSESSION.ZCONTACTJID = ZWAPROFILEPUSHNAME.ZJID
+                LEFT JOIN ZWAGROUPMEMBER
+                        ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
+            WHERE 1=1
+                {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+            GROUP BY ZCONTACTJID);"""
+    )
     total_row_number = c.fetchone()[0]
     print(f"Processing contacts...({total_row_number})")
 
     c.execute(
-        f"""SELECT ZCONTACTJID,
+        f"""SELECT DISTINCT ZCONTACTJID,
                 ZPARTNERNAME,
-                ZPUSHNAME
-           FROM ZWACHATSESSION
+                ZWAPROFILEPUSHNAME.ZPUSHNAME
+            FROM ZWACHATSESSION
+                INNER JOIN ZWAMESSAGE
+                    ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                 LEFT JOIN ZWAPROFILEPUSHNAME
                     ON ZWACHATSESSION.ZCONTACTJID = ZWAPROFILEPUSHNAME.ZJID
-           WHERE 1=1
-                {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
-                {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])};"""
+                LEFT JOIN ZWAGROUPMEMBER
+                        ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
+            WHERE 1=1
+                {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+            GROUP BY ZCONTACTJID;"""
     )
     content = c.fetchone()
     while content is not None:
