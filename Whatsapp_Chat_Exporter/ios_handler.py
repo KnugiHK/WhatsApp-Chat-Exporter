@@ -271,17 +271,6 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                 shutil.copy2(file_path, new_path)
                 message.data = new_path
         else:
-            if False: # Block execution
-                try:
-                    r = requests.get(content["ZMEDIAURL"])
-                    if r.status_code != 200:
-                        raise RuntimeError()
-                except:
-                    message.data = "The media is missing"
-                    message.mime = "media"
-                    message.meta = True
-                else:
-                    ...
             message.data = "The media is missing"
             message.mime = "media"
             message.meta = True
