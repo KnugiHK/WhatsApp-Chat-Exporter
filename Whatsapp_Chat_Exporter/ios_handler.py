@@ -78,10 +78,12 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                   FROM ZWAMESSAGE
                         INNER JOIN ZWACHATSESSION
                             ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                        LEFT JOIN ZWAGROUPMEMBER
+                            ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
                   WHERE 1=1
                     {f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
-                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])}""")
+                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}""")
     total_row_number = c.fetchone()[0]
     print(f"Processing messages...(0/{total_row_number})", end="\r")
     c.execute(f"""SELECT ZCONTACTJID,
@@ -103,8 +105,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
                  WHERE 1=1   
                     {f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID"])}
-                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
                  ORDER BY ZMESSAGEDATE ASC;""")
     i = 0
     content = c.fetchone()
@@ -216,10 +218,12 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                         ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
                     INNER JOIN ZWACHATSESSION
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                    LEFT JOIN ZWAGROUPMEMBER
+                        ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
                   WHERE 1=1
                     {f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID"])}
-                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID","ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
                 """)
     total_row_number = c.fetchone()[0]
     print(f"\nProcessing media...(0/{total_row_number})", end="\r")
@@ -236,10 +240,12 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                         ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
                     INNER JOIN ZWACHATSESSION
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                    LEFT JOIN ZWAGROUPMEMBER
+                        ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
                  WHERE ZMEDIALOCALPATH IS NOT NULL
                     {f'AND ZWAMESSAGE.ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID"])}
-                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID"])}
+                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
                  ORDER BY ZCONTACTJID ASC""")
     content = c.fetchone()
     mime = MimeTypes()
@@ -298,10 +304,12 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
                         ON ZWAMEDIAITEM.ZMESSAGE = ZWAMESSAGE.Z_PK
                     INNER JOIN ZWACHATSESSION
                         ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+                    LEFT JOIN ZWAGROUPMEMBER
+                        ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
                  WHERE 1=1
                     {f'AND ZWAMESSAGE.ZMESSAGEDATE {filter_date}' if filter_date is not None else ''}
-                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID"])}
-                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID"])};""")
+                    {get_chat_condition(filter_chat[0], True, ["ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")};""")
     contents = c.fetchall()
     total_row_number = len(contents)
     print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")

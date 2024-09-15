@@ -218,18 +218,27 @@ def get_file_name(contact: str, chat: ChatStore):
     return sanitize_filename(file_name), name
 
 
-def get_chat_condition(filter, include, columns, jid=None):
+def get_chat_condition(filter, include, columns, jid=None, platform=None):
     if filter is not None:
         conditions = []
+        if len(columns) < 2 and jid is not None:
+            raise ValueError("There must be at least two elements in argument columns if jid is not None")
+        if jid is not None:
+            if platform == "android":
+                is_group = f"{jid}.type == 1"
+            elif platform == "ios":
+                is_group = f"{jid} IS NOT NULL"
+            else:
+                raise ValueError("Only android and ios are supported for argument platform if jid is not None")
         for index, chat in enumerate(filter):
             if include:
                 conditions.append(f"{' OR' if index > 0 else ''} {columns[0]} LIKE '%{chat}%'")
                 if len(columns) > 1:
-                    conditions.append(f" OR ({columns[1]} LIKE '%{chat}%' AND {jid}.type == 1)")
+                    conditions.append(f" OR ({columns[1]} LIKE '%{chat}%' AND {is_group})")
             else:
                 conditions.append(f"{' AND' if index > 0 else ''} {columns[0]} NOT LIKE '%{chat}%'")
                 if len(columns) > 1:
-                    conditions.append(f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {jid}.type == 1)")
+                    conditions.append(f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {is_group})")
         return f"AND ({' '.join(conditions)})"
     else:
         return ""
