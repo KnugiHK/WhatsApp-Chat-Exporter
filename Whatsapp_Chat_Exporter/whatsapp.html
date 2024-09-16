@@ -140,7 +140,7 @@
 								</div>
 								{% if msg.caption is not none %}
 								<div class="w3-container">
-								{{ msg.caption | urlize(none, true, '_blank') }}
+									{{ msg.caption | urlize(none, true, '_blank') }}
 								</div>
 								{% endif %}
 							{% else %}
@@ -167,11 +167,12 @@
 										{% filter escape %}{{ msg.data }}{% endfilter %}
 									{% endif %}
 									{% if msg.caption is not none %}
-									<br>
-									{{ msg.caption | urlize(none, true, '_blank') }}
+									<div class="w3-container">
+										{{ msg.caption | urlize(none, true, '_blank') }}
+									</div>
 									{% endif %}
 								{% endif %}
-								{% endif %}
+							{% endif %}
 							</div>
 						</div>
 						{% if not no_avatar and my_avatar is not none %}
@@ -256,8 +257,9 @@
 										{% filter escape %}{{ msg.data }}{% endfilter %}
 									{% endif %}
 									{% if msg.caption is not none %}
-									<br>
-									{{ msg.caption | urlize(none, true, '_blank') }}
+									<div class="w3-container">
+										{{ msg.caption | urlize(none, true, '_blank') }}
+									</div>
 									{% endif %}
 								{% endif %}
 							{% endif %}
