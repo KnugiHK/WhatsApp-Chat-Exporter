@@ -88,7 +88,7 @@ wtsexporter -a -k 432435053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cdaa5
 ```
 
 ## Working with iOS/iPadOS (iPhone or iPad)
-Do an iPhone/iPad Backup with iTunes first.
+Do an iPhone/iPad Backup with iTunes/Finder first.
 * iPhone backup on Mac: https://support.apple.com/HT211229
 * iPhone backup on Windows: https://support.apple.com/HT212156
 * iPad backup: https://support.apple.com/guide/ipad/ipad9a74df05xx/ipados
