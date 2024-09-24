@@ -18,7 +18,7 @@ from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty, convert_size_reverse
-from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename
+from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename, convert_size
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -580,7 +580,7 @@ def main():
                     ensure_ascii=not args.avoid_encoding_json,
                     indent=args.pretty_print_json
                 )
-                print(f"\nWriting JSON file...({int(len(data)/1024/1024)}MB)")
+                print(f"\nWriting JSON file...({convert_size(len(data))})")
                 f.write(data)
         else:
             if args.json[-5:] == ".json":
