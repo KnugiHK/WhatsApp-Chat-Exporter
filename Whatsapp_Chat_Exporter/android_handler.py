@@ -732,7 +732,9 @@ def calls(db, data, timezone_offset, filter_chat):
             f"call {'to' if call.from_me else 'from'} "
             f"{call.sender} was "
         )
-        if content['call_result'] == 2:
+        if content['call_result'] in (0, 4, 7):
+            call.data += "cancelled." if call.from_me else "missed."
+        elif content['call_result'] == 2:
             call.data += "not answered." if call.from_me else "missed."
         elif content['call_result'] == 3:
             call.data += "unavailable."
@@ -743,6 +745,8 @@ def calls(db, data, timezone_offset, filter_chat):
                 f"initiated and lasted for {call_time} "
                 f"with {call_bytes} data transferred."
             )
+        else:
+            call.data += "in an unknown state."
         chat.add_message(content["_id"], call)
         content = c.fetchone()
     data["000000000000000"] = chat
