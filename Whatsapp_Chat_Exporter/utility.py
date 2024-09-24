@@ -44,7 +44,7 @@ def convert_time_unit(time_second: int):
     return time
 
 
-def convert_size(size_bytes):
+def bytes_to_readable(size_bytes):
     """From https://stackoverflow.com/a/14822210/9478891 
     Authors: james-sapam & other contributors
     Licensed under CC BY-SA 3.0
@@ -59,7 +59,7 @@ def convert_size(size_bytes):
     return "%s %s" % (s, size_name[i])
 
 
-def convert_size_reverse(size_str):
+def readable_to_bytes(size_str):
     SIZE_UNITS = {
         'B': 1,
         'KB': 1024,

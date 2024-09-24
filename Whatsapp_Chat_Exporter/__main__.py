@@ -17,8 +17,8 @@ else:
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty, convert_size_reverse
-from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename, convert_size
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty, readable_to_bytes
+from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -329,7 +329,7 @@ def main():
         parser.error("When --enrich-from-vcards is provided, you must also set --default-country-code")
     if args.size is not None and not isinstance(args.size, int) and not args.size.isnumeric():
         try:
-            args.size = convert_size_reverse(args.size)
+            args.size = readable_to_bytes(args.size)
         except ValueError:
             parser.error("The value for --split must be ended in pure bytes or with a proper unit (e.g., 1048576 or 1MB)")
     if args.filter_date is not None:
@@ -580,7 +580,7 @@ def main():
                     ensure_ascii=not args.avoid_encoding_json,
                     indent=args.pretty_print_json
                 )
-                print(f"\nWriting JSON file...({convert_size(len(data))})")
+                print(f"\nWriting JSON file...({bytes_to_readable(len(data))})")
                 f.write(data)
         else:
             if args.json[-5:] == ".json":
