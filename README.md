@@ -106,6 +106,10 @@ Simply invoke the following command from shell, remember to replace the username
 ```sh
 wtsexporter -i -b "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
 ```
+#### Windows (iTunes downloaded from Microsoft Store)
+```sh
+wtsexporter -i -b "C:\Users\[Username]\Apple\MobileSync\Backup\[device id]"
+```
 #### Mac
 ```sh
 wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
