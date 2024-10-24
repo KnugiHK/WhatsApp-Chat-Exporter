@@ -13,6 +13,7 @@ try:
     from enum import StrEnum, IntEnum
 except ImportError:
     # < Python 3.11
+    # This should be removed when the support for Python 3.10 ends.
     from enum import Enum
     class StrEnum(str, Enum):
         pass
