@@ -11,7 +11,7 @@ assignees: ''
 - WhatsApp version: [WhatsApp version]
 - OS: [Android/iOS] - [version]
 - Platform: [Linux/Windows/MacOS]
-- Branch and version: [main/dev] - [exporter version]
+- Exporter's branch and version: [main/dev] - [exporter version]
 
 If it is an error yield by Python, please also provide the trackback
 ```
