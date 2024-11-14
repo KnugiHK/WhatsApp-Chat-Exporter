@@ -13,14 +13,15 @@ assignees: ''
 - Platform: [Linux/Windows/MacOS]
 - Exporter's branch and version: [main/dev] - [exporter version]
 
+**Describe the bug**
+A clear and concise description of what the bug is.
+
 If it is an error yield by Python, please also provide the trackback
 ```
 [trackback here]
 ```
 
 # Nice to have
-**Describe the bug**
-A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
