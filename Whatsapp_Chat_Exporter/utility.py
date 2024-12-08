@@ -391,7 +391,7 @@ def setup_template(template, no_avatar):
     return template_env.get_template(template_file)
 
 # iOS Specific
-APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
+APPLE_TIME = 978307200
 
 
 def slugify(value, allow_unicode=False):
