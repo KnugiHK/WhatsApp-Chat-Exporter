@@ -12,7 +12,7 @@ from hashlib import sha256
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, DbType, convert_time_unit, determine_metadata
+from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, DbType, convert_time_unit, determine_metadata
 from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template, JidType
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, get_status_location
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, bytes_to_readable, chat_is_empty
@@ -354,7 +354,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
-            timezone_offset=timezone_offset
+            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
         )
         if isinstance(content["data"], bytes):
             message.data = ("The message is binary data and its base64 is "
@@ -717,7 +717,7 @@ def calls(db, data, timezone_offset, filter_chat):
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["call_id"],
-            timezone_offset=timezone_offset
+            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
         )
         _jid = content["raw_string"]
         name = data[_jid].name if _jid in data else content["chat_subject"] or None

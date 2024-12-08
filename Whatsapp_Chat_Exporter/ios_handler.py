@@ -7,7 +7,7 @@ from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Device, get_chat_condition, slugify
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CURRENT_TZ_OFFSET, Device, get_chat_condition, slugify
 
 
 def contacts(db, data):
@@ -149,7 +149,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
             timestamp=ts,
             time=ts, # TODO: Could be bug
             key_id=content["ZSTANZAID"][:17],
-            timezone_offset=timezone_offset
+            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
         )
         invalid = False
         if is_group_message and content["ZISFROMME"] == 0:
