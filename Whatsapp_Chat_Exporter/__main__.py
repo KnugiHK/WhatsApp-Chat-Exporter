@@ -22,10 +22,7 @@ from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanit
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
-try:
-    from .__init__ import __version__
-except ImportError:
-    from Whatsapp_Chat_Exporter.__init__ import __version__
+import importlib.metadata
 
 
 def main():
@@ -33,7 +30,7 @@ def main():
         description = 'A customizable Android and iOS/iPadOS WhatsApp database parser that '
                       'will give you the history of your WhatsApp conversations in HTML '
                       'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
-        epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT. See '
+        epilog = f'WhatsApp Chat Exporter: {importlib.metadata.version("whatsapp_chat_exporter")} Licensed with MIT. See '
                   'https://wts.knugi.dev/docs?dest=osl for all open source licenses.'
     )
     parser.add_argument(
