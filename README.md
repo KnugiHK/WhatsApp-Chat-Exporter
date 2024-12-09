@@ -26,6 +26,10 @@ Then, create a working directory in somewhere you want
 mkdir working_wts
 cd working_wts
 ```
+
+> [!TIP]
+> macOS users should grant Full Disk Access to Terminal in the Security & Privacy settings before using the exporter.
+
 ## Working with Android
 ### Unencrypted WhatsApp database
 Extract the WhatsApp database with whatever means, one possible means is to use the [WhatsApp-Key-DB-Extractor](https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor)

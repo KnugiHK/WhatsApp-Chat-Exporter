@@ -11,7 +11,10 @@ assignees: ''
 - WhatsApp version: [WhatsApp version]
 - OS: [Android/iOS] - [version]
 - Platform: [Linux/Windows/MacOS]
-- Branch and version: [main/dev] - [exporter version]
+- Exporter's branch and version: [main/dev] - [exporter version]
+
+**Describe the bug**
+A clear and concise description of what the bug is.
 
 If it is an error yield by Python, please also provide the trackback
 ```
@@ -19,8 +22,6 @@ If it is an error yield by Python, please also provide the trackback
 ```
 
 # Nice to have
-**Describe the bug**
-A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
