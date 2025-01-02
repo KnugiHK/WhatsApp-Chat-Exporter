@@ -292,7 +292,7 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
                 Path(new_folder).mkdir(parents=True, exist_ok=True)
                 new_path = os.path.join(new_folder, current_filename)
                 shutil.copy2(file_path, new_path)
-                message.data = new_path
+                message.data = '/'.join(new_path.split("\\")[1:])
         else:
             message.data = "The media is missing"
             message.mime = "media"
