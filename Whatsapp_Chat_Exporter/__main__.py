@@ -305,6 +305,15 @@ def main():
         action='store_true',
         help="Use the newly designed WhatsApp-alike theme"
     )
+    parser.add_argument(
+        "--call-db",
+        dest="call_db_ios",
+        nargs='?',
+        default=None,
+        type=str,
+        const="1b432994e958845fffe8e2f190f26d1511534088",
+        help="Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only"
+    )
 
     args = parser.parse_args()
 
@@ -500,6 +509,10 @@ def main():
                 vcard(db, data, args.media, args.filter_date, filter_chat)
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
+                elif args.ios and args.call_db_ios is not None:
+                    with sqlite3.connect(args.call_db_ios) as cdb:
+                        cdb.row_factory = sqlite3.Row
+                        ios_handler.calls(cdb, data, args.timezone_offset, filter_chat)
             if not args.no_html:
                 if args.enrich_from_vcards is not None and not contact_store.is_empty():
                     contact_store.enrich_from_vcards(data)

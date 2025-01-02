@@ -7,7 +7,8 @@ from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CURRENT_TZ_OFFSET, Device, get_chat_condition, slugify
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CURRENT_TZ_OFFSET, get_chat_condition
+from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, slugify, Device
 
 
 def contacts(db, data):
@@ -361,3 +362,72 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
         message.meta = True
         message.safe = True
         print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
+
+
+def calls(db, data, timezone_offset, filter_chat):
+    c = db.cursor()
+    c.execute(f"""SELECT count()
+                FROM ZWACDCALLEVENT
+                WHERE 1=1
+                    {get_chat_condition(filter_chat[0], True, ["ZGROUPCALLCREATORUSERJIDSTRING"], None, "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZGROUPCALLCREATORUSERJIDSTRING"], None, "ios")}""")
+    total_row_number = c.fetchone()[0]
+    if total_row_number == 0:
+        return
+    print(f"\nProcessing calls...({total_row_number})", end="\r")
+    c.execute(f"""SELECT ZCALLIDSTRING,
+                        ZGROUPCALLCREATORUSERJIDSTRING,
+                        ZGROUPJIDSTRING,
+                        ZDATE,
+                        ZOUTCOME,
+                        ZBYTESRECEIVED + ZBYTESSENT AS bytes_transferred,
+                        ZDURATION,
+                        ZVIDEO,
+                        ZMISSED,
+                        ZINCOMING
+                FROM ZWACDCALLEVENT
+                    INNER JOIN ZWAAGGREGATECALLEVENT
+                        ON ZWACDCALLEVENT.Z1CALLEVENTS = ZWAAGGREGATECALLEVENT.Z_PK
+                WHERE 1=1
+                    {get_chat_condition(filter_chat[0], True, ["ZGROUPCALLCREATORUSERJIDSTRING"], None, "ios")}
+                    {get_chat_condition(filter_chat[1], False, ["ZGROUPCALLCREATORUSERJIDSTRING"], None, "ios")}""")
+    chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
+    content = c.fetchone()
+    while content is not None:
+        ts = APPLE_TIME + int(content["ZDATE"])
+        call = Message(
+            from_me=content["ZINCOMING"] == 0,
+            timestamp=ts,
+            time=ts,
+            key_id=content["ZCALLIDSTRING"],
+            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
+        )
+        _jid = content["ZGROUPCALLCREATORUSERJIDSTRING"]
+        name = data[_jid].name if _jid in data else None
+        if _jid is not None and "@" in _jid:
+            fallback = _jid.split('@')[0]
+        else:
+            fallback = None
+        call.sender = name or fallback
+        call.meta = True
+        call.data = (
+            f"A {'video' if content['ZVIDEO'] == 1 else 'voice'} "
+            f"call {'to' if call.from_me else 'from'} "
+            f"{call.sender} was "
+        )
+        if content['ZOUTCOME'] in (1, 4):
+            call.data += "not answered." if call.from_me else "missed."
+        elif content['ZOUTCOME'] == 2:
+            call.data += "failed."
+        elif content['ZOUTCOME'] == 0:
+            call_time = convert_time_unit(int(content['ZDURATION']))
+            call_bytes = bytes_to_readable(content['bytes_transferred'])
+            call.data += (
+                f"initiated and lasted for {call_time} "
+                f"with {call_bytes} data transferred."
+            )
+        else:
+            call.data += "in an unknown state."
+        chat.add_message(call.key_id, call)
+        content = c.fetchone()
+    data["000000000000000"] = chat

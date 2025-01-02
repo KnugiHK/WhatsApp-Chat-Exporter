@@ -35,6 +35,11 @@ def extract_encrypted(base_dir, password, identifiers, decrypt_chunk_size):
             domain_like=identifiers.DOMAIN,
             output_filename=identifiers.CONTACT
         )
+        backup.extract_file(
+            relative_path=RelativePath.WHATSAPP_CALLS,
+            domain_like=identifiers.DOMAIN,
+            output_filename=identifiers.CALL
+        )
     except ValueError:
         print("Failed to decrypt backup: incorrect password?")
         exit(7)
@@ -87,6 +92,7 @@ def extract_media(base_dir, identifiers, decrypt_chunk_size):
     else:
         wts_db = os.path.join(base_dir, identifiers.MESSAGE[:2], identifiers.MESSAGE)
         contact_db = os.path.join(base_dir, identifiers.CONTACT[:2], identifiers.CONTACT)
+        call_db = os.path.join(base_dir, identifiers.CALL[:2], identifiers.CALL)
         if not os.path.isfile(wts_db):
             if identifiers is WhatsAppIdentifier:
                 print("WhatsApp database not found.")
@@ -99,6 +105,10 @@ def extract_media(base_dir, identifiers, decrypt_chunk_size):
             print("Contact database not found. Skipping...")
         else:
             shutil.copyfile(contact_db, identifiers.CONTACT)
+        if not os.path.isfile(call_db):
+            print("Call database not found. Skipping...")
+        else:
+            shutil.copyfile(call_db, identifiers.CALL)
         _wts_id = identifiers.DOMAIN
         with sqlite3.connect(os.path.join(base_dir, "Manifest.db")) as manifest:
             manifest.row_factory = sqlite3.Row

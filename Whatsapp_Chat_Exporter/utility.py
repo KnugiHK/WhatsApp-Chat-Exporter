@@ -416,6 +416,7 @@ def slugify(value, allow_unicode=False):
 class WhatsAppIdentifier(StrEnum):
     MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
     CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
+    CALL = "1b432994e958845fffe8e2f190f26d1511534088"
     DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
 
 
