@@ -376,10 +376,10 @@ def get_status_location(output_folder, offline_static):
     w3css = os.path.join(offline_static, "w3.css")
 
 
-def setup_template(template, no_avatar):
-    if template is None:
+def setup_template(template, no_avatar, experimental=False):
+    if template is None or experimental:
         template_dir = os.path.dirname(__file__)
-        template_file = "whatsapp.html"
+        template_file = "whatsapp.html" if not experimental else template
     else:
         template_dir = os.path.dirname(template)
         template_file = os.path.basename(template)

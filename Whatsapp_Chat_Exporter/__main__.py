@@ -296,7 +296,15 @@ def main():
         default=None,
         type=str,
         const="result",
-        help="Export chats in text format similar to what WhatsApp officially provided (default if present: result/)")
+        help="Export chats in text format similar to what WhatsApp officially provided (default if present: result/)"
+    )
+    parser.add_argument(
+        "--experimental-new-theme",
+        dest="whatsapp_theme",
+        default=False,
+        action='store_true',
+        help="Use the newly designed WhatsApp-alike theme"
+    )
 
     args = parser.parse_args()
 
@@ -358,6 +366,8 @@ def main():
                     args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
                 parser.error("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
+    if args.whatsapp_theme:
+        args.template = "whatsapp_new.html"
     if args.filter_chat_include is not None and args.filter_chat_exclude is not None:
         parser.error("Chat inclusion and exclusion filters cannot be used together.")
     if args.filter_chat_include is not None:
@@ -502,7 +512,8 @@ def main():
                     args.offline,
                     args.size,
                     args.no_avatar,
-                    args.filter_empty
+                    args.filter_empty,
+                    args.whatsapp_theme
                 )
         else:
             print(
@@ -539,7 +550,8 @@ def main():
                 args.offline,
                 args.size,
                 args.no_avatar,
-                args.filter_empty
+                args.filter_empty,
+                args.whatsapp_theme
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
@@ -553,7 +565,8 @@ def main():
             args.offline,
             args.size,
             args.no_avatar,
-            args.filter_empty
+            args.filter_empty,
+            args.whatsapp_theme
         )
 
     if args.text_format:

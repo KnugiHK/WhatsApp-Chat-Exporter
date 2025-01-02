@@ -760,9 +760,10 @@ def create_html(
         offline_static=False,
         maximum_size=None,
         no_avatar=False,
-        filter_empty=True
+        filter_empty=True,
+        experimental=False
     ):
-    template = setup_template(template, no_avatar)
+    template = setup_template(template, no_avatar, experimental)
 
     total_row_number = len(data)
     print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
