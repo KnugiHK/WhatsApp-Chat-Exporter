@@ -411,7 +411,8 @@ def calls(db, data, timezone_offset, filter_chat):
         call.sender = name or fallback
         call.meta = True
         call.data = (
-            f"A {'video' if content['ZVIDEO'] == 1 else 'voice'} "
+            f"A {'group ' if content['ZGROUPJIDSTRING'] is not None else ''}"
+            f"{'video' if content['ZVIDEO'] == 1 else 'voice'} "
             f"call {'to' if call.from_me else 'from'} "
             f"{call.sender} was "
         )
