@@ -12,10 +12,10 @@ from hashlib import sha256
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, DbType, convert_time_unit, determine_metadata
-from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template, JidType
+from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, DbType, convert_time_unit, determine_metadata, get_cond_for_empty
+from Whatsapp_Chat_Exporter.utility import rendering, Crypt, Device, get_file_name, setup_template
 from Whatsapp_Chat_Exporter.utility import brute_force_offset, CRYPT14_OFFSETS, get_status_location
-from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, bytes_to_readable, chat_is_empty
+from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, bytes_to_readable, JidType
 
 try:
     import zlib
@@ -173,7 +173,7 @@ def contacts(db, data):
         row = c.fetchone()
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
     # Get message history
     c = db.cursor()
     try:
@@ -181,7 +181,10 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                       FROM messages
                         INNER JOIN jid
                             ON messages.key_remote_jid = jid.raw_string
+                        LEFT JOIN chat
+                            ON chat.jid_row_id = jid._id
                       WHERE 1=1
+                        {get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")}
                         {f'AND timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "messages.remote_resource"], "jid", "android")}
                         {get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "messages.remote_resource"], "jid", "android")}""")
@@ -196,6 +199,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         LEFT JOIN jid jid_group
                             ON jid_group._id = message.sender_jid_row_id
                       WHERE 1=1
+                        {get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")}
                         {f'AND timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")}
                         {get_chat_condition(filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")}""")
@@ -253,6 +257,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = messages._id
                     WHERE messages.key_remote_jid <> '-1'
+                        {get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")}
                         {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "messages.remote_resource"], "jid_global", "android")}
                         {get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "messages.remote_resource"], "jid_global", "android")}
@@ -321,6 +326,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
                     WHERE key_remote_jid <> '-1'
+                        {get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")}
                         {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")}
                         {get_chat_condition(filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")}
@@ -488,7 +494,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
     print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder, filter_date, filter_chat, separate_media=True):
+def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True):
     # Get media
     c = db.cursor()
     try:
@@ -498,7 +504,10 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=True)
                             ON message_media.message_row_id = messages._id
                         INNER JOIN jid
                             ON messages.key_remote_jid = jid.raw_string
+                        LEFT JOIN chat
+                            ON chat.jid_row_id = jid._id
                     WHERE 1=1  
+                        {get_cond_for_empty(filter_empty, "key_remote_jid", "messages.needs_push")}
                         {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")}
                         {get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")}""")
@@ -514,6 +523,7 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=True)
                         LEFT JOIN jid jid_group
                             ON jid_group._id = message.sender_jid_row_id
                     WHERE 1=1    
+                        {get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")}
                         {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                         {get_chat_condition(filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")}
                         {get_chat_condition(filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")}""")
@@ -536,7 +546,10 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=True)
 						ON message_media.file_hash = media_hash_thumbnail.media_hash
                     INNER JOIN jid
                         ON messages.key_remote_jid = jid.raw_string
+                    LEFT JOIN chat
+                        ON chat.jid_row_id = jid._id
                 WHERE jid.type <> 7
+                    {get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")}
                     {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")}
                     {get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")}
@@ -563,6 +576,7 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=True)
                     LEFT JOIN jid jid_group
                         ON jid_group._id = message.sender_jid_row_id
                 WHERE jid.type <> 7
+                    {get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")}
                     {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")}
                     {get_chat_condition(filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")}
@@ -613,7 +627,7 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=True)
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data, media_folder, filter_date, filter_chat):
+def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     c = db.cursor()
     try:
         c.execute(f"""SELECT message_row_id,
@@ -625,7 +639,10 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
                         ON messages_vcards.message_row_id = messages._id
                     INNER JOIN jid
                         ON messages.key_remote_jid = jid.raw_string
+                    LEFT JOIN chat
+                        ON chat.jid_row_id = jid._id
                  WHERE 1=1
+                    {get_cond_for_empty(filter_empty, "key_remote_jid", "messages.needs_push")}
                     {f'AND messages.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")}
                     {get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")}
@@ -646,6 +663,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat):
                     LEFT JOIN jid jid_group
                         ON jid_group._id = message.sender_jid_row_id
                 WHERE 1=1
+                    {get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")}
                     {f'AND message.timestamp {filter_date}' if filter_date is not None else ''}
                     {get_chat_condition(filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")}
                     {get_chat_condition(filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")}
@@ -760,7 +778,6 @@ def create_html(
         offline_static=False,
         maximum_size=None,
         no_avatar=False,
-        filter_empty=True,
         experimental=False
     ):
     template = setup_template(template, no_avatar, experimental)
@@ -775,8 +792,6 @@ def create_html(
 
     for current, contact in enumerate(data):
         chat = data[contact]
-        if filter_empty and chat_is_empty(chat):
-            continue
         safe_file_name, name = get_file_name(contact, chat)
 
         if maximum_size is not None:

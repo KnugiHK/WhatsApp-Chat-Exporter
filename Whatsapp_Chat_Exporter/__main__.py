@@ -17,8 +17,8 @@ else:
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty, readable_to_bytes
-from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, readable_to_bytes, check_update
+from Whatsapp_Chat_Exporter.utility import import_from_json, sanitize_filename, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -254,7 +254,9 @@ def main():
         dest="filter_empty",
         default=True,
         action='store_false',
-        help="By default, the exporter will not render chats with no valid message. Setting this flag will cause the exporter to render those."
+        help=("By default, the exporter will not render chats with no valid message. "
+              "Setting this flag will cause the exporter to render those. "
+              "This is useful if chat(s) are missing from the output")
     )
     parser.add_argument(
         "--per-chat",
@@ -504,9 +506,9 @@ def main():
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
-                messages(db, data, args.media, args.timezone_offset, args.filter_date, filter_chat)
-                media(db, data, args.media, args.filter_date, filter_chat, args.separate_media)
-                vcard(db, data, args.media, args.filter_date, filter_chat)
+                messages(db, data, args.media, args.timezone_offset, args.filter_date, filter_chat, args.filter_empty)
+                media(db, data, args.media, args.filter_date, filter_chat, args.filter_empty, args.separate_media)
+                vcard(db, data, args.media, args.filter_date, filter_chat, args.filter_empty)
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
                 elif args.ios and args.call_db_ios is not None:
@@ -525,7 +527,6 @@ def main():
                     args.offline,
                     args.size,
                     args.no_avatar,
-                    args.filter_empty,
                     args.whatsapp_theme
                 )
         else:
@@ -563,7 +564,6 @@ def main():
                 args.offline,
                 args.size,
                 args.no_avatar,
-                args.filter_empty,
                 args.whatsapp_theme
             )
         for file in glob.glob(r'*.*'):
@@ -578,7 +578,6 @@ def main():
             args.offline,
             args.size,
             args.no_avatar,
-            args.filter_empty,
             args.whatsapp_theme
         )
 
@@ -587,9 +586,6 @@ def main():
         android_handler.create_txt(data, args.text_format)
 
     if args.json and not args.import_json:
-        if args.filter_empty:
-            data = {k: v for k, v in data.items() if not chat_is_empty(v)}
-
         if args.enrich_from_vcards is not None and not contact_store.is_empty():
             contact_store.enrich_from_vcards(data)
 

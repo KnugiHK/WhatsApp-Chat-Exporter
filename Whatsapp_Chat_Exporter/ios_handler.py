@@ -27,7 +27,7 @@ def contacts(db, data):
         content = c.fetchone()
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
     c = db.cursor()
     # Get contacts
     c.execute(
@@ -227,7 +227,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat):
         f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
-def media(db, data, media_folder, filter_date, filter_chat, separate_media=False):
+def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=False):
     c = db.cursor()
     # Get media
     c.execute(f"""SELECT count()
@@ -308,7 +308,7 @@ def media(db, data, media_folder, filter_date, filter_chat, separate_media=False
         f"Processing media...({total_row_number}/{total_row_number})", end="\r")
 
 
-def vcard(db, data, media_folder, filter_date, filter_chat):
+def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     c = db.cursor()
     c.execute(f"""SELECT DISTINCT ZWAVCARDMENTION.ZMEDIAITEM,
                         ZWAMEDIAITEM.ZMESSAGE,

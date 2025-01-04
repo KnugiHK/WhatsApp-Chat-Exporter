@@ -220,6 +220,10 @@ def get_file_name(contact: str, chat: ChatStore):
     return sanitize_filename(file_name), name
 
 
+def get_cond_for_empty(enable, jid_field: str, broadcast_field: str):
+    return f"AND (chat.sort_timestamp IS NOT NULL OR {jid_field}='status@broadcast' OR {broadcast_field}>0)" if enable else ""
+
+
 def get_chat_condition(filter, include, columns, jid=None, platform=None):
     if filter is not None:
         conditions = []
@@ -244,12 +248,6 @@ def get_chat_condition(filter, include, columns, jid=None, platform=None):
         return f"AND ({' '.join(conditions)})"
     else:
         return ""
-
-def _is_message_empty(message):
-    return (message.data is None or message.data == "") and not message.media
-
-def chat_is_empty(chat: ChatStore):
-    return len(chat.messages) == 0 or all(_is_message_empty(message) for message in chat.messages.values())
 
 
 # Android Specific
