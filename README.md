@@ -82,7 +82,10 @@ To support Crypt15 backup, install javaobj-py3 if it is not installed
 pip install javaobj-py3 # Or 
 pip install whatsapp-chat-exporter["crypt15"] # install along with this software
 ```
-Place the encrypted WhatsApp Backup (msgstore.db.crypt15) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.  
+Before proceeding with this method, you must first create an end-to-end encrypted backup. For detailed instructions, refer to [WhatsApp's help center](https://faq.whatsapp.com/490592613091019).
+
+Once you have copied the backup files to your computer, place the encrypted WhatsApp backup file (msgstore.db.crypt15) into the working directory. If you also wish to include your contacts' names, obtain the contact database file, named wa.db. Additionally, copy the WhatsApp Media folder directly from your phone.
+
 If you do not have the 32 bytes hex key (64 hexdigits), place the decryption key file (encrypted_backup.key) extracted from Android. If you gave the 32 bytes hex key, simply put the key in the shell.
 
 Now, you should have something like this in the working directory (if you do not have 32 bytes hex key).
