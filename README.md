@@ -13,8 +13,6 @@ If you would like to support this project, all you need to do is to contribute o
 
 > [!NOTE]
 > Usage in README may be removed in the future. Check the usage in [Wiki](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/wiki)
-> 
-> If you want to use the old release (< 0.5) of the exporter, please follow the [old usage guide](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/wiki/Old-Usage#usage).
 
 First, install the exporter by:
 ```shell
