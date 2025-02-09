@@ -332,6 +332,17 @@
                         {% endif %}
                     {% endfor %}
                 </div>
+                <footer>
+                    <h2 class="text-center">
+                    {% if next %}
+                    <a href="./{{ next }}" target="_self">Next</a>
+                    {% else %}
+                    End of History
+                    {% endif %}
+                    </h2>
+                    <br>
+                    Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
+                </footer>
             </div>
         </article>
     </body>
