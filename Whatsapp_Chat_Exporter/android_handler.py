@@ -817,9 +817,10 @@ def create_html(
                         render_box,
                         contact,
                         w3css,
-                        f"{safe_file_name}-{current_page + 1}.html",
                         chat,
-                        headline
+                        headline,
+                        next=f"{safe_file_name}-{current_page + 1}.html",
+                        previous=f"{safe_file_name}-{current_page - 1}.html" if current_page > 1 else False
                     )
                     render_box = [message]
                     current_size = 0
@@ -838,9 +839,10 @@ def create_html(
                             render_box,
                             contact,
                             w3css,
-                            False,
                             chat,
-                            headline
+                            headline,
+                            False,
+                            previous=f"{safe_file_name}-{current_page - 1}.html"
                         )
         else:
             output_file_name = f"{output_folder}/{safe_file_name}.html"
@@ -851,9 +853,9 @@ def create_html(
                 chat.get_messages(),
                 contact,
                 w3css,
-                False,
                 chat,
-                headline
+                headline,
+                False
             )
         if current % 10 == 0:
             print(f"Generating chats...({current}/{total_row_number})", end="\r")

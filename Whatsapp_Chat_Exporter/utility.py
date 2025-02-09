@@ -132,9 +132,10 @@ def rendering(
         msgs,
         contact,
         w3css,
-        next,
         chat,
-        headline
+        headline,
+        next=False,
+        previous=False
     ):
     if chat.their_avatar_thumb is None and chat.their_avatar is not None:
         their_avatar_thumb = chat.their_avatar
@@ -153,6 +154,7 @@ def rendering(
                 their_avatar_thumb=their_avatar_thumb,
                 w3css=w3css,
                 next=next,
+                previous=previous,
                 status=chat.status,
                 media_base=chat.media_base,
                 headline=headline
