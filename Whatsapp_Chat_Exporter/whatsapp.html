@@ -155,7 +155,7 @@
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video class="lazy" controls autobuffer>
+									<video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
 										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
@@ -245,7 +245,7 @@
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video class="lazy" controls autobuffer>
+									<video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
 										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}

@@ -360,7 +360,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["key_id"],
-            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
+            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
+            message_type=content["media_wa_type"]
         )
         if isinstance(content["data"], bytes):
             message.data = ("The message is binary data and its base64 is "
