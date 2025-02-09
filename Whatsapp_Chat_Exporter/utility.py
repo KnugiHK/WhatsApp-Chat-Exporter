@@ -221,7 +221,7 @@ def get_file_name(contact: str, chat: ChatStore):
 
 
 def get_cond_for_empty(enable, jid_field: str, broadcast_field: str):
-    return f"AND (chat.sort_timestamp IS NOT NULL OR {jid_field}='status@broadcast' OR {broadcast_field}>0)" if enable else ""
+    return f"AND (chat.hidden=0 OR {jid_field}='status@broadcast' OR {broadcast_field}>0)" if enable else ""
 
 
 def get_chat_condition(filter, include, columns, jid=None, platform=None):
