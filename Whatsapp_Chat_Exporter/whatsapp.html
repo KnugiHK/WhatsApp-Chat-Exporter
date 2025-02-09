@@ -20,7 +20,6 @@
 		}
 		footer {
 			border-top: 2px solid #e3e6e7;
-			font-size: 2em;
 			padding: 20px 0 20px 0;
 		}
 		article {
@@ -156,8 +155,8 @@
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls="controls" autobuffer="autobuffer">
-										<source src="{{ msg.data }}" />
+									<video class="lazy" controls autobuffer>
+										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
 										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
@@ -246,8 +245,8 @@
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls="controls" autobuffer="autobuffer">
-										<source src="{{ msg.data }}" />
+									<video class="lazy" controls autobuffer>
+										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
 										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
@@ -277,6 +276,36 @@
 			{% else %}
 			End of history
 			{% endif %}
+			<br>
+			Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
 		</footer>
+		<script>
+		document.addEventListener("DOMContentLoaded", function() {
+		var lazyVideos = [].slice.call(document.querySelectorAll("video.lazy"));
+
+		if ("IntersectionObserver" in window) {
+			var lazyVideoObserver = new IntersectionObserver(function(entries, observer) {
+			entries.forEach(function(video) {
+				if (video.isIntersecting) {
+				for (var source in video.target.children) {
+					var videoSource = video.target.children[source];
+					if (typeof videoSource.tagName === "string" && videoSource.tagName === "SOURCE") {
+					videoSource.src = videoSource.dataset.src;
+					}
+				}
+
+				video.target.load();
+				video.target.classList.remove("lazy");
+				lazyVideoObserver.unobserve(video.target);
+				}
+			});
+			});
+
+			lazyVideos.forEach(function(lazyVideo) {
+			lazyVideoObserver.observe(lazyVideo);
+			});
+		}
+		});
+		</script>
 	</body>
 </html>
