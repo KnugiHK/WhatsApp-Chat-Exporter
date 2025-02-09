@@ -134,11 +134,15 @@ def rendering(
         w3css,
         next,
         chat,
+        headline
     ):
     if chat.their_avatar_thumb is None and chat.their_avatar is not None:
         their_avatar_thumb = chat.their_avatar
     else:
         their_avatar_thumb = chat.their_avatar_thumb
+    if "??" not in headline:
+        raise ValueError("Headline must contain '??' to replace with name")
+    headline = headline.replace("??", name)
     with open(output_file_name, "w", encoding="utf-8") as f:
         f.write(
             template.render(
@@ -150,7 +154,8 @@ def rendering(
                 w3css=w3css,
                 next=next,
                 status=chat.status,
-                media_base=chat.media_base
+                media_base=chat.media_base,
+                headline=headline
             )
         )
 

@@ -779,7 +779,8 @@ def create_html(
         offline_static=False,
         maximum_size=None,
         no_avatar=False,
-        experimental=False
+        experimental=False,
+        headline=None
     ):
     template = setup_template(template, no_avatar, experimental)
 
@@ -817,7 +818,8 @@ def create_html(
                         contact,
                         w3css,
                         f"{safe_file_name}-{current_page + 1}.html",
-                        chat
+                        chat,
+                        headline
                     )
                     render_box = [message]
                     current_size = 0
@@ -837,7 +839,8 @@ def create_html(
                             contact,
                             w3css,
                             False,
-                            chat
+                            chat,
+                            headline
                         )
         else:
             output_file_name = f"{output_folder}/{safe_file_name}.html"
@@ -849,7 +852,8 @@ def create_html(
                 contact,
                 w3css,
                 False,
-                chat
+                chat,
+                headline
             )
         if current % 10 == 0:
             print(f"Generating chats...({current}/{total_row_number})", end="\r")

@@ -316,6 +316,12 @@ def main():
         const="1b432994e958845fffe8e2f190f26d1511534088",
         help="Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only"
     )
+    parser.add_argument(
+        "--headline",
+        dest="headline",
+        default="Chat history with ??",
+        help="The custom headline for the HTML output. Use '??' as a placeholder for the chat name"
+    )
 
     args = parser.parse_args()
 
@@ -336,6 +342,8 @@ def main():
         parser.error("JSON file not found.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
+    if "??" not in args.headline:
+        parser.error("--headline must contain '??' for replacement.")
     if args.json_per_chat and (
         (args.json[-5:] != ".json" and os.path.isfile(args.json)) or \
         (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
@@ -527,7 +535,8 @@ def main():
                     args.offline,
                     args.size,
                     args.no_avatar,
-                    args.whatsapp_theme
+                    args.whatsapp_theme,
+                    args.headline
                 )
         else:
             print(
@@ -564,7 +573,8 @@ def main():
                 args.offline,
                 args.size,
                 args.no_avatar,
-                args.whatsapp_theme
+                args.whatsapp_theme,
+                args.headline
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
@@ -578,7 +588,8 @@ def main():
             args.offline,
             args.size,
             args.no_avatar,
-            args.whatsapp_theme
+            args.whatsapp_theme,
+            args.headline
         )
 
     if args.text_format:
