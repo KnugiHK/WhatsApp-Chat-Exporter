@@ -65,7 +65,7 @@ class ChatStore():
 
 
 class Message():
-    def __init__(self, from_me: Union[bool,int], timestamp: int, time: Union[int,float,str], key_id: int, timezone_offset: int = 0):
+    def __init__(self, from_me: Union[bool,int], timestamp: int, time: Union[int,float,str], key_id: int, timezone_offset: int = 0, message_type: int = None):
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
         if isinstance(time, int) or isinstance(time, float):
@@ -81,6 +81,7 @@ class Message():
         self.sender = None
         self.safe = False
         self.mime = None
+        self.message_type = message_type
         # Extra
         self.reply = None
         self.quoted_data = None

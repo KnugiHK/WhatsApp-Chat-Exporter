@@ -26,7 +26,7 @@ cd working_wts
 ```
 
 > [!TIP]
-> macOS users should grant Full Disk Access to Terminal in the Security & Privacy settings before using the exporter.
+> macOS users should grant *Full Disk Access* to Terminal in the *Security & Privacy* settings before using the exporter.
 
 ## Working with Android
 ### Unencrypted WhatsApp database

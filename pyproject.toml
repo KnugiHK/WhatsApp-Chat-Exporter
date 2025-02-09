@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whatsapp-chat-exporter"
+version = "0.10.5"
+description = "A Whatsapp database parser that provides history of your Whatsapp conversations in HTML and JSON. Android, iOS, iPadOS, Crypt12, Crypt14, Crypt15 supported."
+readme = "README.md"
+authors = [
+    { name = "KnugiHK", email = "hello@knugi.com" }
+]
+license = { text = "MIT" }
+keywords = [
+    "android", "ios", "parsing", "history", "iphone", "message", "crypt15",
+    "customizable", "whatsapp", "android-backup", "messages", "crypt14", 
+    "crypt12", "whatsapp-chat-exporter", "whatsapp-export", "iphone-backup",
+    "whatsapp-database", "whatsapp-database-parser", "whatsapp-conversations"
+]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Communications :: Chat",
+    "Topic :: Utilities",
+    "Topic :: Database"
+]
+requires-python = ">=3.9"
+dependencies = [
+    "jinja2",
+    "bleach"
+]
+
+[project.optional-dependencies]
+android_backup = ["pycryptodome", "javaobj-py3"]
+crypt12 = ["pycryptodome"]
+crypt14 = ["pycryptodome"]
+crypt15 = ["pycryptodome", "javaobj-py3"]
+all = ["pycryptodome", "javaobj-py3", "vobject"]
+everything = ["pycryptodome", "javaobj-py3", "vobject"]
+backup = ["pycryptodome", "javaobj-py3"]
+vcards = ["vobject", "pycryptodome", "javaobj-py3"]
+
+[project.scripts]
+wtsexporter = "Whatsapp_Chat_Exporter.__main__:main"
+waexporter = "Whatsapp_Chat_Exporter.__main__:main"
+whatsapp-chat-exporter = "Whatsapp_Chat_Exporter.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["Whatsapp_Chat_Exporter"]
+
+[tool.setuptools.package-data]
+template = ["whatsapp.html"]

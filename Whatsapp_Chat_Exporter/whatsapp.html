@@ -20,7 +20,6 @@
 		}
 		footer {
 			border-top: 2px solid #e3e6e7;
-			font-size: 2em;
 			padding: 20px 0 20px 0;
 		}
 		article {
@@ -91,7 +90,7 @@
 	</head>
 	<body>
 		<header class="w3-center w3-top">
-			Chat history with {{ name }}
+			{{ headline }}
 			{% if status is not none %}
 			<br>
 			<span class="w3-small">{{ status }}</span>
@@ -121,7 +120,7 @@
 							{% if msg.reply is not none %}
 								<div class="reply">
 									<span class="blue">Replying to </span>
-									<a href="#{{msg.reply}}" class="reply_link">
+									<a href="#{{msg.reply}}" target="_self" class="reply_link no-base">
 										{% if msg.quoted_data is not none %}
 											"{{msg.quoted_data}}"
 										{% else %}
@@ -156,8 +155,8 @@
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls="controls" autobuffer="autobuffer">
-										<source src="{{ msg.data }}" />
+									<video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
 										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
@@ -211,7 +210,7 @@
 							{% if msg.reply is not none %}
 								<div class="reply">
 									<span class="blue">Replying to </span>
-									<a href="#{{msg.reply}}" class="reply_link">
+									<a href="#{{msg.reply}}" target="_self" class="reply_link no-base">
 										{% if msg.quoted_data is not none %}
 											"{{msg.quoted_data}}"
 										{% else %}
@@ -246,8 +245,8 @@
 										<source src="{{ msg.data }}" />
 									</audio>
 									{% elif "video/" in msg.mime %}
-									<video controls="controls" autobuffer="autobuffer">
-										<source src="{{ msg.data }}" />
+									<video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
 									</video>
 									{% elif "/" in msg.mime %}
 										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
@@ -272,11 +271,59 @@
 			</div>
 		</article>
 		<footer class="w3-center">
-			{% if next %}
-			<a href="./{{ next }}">Next</a>
-			{% else %}
-			End of history
+			<h2>
+			{% if previous %}
+			<a href="./{{ previous }}" target="_self">Previous</a>
 			{% endif %}
+			<h2>
+			{% if next %}
+			<a href="./{{ next }}" target="_self">Next</a>
+			{% else %}
+			End of History
+			{% endif %}
+			</h2>
+			<br>
+			Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
 		</footer>
+		<script>
+		document.addEventListener("DOMContentLoaded", function() {
+		var lazyVideos = [].slice.call(document.querySelectorAll("video.lazy"));
+
+		if ("IntersectionObserver" in window) {
+			var lazyVideoObserver = new IntersectionObserver(function(entries, observer) {
+			entries.forEach(function(video) {
+				if (video.isIntersecting) {
+				for (var source in video.target.children) {
+					var videoSource = video.target.children[source];
+					if (typeof videoSource.tagName === "string" && videoSource.tagName === "SOURCE") {
+					videoSource.src = videoSource.dataset.src;
+					}
+				}
+
+				video.target.load();
+				video.target.classList.remove("lazy");
+				lazyVideoObserver.unobserve(video.target);
+				}
+			});
+			});
+
+			lazyVideos.forEach(function(lazyVideo) {
+			lazyVideoObserver.observe(lazyVideo);
+			});
+		}
+		});
+		</script>
+		<script>   
+		// Prevent the <base> tag from affecting links with the class "no-base"
+		document.querySelectorAll('.no-base').forEach(link => {
+			link.addEventListener('click', function(event) {
+			const href = this.getAttribute('href');
+			if (href.startsWith('#')) {
+				window.location.hash = href;
+				event.preventDefault();
+			}
+			});
+		});
+		</script>
 	</body>
 </html>

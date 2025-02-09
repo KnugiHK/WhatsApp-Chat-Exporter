@@ -13,6 +13,7 @@ try:
     from enum import StrEnum, IntEnum
 except ImportError:
     # < Python 3.11
+    # This should be removed when the support for Python 3.10 ends.
     from enum import Enum
     class StrEnum(str, Enum):
         pass
@@ -22,6 +23,7 @@ except ImportError:
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
+CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().seconds / 3600
 
 
 def convert_time_unit(time_second: int):
@@ -130,13 +132,18 @@ def rendering(
         msgs,
         contact,
         w3css,
-        next,
         chat,
+        headline,
+        next=False,
+        previous=False
     ):
     if chat.their_avatar_thumb is None and chat.their_avatar is not None:
         their_avatar_thumb = chat.their_avatar
     else:
         their_avatar_thumb = chat.their_avatar_thumb
+    if "??" not in headline:
+        raise ValueError("Headline must contain '??' to replace with name")
+    headline = headline.replace("??", name)
     with open(output_file_name, "w", encoding="utf-8") as f:
         f.write(
             template.render(
@@ -147,8 +154,10 @@ def rendering(
                 their_avatar_thumb=their_avatar_thumb,
                 w3css=w3css,
                 next=next,
+                previous=previous,
                 status=chat.status,
-                media_base=chat.media_base
+                media_base=chat.media_base,
+                headline=headline
             )
         )
 
@@ -218,6 +227,10 @@ def get_file_name(contact: str, chat: ChatStore):
     return sanitize_filename(file_name), name
 
 
+def get_cond_for_empty(enable, jid_field: str, broadcast_field: str):
+    return f"AND (chat.hidden=0 OR {jid_field}='status@broadcast' OR {broadcast_field}>0)" if enable else ""
+
+
 def get_chat_condition(filter, include, columns, jid=None, platform=None):
     if filter is not None:
         conditions = []
@@ -243,12 +256,6 @@ def get_chat_condition(filter, include, columns, jid=None, platform=None):
     else:
         return ""
 
-def _is_message_empty(message):
-    return (message.data is None or message.data == "") and not message.media
-
-def chat_is_empty(chat: ChatStore):
-    return len(chat.messages) == 0 or all(_is_message_empty(message) for message in chat.messages.values())
-
 
 # Android Specific
 CRYPT14_OFFSETS = (
@@ -257,6 +264,7 @@ CRYPT14_OFFSETS = (
     {"iv": 66, "db": 99},
     {"iv": 67, "db": 193},
     {"iv": 67, "db": 194},
+    {"iv": 67, "db": 158},
 )
 
 
@@ -373,10 +381,10 @@ def get_status_location(output_folder, offline_static):
     w3css = os.path.join(offline_static, "w3.css")
 
 
-def setup_template(template, no_avatar):
-    if template is None:
+def setup_template(template, no_avatar, experimental=False):
+    if template is None or experimental:
         template_dir = os.path.dirname(__file__)
-        template_file = "whatsapp.html"
+        template_file = "whatsapp.html" if not experimental else template
     else:
         template_dir = os.path.dirname(template)
         template_file = os.path.basename(template)
@@ -390,7 +398,7 @@ def setup_template(template, no_avatar):
     return template_env.get_template(template_file)
 
 # iOS Specific
-APPLE_TIME = datetime.timestamp(datetime(2001, 1, 1))
+APPLE_TIME = 978307200
 
 
 def slugify(value, allow_unicode=False):
@@ -413,6 +421,7 @@ def slugify(value, allow_unicode=False):
 class WhatsAppIdentifier(StrEnum):
     MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
     CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
+    CALL = "1b432994e958845fffe8e2f190f26d1511534088"
     DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
 
 

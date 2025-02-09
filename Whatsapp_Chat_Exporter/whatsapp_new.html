@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Whatsapp - {{ name }}</title> 
+        <meta charset="UTF-8">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            whatsapp: {
+                                light: '#e7ffdb',
+                                DEFAULT: '#25D366',
+                                dark: '#075E54',
+                                chat: '#efeae2',
+                                'chat-light': '#f0f2f5',
+                            }
+                        }
+                    }
+                }
+            }
+        </script>
+        <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth !important;
+        }
+        .chat-list {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        .message-list {
+            height: calc(100vh - 90px);
+            overflow-y: auto;
+        }
+        @media (max-width: 640px) {
+            .chat-list, .message-list {
+                height: calc(100vh - 108px);
+            }
+        }
+        header {
+            position: fixed;
+            z-index: 20;
+            border-bottom: 2px solid #e3e6e7;
+            font-size: 2em;
+            font-weight: bolder;
+            background-color: white;
+            padding: 20px 0 20px 0;
+        }
+        footer {
+            margin-top: 10px;
+            border-top: 2px solid #e3e6e7;
+            padding: 20px 0 20px 0;
+        }
+        article {
+            width:430px;
+            margin: auto;
+            z-index:10;
+            font-size: 15px;
+            word-wrap: break-word;
+        }
+        img, video, audio{
+            max-width:100%;
+            box-sizing: border-box;
+        }
+        div.reply{
+            font-size: 13px;
+            text-decoration: none;
+        }
+        div:target::before {
+            content: '';
+            display: block;
+            height: 115px;
+            margin-top: -115px;
+            visibility: hidden;
+        }
+        div:target {
+            animation: 3s highlight;
+        }
+        .avatar {
+            border-radius:50%;
+            overflow:hidden;
+            max-width: 64px;
+            max-height: 64px;
+        }
+        .name {
+            color: #3892da;
+        }
+        .pad-left-10 {
+            padding-left: 10px;
+        }
+        .pad-right-10 {
+            padding-right: 10px;
+        }
+        .reply_link {
+            color: #168acc;
+        }
+        .blue {
+            color: #70777a;
+        }
+        .sticker {
+            max-width: 100px !important;
+            max-height: 100px !important;
+        }
+        @keyframes highlight {
+            from {
+                background-color: rgba(37, 211, 102, 0.1);
+            }
+            to {
+                background-color: transparent;
+            }
+        }
+        .search-input {
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .search-input.active {
+            transform: translateY(0);
+        }
+        .reply-box:active {
+            background-color:rgb(200 202 205 / var(--tw-bg-opacity, 1));
+        }
+        </style>
+        <script>
+            function search(event) {
+                keywords = document.getElementById("mainHeaderSearchInput").value;
+                hits = [];
+                document.querySelectorAll(".message-text").forEach(elem => {
+                    if (elem.innerText.trim().includes(keywords)){
+                        hits.push(elem.parentElement.parentElement.id);
+                    }
+                })
+                console.log(hits);
+            }
+        </script>
+    <base href="{{ media_base }}" target="_blank">
+    </head>
+    <body>
+        <article class="h-screen bg-whatsapp-chat-light">
+            <div class="w-full flex flex-col">
+                <div class="p-3 bg-whatsapp-dark flex items-center justify-between border-l border-[#d1d7db]">
+                    <div class="flex items-center">
+                        {% if not no_avatar %}
+                        <div class="w3-col m2 l2">
+                            {% if their_avatar is not none %}
+                            <a href="{{ their_avatar }}"><img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="w-10 h-10 rounded-full mr-3" loading="lazy"></a>
+                            {% else %}
+                            <img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="w-10 h-10 rounded-full mr-3" loading="lazy">
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="text-white font-medium">{{ headline }}</h2>
+                            {% if status is not none %}<p class="text-[#8696a0] text-xs">{{ status }}</p>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex space-x-4">
+                        <!-- <button id="searchButton">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button> -->
+                        <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg> -->
+                        {% if previous %}
+                        <a href="./{{ previous }}" target="_self">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5l-7 7 7 7" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                        {% if next %}
+                        <a href="./{{ next }}" target="_self">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <!-- Search Input Overlay -->
+                    <div id="mainSearchInput" class="search-input absolute article top-0 bg-whatsapp-dark p-3 flex items-center space-x-3">
+                        <button id="closeMainSearch" class="text-[#aebac1]">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <input type="text" placeholder="Search..." class="flex-1 bg-[#1f2c34] text-white rounded-lg px-3 py-1 focus:outline-none" id="mainHeaderSearchInput" onkeyup="search(event)">
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 p-5 message-list">
+                <div class="flex flex-col space-y-2">
+                    <!--Date-->
+                    {% set last = {'last': 946688461.001} %}
+                    {% for msg in msgs -%}
+                        {% if determine_day(last.last, msg.timestamp) is not none  %}
+                            <div class="flex justify-center">
+                                <div class="bg-[#e1f2fb] rounded-lg px-2 py-1 text-xs text-[#54656f]">
+                                    {{ determine_day(last.last, msg.timestamp) }}
+                                </div>
+                            </div>
+                            {% if last.update({'last': msg.timestamp}) %}{% endif %}
+                        {% endif %}
+                        <!--Actual messages-->
+                        {% if msg.from_me == true %}
+                        <div class="flex justify-end" id="{{ msg.key_id }}">
+                            <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm">
+                                {% if msg.reply is not none %}
+                                <a href="#{{msg.reply}}" target="_self" class="no-base">
+                                    <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
+                                        <p class="text-whatsapp font-medium text-xs">Replying to</p>
+                                        <p class="text-[#111b21] text-xs truncate">
+                                            {% if msg.quoted_data is not none %}
+                                                "{{msg.quoted_data}}"
+                                            {% else %}
+                                                this message
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </a>
+                                {% endif %}
+                                <p class="text-[#111b21] text-sm message-text">
+                                    {% if msg.meta == true or msg.media == false and msg.data is none %}     
+                                        <div class="flex justify-center mb-2">
+                                            <div class="bg-[#FFF3C5] rounded-lg px-3 py-2 text-sm text-[#856404] flex items-center">
+                                                {% if msg.safe %}
+                                                    {{ msg.data | safe or 'Not supported WhatsApp internal message' }}
+                                                {% else %}
+                                                    {{ msg.data or 'Not supported WhatsApp internal message' }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if msg.caption is not none %}
+                                            <p>{{ msg.caption | urlize(none, true, '_blank') }}</p>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if msg.media == false %}
+                                            {{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
+                                        {% else %}
+                                            {% if "image/" in msg.mime %}
+                                                <a href="{{ msg.data }}">
+                                                    <img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} loading="lazy"/>
+                                                </a>
+                                            {% elif "audio/" in msg.mime %}
+                                                <audio controls="controls" autobuffer="autobuffer">
+                                                    <source src="{{ msg.data }}" />
+                                                </audio>
+                                            {% elif "video/" in msg.mime %}
+                                                <video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+                                                    <source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
+                                                </video>
+                                            {% elif "/" in msg.mime %}
+                                                The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a>
+                                            {% else %}
+                                                {% filter escape %}{{ msg.data }}{% endfilter %}
+                                            {% endif %}
+                                            {% if msg.caption is not none %}
+                                                {{ msg.caption | urlize(none, true, '_blank') }}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </p>
+                                <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="flex justify-start" id="{{ msg.key_id }}">
+                            <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm">
+                                {% if msg.reply is not none %}
+                                <a href="#{{msg.reply}}" target="_self" class="no-base">
+                                    <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
+                                        <p class="text-whatsapp font-medium text-xs">Replying to</p>
+                                        <p class="text-[#808080] text-xs truncate">
+                                            {% if msg.quoted_data is not none %}
+                                                {{msg.quoted_data}}
+                                            {% else %}
+                                                this message
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </a>
+                                {% endif %}
+                                <p class="text-[#111b21] text-sm">
+                                    {% if msg.meta == true or msg.media == false and msg.data is none %}
+                                        <div class="flex justify-center mb-2">
+                                            <div class="bg-[#FFF3C5] rounded-lg px-3 py-2 text-sm text-[#856404] flex items-center">
+                                                {% if msg.safe %}
+                                                    {{ msg.data | safe or 'Not supported WhatsApp internal message' }}
+                                                {% else %}
+                                                    {{ msg.data or 'Not supported WhatsApp internal message' }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if msg.caption is not none %}
+                                            <p>{{ msg.caption | urlize(none, true, '_blank') }}</p>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if msg.media == false %}
+                                            {{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
+                                        {% else %}
+                                            {% if "image/" in msg.mime %}
+                                                <a href="{{ msg.data }}">
+                                                    <img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} loading="lazy"/>
+                                                </a>
+                                            {% elif "audio/" in msg.mime %}
+                                                <audio controls="controls" autobuffer="autobuffer">
+                                                    <source src="{{ msg.data }}" />
+                                                </audio>
+                                            {% elif "video/" in msg.mime %}
+                                                <video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+                                                    <source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
+                                                </video>
+                                            {% elif "/" in msg.mime %}
+                                                The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a>
+                                            {% else %}
+                                                {% filter escape %}{{ msg.data }}{% endfilter %}
+                                            {% endif %}
+                                            {% if msg.caption is not none %}
+                                                {{ msg.caption | urlize(none, true, '_blank') }}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </p>
+                                <div class="flex items-baseline text-[10px] text-[#667781] mt-1 gap-2">
+                                    <span class="flex-shrink-0">
+                                        {% if msg.sender is not none %}
+                                        {{ msg.sender }}
+                                        {% endif %}
+                                    </span>
+                                    <span class="flex-grow min-w-[4px]"></span>
+                                    <span class="flex-shrink-0">{{ msg.time }}</span>
+                                    </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <footer>
+                    <h2 class="text-center">
+                    {% if not next %}
+                    End of History
+                    {% endif %}
+                    </h2>
+                    <br>
+                    Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
+                </footer>
+            </div>
+        </article>
+    </body>
+    <script>
+    // Search functionality
+    const searchButton = document.getElementById('searchButton');
+    const mainSearchInput = document.getElementById('mainSearchInput');
+    const closeMainSearch = document.getElementById('closeMainSearch');
+    const mainHeaderSearchInput = document.getElementById('mainHeaderSearchInput');
+
+    // Function to show search input
+    const showSearch = () => {
+        mainSearchInput.classList.add('active');
+        mainHeaderSearchInput.focus();
+    };
+
+    // Function to hide search input
+    const hideSearch = () => {
+        mainSearchInput.classList.remove('active');
+        mainHeaderSearchInput.value = '';
+    };
+
+    // Event listeners
+    searchButton.addEventListener('click', showSearch);
+    closeMainSearch.addEventListener('click', hideSearch);
+
+    // Handle ESC key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && mainSearchInput.classList.contains('active')) {
+            hideSearch();
+        }
+    });
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+    var lazyVideos = [].slice.call(document.querySelectorAll("video.lazy"));
+
+    if ("IntersectionObserver" in window) {
+        var lazyVideoObserver = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(function(video) {
+            if (video.isIntersecting) {
+            for (var source in video.target.children) {
+                var videoSource = video.target.children[source];
+                if (typeof videoSource.tagName === "string" && videoSource.tagName === "SOURCE") {
+                videoSource.src = videoSource.dataset.src;
+                }
+            }
+
+            video.target.load();
+            video.target.classList.remove("lazy");
+            lazyVideoObserver.unobserve(video.target);
+            }
+        });
+        });
+
+        lazyVideos.forEach(function(lazyVideo) {
+        lazyVideoObserver.observe(lazyVideo);
+        });
+    }
+    });
+    </script>
+    <script>   
+    // Prevent the <base> tag from affecting links with the class "no-base"
+    document.querySelectorAll('.no-base').forEach(link => {
+        link.addEventListener('click', function(event) {
+        const href = this.getAttribute('href');
+        if (href.startsWith('#')) {
+            window.location.hash = href;
+            event.preventDefault();
+        }
+        });
+    });
+    </script>
+</html>

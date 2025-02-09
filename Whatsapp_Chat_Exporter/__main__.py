@@ -17,15 +17,12 @@ else:
 from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, chat_is_empty, readable_to_bytes
-from Whatsapp_Chat_Exporter.utility import check_update, import_from_json, sanitize_filename, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, readable_to_bytes, check_update
+from Whatsapp_Chat_Exporter.utility import import_from_json, sanitize_filename, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
-try:
-    from .__init__ import __version__
-except ImportError:
-    from Whatsapp_Chat_Exporter.__init__ import __version__
+import importlib.metadata
 
 
 def main():
@@ -33,7 +30,7 @@ def main():
         description = 'A customizable Android and iOS/iPadOS WhatsApp database parser that '
                       'will give you the history of your WhatsApp conversations in HTML '
                       'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
-        epilog = f'WhatsApp Chat Exporter: {__version__} Licensed with MIT. See '
+        epilog = f'WhatsApp Chat Exporter: {importlib.metadata.version("whatsapp_chat_exporter")} Licensed with MIT. See '
                   'https://wts.knugi.dev/docs?dest=osl for all open source licenses.'
     )
     parser.add_argument(
@@ -257,7 +254,9 @@ def main():
         dest="filter_empty",
         default=True,
         action='store_false',
-        help="By default, the exporter will not render chats with no valid message. Setting this flag will cause the exporter to render those."
+        help=("By default, the exporter will not render chats with no valid message. "
+              "Setting this flag will cause the exporter to render those. "
+              "This is useful if chat(s) are missing from the output")
     )
     parser.add_argument(
         "--per-chat",
@@ -299,7 +298,30 @@ def main():
         default=None,
         type=str,
         const="result",
-        help="Export chats in text format similar to what WhatsApp officially provided (default if present: result/)")
+        help="Export chats in text format similar to what WhatsApp officially provided (default if present: result/)"
+    )
+    parser.add_argument(
+        "--experimental-new-theme",
+        dest="whatsapp_theme",
+        default=False,
+        action='store_true',
+        help="Use the newly designed WhatsApp-alike theme"
+    )
+    parser.add_argument(
+        "--call-db",
+        dest="call_db_ios",
+        nargs='?',
+        default=None,
+        type=str,
+        const="1b432994e958845fffe8e2f190f26d1511534088",
+        help="Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only"
+    )
+    parser.add_argument(
+        "--headline",
+        dest="headline",
+        default="Chat history with ??",
+        help="The custom headline for the HTML output. Use '??' as a placeholder for the chat name"
+    )
 
     args = parser.parse_args()
 
@@ -320,6 +342,8 @@ def main():
         parser.error("JSON file not found.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
+    if "??" not in args.headline:
+        parser.error("--headline must contain '??' for replacement.")
     if args.json_per_chat and (
         (args.json[-5:] != ".json" and os.path.isfile(args.json)) or \
         (args.json[-5:] == ".json" and os.path.isfile(args.json[:-5]))
@@ -361,6 +385,8 @@ def main():
                     args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
                 parser.error("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
+    if args.whatsapp_theme:
+        args.template = "whatsapp_new.html"
     if args.filter_chat_include is not None and args.filter_chat_exclude is not None:
         parser.error("Chat inclusion and exclusion filters cannot be used together.")
     if args.filter_chat_include is not None:
@@ -488,11 +514,15 @@ def main():
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
-                messages(db, data, args.media, args.timezone_offset, args.filter_date, filter_chat)
-                media(db, data, args.media, args.filter_date, filter_chat, args.separate_media)
-                vcard(db, data, args.media, args.filter_date, filter_chat)
+                messages(db, data, args.media, args.timezone_offset, args.filter_date, filter_chat, args.filter_empty)
+                media(db, data, args.media, args.filter_date, filter_chat, args.filter_empty, args.separate_media)
+                vcard(db, data, args.media, args.filter_date, filter_chat, args.filter_empty)
                 if args.android:
                     android_handler.calls(db, data, args.timezone_offset, filter_chat)
+                elif args.ios and args.call_db_ios is not None:
+                    with sqlite3.connect(args.call_db_ios) as cdb:
+                        cdb.row_factory = sqlite3.Row
+                        ios_handler.calls(cdb, data, args.timezone_offset, filter_chat)
             if not args.no_html:
                 if args.enrich_from_vcards is not None and not contact_store.is_empty():
                     contact_store.enrich_from_vcards(data)
@@ -505,7 +535,8 @@ def main():
                     args.offline,
                     args.size,
                     args.no_avatar,
-                    args.filter_empty
+                    args.whatsapp_theme,
+                    args.headline
                 )
         else:
             print(
@@ -542,7 +573,8 @@ def main():
                 args.offline,
                 args.size,
                 args.no_avatar,
-                args.filter_empty
+                args.whatsapp_theme,
+                args.headline
             )
         for file in glob.glob(r'*.*'):
             shutil.copy(file, args.output)
@@ -556,7 +588,8 @@ def main():
             args.offline,
             args.size,
             args.no_avatar,
-            args.filter_empty
+            args.whatsapp_theme,
+            args.headline
         )
 
     if args.text_format:
@@ -564,9 +597,6 @@ def main():
         android_handler.create_txt(data, args.text_format)
 
     if args.json and not args.import_json:
-        if args.filter_empty:
-            data = {k: v for k, v in data.items() if not chat_is_empty(v)}
-
         if args.enrich_from_vcards is not None and not contact_store.is_empty():
             contact_store.enrich_from_vcards(data)
 
