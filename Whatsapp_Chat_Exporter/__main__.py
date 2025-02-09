@@ -43,7 +43,6 @@ def main():
     parser.add_argument(
         '-i',
         '--ios',
-        '--iphone',
         dest='ios',
         default=False,
         action='store_true',
@@ -475,12 +474,6 @@ def main():
                 db.row_factory = sqlite3.Row
                 contacts(db, data)
     elif args.ios:
-        import sys
-        if "--iphone" in sys.argv:
-            print(
-                "WARNING: The --iphone flag is deprecated and will"
-                "be removed in the future. Use --ios instead."
-            )
         contacts = ios_handler.contacts
         messages = ios_handler.messages
         media = ios_handler.media

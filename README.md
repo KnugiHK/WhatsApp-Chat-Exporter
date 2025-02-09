@@ -151,7 +151,7 @@ conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supp
 options:
   -h, --help            show this help message and exit
   -a, --android         Define the target as Android
-  -i, --ios, --iphone   Define the target as iPhone/iPad
+  -i, --ios,            Define the target as iPhone/iPad
   -e EXPORTED, --exported EXPORTED
                         Define the target as exported chat file and specify the path to the file
   -w WA, --wa WA        Path to contact database (default: wa.db/ContactsV2.sqlite)
