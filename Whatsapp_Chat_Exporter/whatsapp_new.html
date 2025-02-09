@@ -51,8 +51,8 @@
             padding: 20px 0 20px 0;
         }
         footer {
+            margin-top: 10px;
             border-top: 2px solid #e3e6e7;
-            font-size: 2em;
             padding: 20px 0 20px 0;
         }
         article {
@@ -243,8 +243,8 @@
                                                     <source src="{{ msg.data }}" />
                                                 </audio>
                                             {% elif "video/" in msg.mime %}
-                                                <video controls="controls" autobuffer="autobuffer">
-                                                    <source src="{{ msg.data }}" />
+                                                <video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+                                                    <source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
                                                 </video>
                                             {% elif "/" in msg.mime %}
                                                 The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a>
@@ -304,8 +304,8 @@
                                                     <source src="{{ msg.data }}" />
                                                 </audio>
                                             {% elif "video/" in msg.mime %}
-                                                <video controls="controls" autobuffer="autobuffer">
-                                                    <source src="{{ msg.data }}" />
+                                                <video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+                                                    <source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
                                                 </video>
                                             {% elif "/" in msg.mime %}
                                                 The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a>
@@ -336,33 +336,61 @@
         </article>
     </body>
     <script>
-        // Search functionality
-        const searchButton = document.getElementById('searchButton');
-        const mainSearchInput = document.getElementById('mainSearchInput');
-        const closeMainSearch = document.getElementById('closeMainSearch');
-        const mainHeaderSearchInput = document.getElementById('mainHeaderSearchInput');
+    // Search functionality
+    const searchButton = document.getElementById('searchButton');
+    const mainSearchInput = document.getElementById('mainSearchInput');
+    const closeMainSearch = document.getElementById('closeMainSearch');
+    const mainHeaderSearchInput = document.getElementById('mainHeaderSearchInput');
 
-        // Function to show search input
-        const showSearch = () => {
-            mainSearchInput.classList.add('active');
-            mainHeaderSearchInput.focus();
-        };
+    // Function to show search input
+    const showSearch = () => {
+        mainSearchInput.classList.add('active');
+        mainHeaderSearchInput.focus();
+    };
 
-        // Function to hide search input
-        const hideSearch = () => {
-            mainSearchInput.classList.remove('active');
-            mainHeaderSearchInput.value = '';
-        };
+    // Function to hide search input
+    const hideSearch = () => {
+        mainSearchInput.classList.remove('active');
+        mainHeaderSearchInput.value = '';
+    };
 
-        // Event listeners
-        searchButton.addEventListener('click', showSearch);
-        closeMainSearch.addEventListener('click', hideSearch);
+    // Event listeners
+    searchButton.addEventListener('click', showSearch);
+    closeMainSearch.addEventListener('click', hideSearch);
 
-        // Handle ESC key
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && mainSearchInput.classList.contains('active')) {
-                hideSearch();
+    // Handle ESC key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && mainSearchInput.classList.contains('active')) {
+            hideSearch();
+        }
+    });
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+    var lazyVideos = [].slice.call(document.querySelectorAll("video.lazy"));
+
+    if ("IntersectionObserver" in window) {
+        var lazyVideoObserver = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(function(video) {
+            if (video.isIntersecting) {
+            for (var source in video.target.children) {
+                var videoSource = video.target.children[source];
+                if (typeof videoSource.tagName === "string" && videoSource.tagName === "SOURCE") {
+                videoSource.src = videoSource.dataset.src;
+                }
+            }
+
+            video.target.load();
+            video.target.classList.remove("lazy");
+            lazyVideoObserver.unobserve(video.target);
             }
         });
+        });
+
+        lazyVideos.forEach(function(lazyVideo) {
+        lazyVideoObserver.observe(lazyVideo);
+        });
+    }
+    });
     </script>
 </html>
