@@ -5,6 +5,18 @@ from datetime import datetime, tzinfo, timedelta
 from typing import Union
 
 
+class Timing():
+    def __init__(self, timezone_offset: Union[int, None]):
+        self.timezone_offset = timezone_offset
+
+    def format_timestamp(self, timestamp, format):
+        if timestamp:
+            timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
+            return datetime.fromtimestamp(timestamp, TimeZone(self.timezone_offset)).strftime(format)
+        else:
+            return None
+
+
 class TimeZone(tzinfo):
     def __init__(self, offset):
         self.offset = offset
@@ -65,11 +77,23 @@ class ChatStore():
 
 
 class Message():
-    def __init__(self, from_me: Union[bool,int], timestamp: int, time: Union[int,float,str], key_id: int, timezone_offset: int = 0, message_type: int = None):
+    def __init__(
+            self,
+            *,
+            from_me: Union[bool,int],
+            timestamp: int,
+            time: Union[int,float,str],
+            key_id: int,
+            received_timestamp: int,
+            read_timestamp: int,
+            timezone_offset: int = 0,
+            message_type: int = None
+        ):
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
+        timing = Timing(timezone_offset)
         if isinstance(time, int) or isinstance(time, float):
-            self.time = datetime.fromtimestamp(self.timestamp, TimeZone(timezone_offset)).strftime("%H:%M")
+            self.time = timing.format_timestamp(self.timestamp, "%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
@@ -81,7 +105,9 @@ class Message():
         self.sender = None
         self.safe = False
         self.mime = None
-        self.message_type = message_type
+        self.message_type = message_type,
+        self.received_timestamp = timing.format_timestamp(received_timestamp, "%Y/%m/%d %H:%M")
+        self.read_timestamp = timing.format_timestamp(read_timestamp, "%Y/%m/%d %H:%M") 
         # Extra
         self.reply = None
         self.quoted_data = None

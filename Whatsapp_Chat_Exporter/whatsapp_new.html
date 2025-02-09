@@ -123,6 +123,10 @@
         .reply-box:active {
             background-color:rgb(200 202 205 / var(--tw-bg-opacity, 1));
         }
+        .info-box-tooltip {
+            --tw-translate-x: -50%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+        }
         </style>
         <script>
             function search(event) {
@@ -207,7 +211,25 @@
                         {% endif %}
                         <!--Actual messages-->
                         {% if msg.from_me == true %}
-                        <div class="flex justify-end" id="{{ msg.key_id }}">
+                        <div class="flex justify-end items-center group" id="{{ msg.key_id }}">
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 relative mr-2">
+                                <div class="relative">
+                                    <div class="relative group/tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#8696a0] hover:text-[#54656f] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <use href="#info-icon"></use>
+                                        </svg>
+                                        <div class="absolute bottom-full info-box-tooltip mb-2 hidden group-hover/tooltip:block z-50">
+                                            <div class="bg-black text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                                Delivered at {{msg.received_timestamp or 'unknown'}}
+                                                {% if msg.read_timestamp is not none %}
+                                                <br>Read at {{ msg.read_timestamp }}
+                                                {% endif %}
+                                            </div>
+                                            <div class="absolute top-full right-3 -mt-1 border-4 border-transparent border-t-black"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
@@ -268,7 +290,7 @@
                             </div>
                         </div>
                         {% else %}
-                        <div class="flex justify-start" id="{{ msg.key_id }}">
+                        <div class="flex justify-start items-center group" id="{{ msg.key_id }}">
                             <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
@@ -335,6 +357,21 @@
                                     <span class="flex-shrink-0">{{ msg.time }}</span>
                                     </div>
                             </div>
+                            <!-- <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 relative ml-2">
+                                <div class="relative">
+                                    <div class="relative group/tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#8696a0] hover:text-[#54656f] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <use href="#info-icon"></use>
+                                        </svg>
+                                        <div class="absolute bottom-full info-box-tooltip mb-2 hidden group-hover/tooltip:block z-50">
+                                            <div class="bg-black text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                                Received at {{msg.received_timestamp or 'unknown'}}
+                                            </div>
+                                            <div class="absolute top-full right-3 ml-1 border-4 border-transparent border-t-black"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> -->
                         </div>
                         {% endif %}
                     {% endfor %}
@@ -348,6 +385,12 @@
                     <br>
                     Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
                 </footer>
+                <svg style="display: none;">
+                    <!-- Tooltip info icon -->
+                    <symbol id="info-icon" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </symbol>
+                </svg>
             </div>
         </article>
     </body>

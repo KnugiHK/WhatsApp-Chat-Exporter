@@ -114,7 +114,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                         ZWAGROUPMEMBER.ZMEMBERJID,
 						ZMETADATA,
                         ZSTANZAID,
-                        ZGROUPINFO
+                        ZGROUPINFO,
+                        ZSENTDATE
                  FROM ZWAMESSAGE
                     LEFT JOIN ZWAGROUPMEMBER
                         ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
@@ -152,7 +153,9 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             time=ts,
             key_id=content["ZSTANZAID"][:17],
             timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
-            message_type=content["ZMESSAGETYPE"]
+            message_type=content["ZMESSAGETYPE"],
+            received_timestamp=APPLE_TIME + content["ZSENTDATE"] if content["ZSENTDATE"] else None,
+            read_timestamp=None # TODO: Add timestamp
         )
         invalid = False
         if is_group_message and content["ZISFROMME"] == 0:

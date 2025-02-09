@@ -230,11 +230,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                             jid_old.raw_string as old_jid,
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
-                            group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
-                            group_concat(messages.received_timestamp) as received_timestamp,
-                            group_concat(receipt_user.read_timestamp) as read_timestamp,
-                            group_concat(receipt_user.played_timestamp) as played_timestamp,
-                            group_concat(messages.read_device_timestamp) as read_device_timestamp
+                            COALESCE(receipt_user.receipt_timestamp, messages.received_timestamp) as received_timestamp,
+                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp, messages.read_device_timestamp) as read_timestamp
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
@@ -290,10 +287,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                             jid_old.raw_string as old_jid,
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
-                            group_concat(receipt_user.receipt_timestamp) as receipt_timestamp,
-                            group_concat(message.received_timestamp) as received_timestamp,
-                            group_concat(receipt_user.read_timestamp) as read_timestamp,
-                            group_concat(receipt_user.played_timestamp) as played_timestamp
+                            COALESCE(receipt_user.receipt_timestamp, message.received_timestamp) as received_timestamp,
+                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -361,7 +356,9 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             time=content["timestamp"],
             key_id=content["key_id"],
             timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
-            message_type=content["media_wa_type"]
+            message_type=content["media_wa_type"],
+            received_timestamp=content["received_timestamp"],
+            read_timestamp=content["read_timestamp"]
         )
         if isinstance(content["data"], bytes):
             message.data = ("The message is binary data and its base64 is "
@@ -736,7 +733,9 @@ def calls(db, data, timezone_offset, filter_chat):
             timestamp=content["timestamp"],
             time=content["timestamp"],
             key_id=content["call_id"],
-            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
+            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
+            received_timestamp=None, # TODO: Add timestamp
+            read_timestamp=None # TODO: Add timestamp
         )
         _jid = content["raw_string"]
         name = data[_jid].name if _jid in data else content["chat_subject"] or None
