@@ -29,6 +29,7 @@ def contacts(db, data):
 
 def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
     c = db.cursor()
+    cursor2 = db.cursor()
     # Get contacts
     c.execute(
         f"""SELECT count() 
@@ -191,7 +192,11 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14"):
                 quoted = content["ZMETADATA"][2:19]
                 message.reply = quoted.decode()
-                message.quoted_data = None # TODO
+                cursor2.execute(f"""SELECT ZTEXT
+                                    FROM ZWAMESSAGE
+                                    WHERE ZSTANZAID LIKE '{message.reply}%'""")
+                quoted_content = cursor2.fetchone()
+                message.quoted_data = quoted_content["ZTEXT"] or quoted_content
             if content["ZMESSAGETYPE"] == 15: # Sticker
                 message.sticker = True
 
