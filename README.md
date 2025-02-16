@@ -213,7 +213,7 @@ options:
                         Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only
   --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat name
 
-WhatsApp Chat Exporter: 0.11.1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+WhatsApp Chat Exporter: 0.11.2 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 ```
 
