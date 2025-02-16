@@ -199,7 +199,10 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                                     FROM ZWAMESSAGE
                                     WHERE ZSTANZAID LIKE '{message.reply}%'""")
                 quoted_content = cursor2.fetchone()
-                message.quoted_data = quoted_content["ZTEXT"] or quoted_content
+                if quoted_content and "ZTEXT" in quoted_content:
+                    message.quoted_data = quoted_content["ZTEXT"] 
+                else:
+                    message.quoted_data = None
             if content["ZMESSAGETYPE"] == 15: # Sticker
                 message.sticker = True
 
