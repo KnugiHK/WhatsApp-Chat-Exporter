@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatsapp-chat-exporter"
-version = "0.11.0"
+version = "0.11.1"
 description = "A Whatsapp database parser that provides history of your Whatsapp conversations in HTML and JSON. Android, iOS, iPadOS, Crypt12, Crypt14, Crypt15 supported."
 readme = "README.md"
 authors = [
@@ -58,4 +58,4 @@ where = ["."]
 include = ["Whatsapp_Chat_Exporter"]
 
 [tool.setuptools.package-data]
-template = ["whatsapp.html"]
+Whatsapp_Chat_Exporter = ["*.html"]
