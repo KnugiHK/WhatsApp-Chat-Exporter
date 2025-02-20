@@ -153,13 +153,16 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
             raise ValueError("The plaintext is not a SQLite database. Did you use the key to encrypt something...")
 
 
-def contacts(db, data):
+def contacts(db, data, enrich_from_vcards):
     # Get contacts
     c = db.cursor()
     c.execute("""SELECT count() FROM wa_contacts""")
     total_row_number = c.fetchone()[0]
     if total_row_number == 0:
-        print("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
+        if enrich_from_vcards is not None:
+            print("No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
+        else:
+            print("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
         return False
     else:
         print(f"Processing contacts...({total_row_number})")

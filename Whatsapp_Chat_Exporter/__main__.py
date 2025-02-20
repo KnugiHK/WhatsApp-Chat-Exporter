@@ -472,7 +472,7 @@ def main():
         if os.path.isfile(contact_db):
             with sqlite3.connect(contact_db) as db:
                 db.row_factory = sqlite3.Row
-                contacts(db, data)
+                contacts(db, data, args.enrich_from_vcards)
     elif args.ios:
         contacts = ios_handler.contacts
         messages = ios_handler.messages
