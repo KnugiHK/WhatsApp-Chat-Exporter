@@ -53,9 +53,11 @@ def _extract_encrypted_key(keyfile):
     return _generate_hmac_of_hmac(key_stream)
 
 
-def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=False, db_type=DbType.MESSAGE):
+def decrypt_backup(database, key, output=None, crypt=Crypt.CRYPT14, show_crypt15=False, db_type=DbType.MESSAGE, dry_run=False):
     if not support_backup:
         return 1
+    if not dry_run and output is None:
+        ValueError("The path to the decrypted database must be specified unless dry_run is true.")
     if isinstance(key, io.IOBase):
         key = key.read()
         if crypt is not Crypt.CRYPT15:
@@ -146,8 +148,9 @@ def decrypt_backup(database, key, output, crypt=Crypt.CRYPT14, show_crypt15=Fals
         else:
             decompressed = True
         if db[0:6].upper() == b"SQLITE":
-            with open(output, "wb") as f:
-                f.write(db)
+            if not dry_run:
+                with open(output, "wb") as f:
+                    f.write(db)
             return 0
         else:
             raise ValueError("The plaintext is not a SQLite database. Did you use the key to encrypt something...")
