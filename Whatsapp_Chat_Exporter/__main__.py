@@ -21,6 +21,7 @@ from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, readable_t
 from Whatsapp_Chat_Exporter.utility import import_from_json, sanitize_filename, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
+from getpass import getpass
 from sys import exit
 import importlib.metadata
 
@@ -114,7 +115,8 @@ def main():
         '--key',
         dest='key',
         default=None,
-        help="Path to key file"
+        nargs='?',
+        help="Path to key file. If this option is set for crypt15 backup but nothing is specified, you will be prompted to enter the key."
     )
     parser.add_argument(
         "-t",
@@ -384,6 +386,8 @@ def main():
                     args.filter_date = f"<= {_timestamp - APPLE_TIME}"
             else:
                 parser.error("Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
+    if args.key is None and args.backup is not None and args.backup.endswith("crypt15"):
+        args.key = getpass("Enter your encryption key: ")
     if args.whatsapp_theme:
         args.template = "whatsapp_new.html"
     if args.filter_chat_include is not None and args.filter_chat_exclude is not None:
@@ -435,19 +439,21 @@ def main():
                 crypt = Crypt.CRYPT14
             elif "crypt15" in args.backup:
                 crypt = Crypt.CRYPT15
-            if os.path.isfile(args.key):
+            if not os.path.isfile(args.key) and all(char in string.hexdigits for char in args.key.replace(" ", "")):
+                key = bytes.fromhex(args.key.replace(" ", ""))
+                key_stream = False
+            else:
                 key = open(args.key, "rb")
-            elif all(char in string.hexdigits for char in args.key):
-                key = bytes.fromhex(args.key)
+                key_stream = True
             db = open(args.backup, "rb").read()
             if args.wab:
                 wab = open(args.wab, "rb").read()
-                error_wa = android_handler.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT)
+                error_wa = android_handler.decrypt_backup(wab, key, key_stream, contact_db, crypt, args.showkey, DbType.CONTACT)
                 if isinstance(key, io.IOBase):
                     key.seek(0)
             else:
                 error_wa = 0
-            error_message = android_handler.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE)               
+            error_message = android_handler.decrypt_backup(db, key, key_stream, msg_db, crypt, args.showkey, DbType.MESSAGE)               
             if error_wa != 0:
                 error = error_wa
             elif error_message != 0:

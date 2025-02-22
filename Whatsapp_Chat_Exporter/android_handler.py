@@ -7,6 +7,7 @@ import hmac
 import shutil
 from pathlib import Path
 from mimetypes import MimeTypes
+from typing import Tuple, Union
 from markupsafe import escape as htmle
 from hashlib import sha256
 from base64 import b64decode, b64encode
@@ -32,7 +33,16 @@ else:
     support_crypt15 = True
 
 
-def _generate_hmac_of_hmac(key_stream):
+def _derive_main_enc_key(key_stream: bytes) -> Tuple[bytes, bytes]:
+    """
+    Derive the main encryption key for the given key stream. The key is derived using HMAC of HMAC of the provided key stream.
+
+    Args:
+        key_stream (bytes): The key stream to generate HMAC of HMAC.
+
+    Returns:
+        Tuple[bytes, bytes]: A tuple containing the main encryption key and the original key stream.
+    """
     key = hmac.new(
         hmac.new(
             b'\x00' * 32,
@@ -45,15 +55,53 @@ def _generate_hmac_of_hmac(key_stream):
     return key.digest(), key_stream
 
 
-def _extract_encrypted_key(keyfile):
+def _extract_enc_key(keyfile: bytes) -> Tuple[bytes, bytes]:
+    """
+    Extract the encryption key from the keyfile.
+
+    Args:
+        keyfile (bytes): The keyfile containing the encrypted key.
+
+    Returns:
+        Tuple[bytes, bytes]: values from _derive_main_enc_key()
+    """
     key_stream = b""
     for byte in javaobj.loads(keyfile):
         key_stream += byte.to_bytes(1, "big", signed=True)
 
-    return _generate_hmac_of_hmac(key_stream)
+    return _derive_main_enc_key(key_stream)
 
 
-def decrypt_backup(database, key, output=None, crypt=Crypt.CRYPT14, show_crypt15=False, db_type=DbType.MESSAGE, dry_run=False):
+def decrypt_backup(
+    database: bytes,
+    key: Union[str, io.IOBase],
+    output: str = None,
+    crypt: Crypt = Crypt.CRYPT14,
+    show_crypt15: bool = False,
+    db_type: DbType = DbType.MESSAGE,
+    dry_run: bool = False,
+    key_stream: bool = False
+) -> int:
+    """
+    Decrypt the WhatsApp backup database.
+
+    Args:
+        database (bytes): The encrypted database file.
+        key (str or io.IOBase): The key to decrypt the database. The key should either be a string (32 bytes hex key) or a file object (encryption key file).
+        key_stream (bool, optional): Whether the key is a key stream. False for hex key. True for key stream.
+        output (str, optional): The path to save the decrypted database. Defaults to None. When dry_run is True, this parameter is ignored.
+        crypt (Crypt, optional): The encryption version of the database. Defaults to Crypt.CRYPT14.
+        show_crypt15 (bool, optional): Whether to show the HEX key of the crypt15 backup. Defaults to False.
+        db_type (DbType, optional): The type of database (MESSAGE or CONTACT). Defaults to DbType.MESSAGE.
+        dry_run (bool, optional): Whether to perform a dry run without saving the decrypted database. Defaults to False.
+
+    Returns:
+        int: The status code of the decryption process.
+            - 0: The decryption process was successful.
+            - 1: The decryption process failed because the necessary dependencies for backup decryption are not available.
+            - 2: The decryption process failed because the common offsets for the IV and database are not applicable, and the brute force attempt to find the correct offsets also failed.
+            - 3: The decryption process failed due to unknown error
+    """
     if not support_backup:
         return 1
     if not dry_run and output is None:
@@ -97,10 +145,10 @@ def decrypt_backup(database, key, output=None, crypt=Crypt.CRYPT14, show_crypt15
         raise ValueError("The signature of key file and backup file mismatch")
 
     if crypt == Crypt.CRYPT15:
-        if len(key) == 32:
-            main_key, hex_key = _generate_hmac_of_hmac(key)
+        if key_stream:
+            main_key, hex_key = _extract_enc_key(key)
         else:
-            main_key, hex_key = _extract_encrypted_key(key)
+            main_key, hex_key = _derive_main_enc_key(key)
         if show_crypt15:
             hex_key = [hex_key.hex()[c:c+4] for c in range(0, len(hex_key.hex()), 4)]
             print("The HEX key of the crypt15 backup is: " + ' '.join(hex_key))
