@@ -279,12 +279,6 @@ class DbType(StrEnum):
     CONTACT = "contact"
 
 
-def brute_force_offset(max_iv=200, max_db=200):
-    for iv in range(0, max_iv):
-        for db in range(0, max_db):
-            yield iv, iv + 16, db
-
-
 def determine_metadata(content, init_msg):
     msg = init_msg if init_msg else ""
     if content["is_me_joined"] == 1:  # Override

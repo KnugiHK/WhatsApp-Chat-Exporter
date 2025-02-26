@@ -7,6 +7,17 @@ import shutil
 import json
 import string
 import glob
+import importlib.metadata
+from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
+from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
+from Whatsapp_Chat_Exporter.data_model import ChatStore
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, check_update, DbType
+from Whatsapp_Chat_Exporter.utility import readable_to_bytes, sanitize_filename
+from Whatsapp_Chat_Exporter.utility import import_from_json, bytes_to_readable
+from argparse import ArgumentParser, SUPPRESS
+from datetime import datetime
+from getpass import getpass
+from sys import exit
 try:
     import vobject
 except ModuleNotFoundError:
@@ -14,16 +25,6 @@ except ModuleNotFoundError:
 else:
     from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
     vcards_deps_installed = True
-from Whatsapp_Chat_Exporter import exported_handler, android_handler
-from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, readable_to_bytes, check_update
-from Whatsapp_Chat_Exporter.utility import import_from_json, sanitize_filename, bytes_to_readable
-from argparse import ArgumentParser, SUPPRESS
-from datetime import datetime
-from getpass import getpass
-from sys import exit
-import importlib.metadata
 
 
 def main():
@@ -448,12 +449,12 @@ def main():
             db = open(args.backup, "rb").read()
             if args.wab:
                 wab = open(args.wab, "rb").read()
-                error_wa = android_handler.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT, key_stream)
+                error_wa = android_crypt.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT, key_stream)
                 if isinstance(key, io.IOBase):
                     key.seek(0)
             else:
                 error_wa = 0
-            error_message = android_handler.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE, key_stream)
+            error_message = android_crypt.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE, key_stream)
             if error_wa != 0:
                 error = error_wa
             elif error_message != 0:
