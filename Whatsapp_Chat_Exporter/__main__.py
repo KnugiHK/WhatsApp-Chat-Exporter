@@ -448,12 +448,12 @@ def main():
             db = open(args.backup, "rb").read()
             if args.wab:
                 wab = open(args.wab, "rb").read()
-                error_wa = android_handler.decrypt_backup(wab, key, key_stream, contact_db, crypt, args.showkey, DbType.CONTACT)
+                error_wa = android_handler.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT, key_stream)
                 if isinstance(key, io.IOBase):
                     key.seek(0)
             else:
                 error_wa = 0
-            error_message = android_handler.decrypt_backup(db, key, key_stream, msg_db, crypt, args.showkey, DbType.MESSAGE)               
+            error_message = android_handler.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE, key_stream)
             if error_wa != 0:
                 error = error_wa
             elif error_message != 0:
