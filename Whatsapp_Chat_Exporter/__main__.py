@@ -442,19 +442,35 @@ def main():
                 crypt = Crypt.CRYPT15
             if not os.path.isfile(args.key) and all(char in string.hexdigits for char in args.key.replace(" ", "")):
                 key = bytes.fromhex(args.key.replace(" ", ""))
-                key_stream = False
+                keyfile_stream = False
             else:
                 key = open(args.key, "rb")
-                key_stream = True
+                keyfile_stream = True
             db = open(args.backup, "rb").read()
             if args.wab:
                 wab = open(args.wab, "rb").read()
-                error_wa = android_crypt.decrypt_backup(wab, key, contact_db, crypt, args.showkey, DbType.CONTACT, key_stream)
+                error_wa = android_crypt.decrypt_backup(
+                    wab,
+                    key,
+                    contact_db,
+                    crypt,
+                    args.showkey,
+                    DbType.CONTACT,
+                    keyfile_stream=keyfile_stream
+                )
                 if isinstance(key, io.IOBase):
                     key.seek(0)
             else:
                 error_wa = 0
-            error_message = android_crypt.decrypt_backup(db, key, msg_db, crypt, args.showkey, DbType.MESSAGE, key_stream)
+            error_message = android_crypt.decrypt_backup(
+                db,
+                key,
+                msg_db,
+                crypt,
+                args.showkey,
+                DbType.MESSAGE,
+                keyfile_stream=keyfile_stream
+            )
             if error_wa != 0:
                 error = error_wa
             elif error_message != 0:

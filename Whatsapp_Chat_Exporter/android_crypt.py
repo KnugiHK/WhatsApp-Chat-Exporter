@@ -86,8 +86,9 @@ def decrypt_backup(
     crypt: Crypt = Crypt.CRYPT14,
     show_crypt15: bool = False,
     db_type: DbType = DbType.MESSAGE,
+    *,
     dry_run: bool = False,
-    key_stream: bool = False
+    keyfile_stream: bool = False
 ) -> int:
     """
     Decrypt the WhatsApp backup database.
@@ -152,7 +153,7 @@ def decrypt_backup(
         raise ValueError("The signature of key file and backup file mismatch")
 
     if crypt == Crypt.CRYPT15:
-        if key_stream:
+        if keyfile_stream:
             main_key, hex_key = _extract_enc_key(key)
         else:
             main_key, hex_key = _derive_main_enc_key(key)
