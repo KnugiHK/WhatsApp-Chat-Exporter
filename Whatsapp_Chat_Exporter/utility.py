@@ -96,8 +96,8 @@ def determine_day(last, current):
 def check_update():
     import urllib.request
     import json
+    import importlib
     from sys import platform
-    from .__init__ import __version__
 
     package_url_json = "https://pypi.org/pypi/whatsapp-chat-exporter/json"
     try:
@@ -109,6 +109,7 @@ def check_update():
         with raw:
             package_info = json.load(raw)
             latest_version = tuple(map(int, package_info["info"]["version"].split(".")))
+            __version__ = importlib.metadata.version("whatsapp_chat_exporter")
             current_version = tuple(map(int, __version__.split(".")))
             if current_version < latest_version:
                 print("===============Update===============")
