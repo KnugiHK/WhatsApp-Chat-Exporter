@@ -239,8 +239,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         if i % 1000 == 0:
             print(f"Processing messages...({i}/{total_row_number})", end="\r")
         content = c.fetchone()
-    print(
-        f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
+    print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
 
 
 def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=False):
