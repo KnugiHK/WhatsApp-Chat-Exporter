@@ -50,8 +50,8 @@ jobs:
         pip install .
     - name: Build binary with Nuitka
       run: |
-        python -m nuitka --no-deployment-flag=self-execution --onefile ^
-          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html ^
+        python -m nuitka --no-deployment-flag=self-execution --onefile ` 
+          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html ` 
           --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter\__main__.py --output-filename=wtsexporter 
         copy wtsexporter.exe wtsexporter_x64.exe
         Get-FileHash wtsexporter_x64.exe
