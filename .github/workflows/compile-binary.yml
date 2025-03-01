@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.6.7
+        pip install pycryptodome vobject javaobj-py3 ordered-set zstandard nuitka==2.6.7
         pip install .
     - name: Build binary with Nuitka
       run: |
@@ -44,7 +44,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.6.7
+        pip install pycryptodome vobject javaobj-py3 ordered-set zstandard nuitka==2.6.7
         pip install .
     - name: Build binary with Nuitka
       run: |
@@ -68,7 +68,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.6.7
+        pip install pycryptodome vobject javaobj-py3 ordered-set zstandard nuitka==2.6.7
         pip install .
     - name: Build binary with Nuitka
       run: |
