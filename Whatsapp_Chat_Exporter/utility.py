@@ -145,9 +145,9 @@ def check_update():
     import importlib
     from sys import platform
 
-    package_url_json = "https://pypi.org/pypi/whatsapp-chat-exporter/json"
+    PACKAGE_JSON = "https://pypi.org/pypi/whatsapp-chat-exporter/json"
     try:
-        raw = urllib.request.urlopen(package_url_json)
+        raw = urllib.request.urlopen(PACKAGE_JSON)
     except Exception:
         print("Failed to check for updates.")
         return 1
