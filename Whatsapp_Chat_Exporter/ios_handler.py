@@ -283,7 +283,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
         file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
         ZMESSAGE = content["ZMESSAGE"]
         contact = data[content["ZCONTACTJID"]]
-        message = contact.messages[ZMESSAGE]
+        message = contact.get_message(ZMESSAGE)
         message.media = True
         if contact.media_base == "":
             contact.media_base = media_folder + "/"
@@ -367,7 +367,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
 
         vcard_summary = "This media include the following vCard file(s):<br>" 
         vcard_summary += " | ".join([f'<a href="{htmle(fp)}">{htmle(name)}</a>' for name, fp in zip(vcard_names, file_paths)])
-        message = data[content["ZCONTACTJID"]].messages[content["ZMESSAGE"]]
+        message = data[content["ZCONTACTJID"]].get_message(content["ZMESSAGE"])
         message.data = vcard_summary
         message.mime = "text/x-vcard"
         message.media = True

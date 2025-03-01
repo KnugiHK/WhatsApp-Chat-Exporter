@@ -451,7 +451,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
         Path(f"{media_folder}/thumbnails").mkdir(parents=True, exist_ok=True)
     while content is not None:
         file_path = f"{media_folder}/{content['file_path']}"
-        message = data[content["key_remote_jid"]].messages[content["message_row_id"]]
+        message = data[content["key_remote_jid"]].get_message(content["message_row_id"])
         message.media = True
         if os.path.isfile(file_path):
             message.data = file_path
@@ -547,7 +547,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
-        message = data[row["key_remote_jid"]].messages[row["message_row_id"]]
+        message = data[row["key_remote_jid"]].get_message(row["message_row_id"])
         message.data = "This media include the following vCard file(s):<br>" \
             f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
         message.mime = "text/x-vcard"
@@ -736,7 +736,7 @@ def create_txt(data, output):
             contact = jik.replace('+', '')
         output_file = os.path.join(output, f"{contact}.txt")
         with open(output_file, "w", encoding="utf8") as f:
-            for message in chat.messages.values():
+            for message in chat.get_messages():
                 date = datetime.fromtimestamp(message.timestamp).date()
                 if message.meta and message.mime != "media":
                     continue  # Skip any metadata in text format

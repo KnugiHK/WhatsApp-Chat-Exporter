@@ -74,7 +74,7 @@ class ChatStore:
         if name is not None and not isinstance(name, str):
             raise TypeError("Name must be a string or None")
         self.name = name
-        self.messages: Dict[str, 'Message'] = {}
+        self._messages: Dict[str, 'Message'] = {}
         self.type = type
         if media is not None:
             from Whatsapp_Chat_Exporter.utility import Device
@@ -95,12 +95,16 @@ class ChatStore:
         """Add a message to the chat store."""
         if not isinstance(message, Message):
             raise TypeError("message must be a Message object")
-        self.messages[id] = message
+        self._messages[id] = message
+    
+    def get_message(self, id: str) -> 'Message':
+        """Get a message from the chat store."""
+        return self._messages.get(id)
 
     def delete_message(self, id: str) -> None:
         """Delete a message from the chat store."""
-        if id in self.messages:
-            del self.messages[id]
+        if id in self._messages:
+            del self._messages[id]
 
     def to_json(self) -> Dict[str, Any]:
         """Convert chat store to JSON-serializable dict."""
@@ -111,16 +115,16 @@ class ChatStore:
             'their_avatar': self.their_avatar,
             'their_avatar_thumb': self.their_avatar_thumb,
             'status': self.status,
-            'messages': {id: msg.to_json() for id, msg in self.messages.items()}
+            'messages': {id: msg.to_json() for id, msg in self._messages.items()}
         }
 
     def get_last_message(self) -> 'Message':
         """Get the most recent message in the chat."""
-        return tuple(self.messages.values())[-1]
+        return tuple(self._messages.values())[-1]
 
     def get_messages(self) -> Dict[str, 'Message']:
         """Get all messages in the chat."""
-        return self.messages.values()
+        return self._messages.values()
 
 
 class Message:
