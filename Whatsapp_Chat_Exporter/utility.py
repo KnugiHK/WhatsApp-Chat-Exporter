@@ -10,7 +10,7 @@ from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 try:
     from enum import StrEnum, IntEnum
 except ImportError:
