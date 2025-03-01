@@ -2,11 +2,11 @@
 
 import os
 from datetime import datetime, tzinfo, timedelta
-from typing import Union
+from typing import Union, Optional
 
 
 class Timing():
-    def __init__(self, timezone_offset: Union[int, None]):
+    def __init__(self, timezone_offset: Optional[int]):
         self.timezone_offset = timezone_offset
 
     def format_timestamp(self, timestamp, format):
@@ -80,9 +80,9 @@ class Message():
     def __init__(
             self,
             *,
-            from_me: Union[bool,int],
+            from_me: Union[bool, int],
             timestamp: int,
-            time: Union[int,float,str],
+            time: Union[int, float, str],
             key_id: int,
             received_timestamp: int,
             read_timestamp: int,
