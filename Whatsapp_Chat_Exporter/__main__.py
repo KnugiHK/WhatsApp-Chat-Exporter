@@ -440,6 +440,9 @@ def main():
                 crypt = Crypt.CRYPT14
             elif "crypt15" in args.backup:
                 crypt = Crypt.CRYPT15
+            else:
+                print("Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.")
+                exit(1)
             if not os.path.isfile(args.key) and all(char in string.hexdigits for char in args.key.replace(" ", "")):
                 key = bytes.fromhex(args.key.replace(" ", ""))
                 keyfile_stream = False
