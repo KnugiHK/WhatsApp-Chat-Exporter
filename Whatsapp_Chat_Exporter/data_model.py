@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, tzinfo, timedelta
-from typing import Union, Optional, Dict, Any
+from typing import MutableMapping, Union, Optional, Dict, Any
 
 
 class Timing:
@@ -53,6 +53,98 @@ class TimeZone(tzinfo):
     def dst(self, dt: Optional[datetime]) -> timedelta:
         """Get DST offset (always 0)."""
         return timedelta(0)
+
+
+class ChatCollection(MutableMapping):
+    """
+    A collection of chats that provides dictionary-like access with additional chat management methods.
+    Inherits from MutableMapping to implement a custom dictionary-like behavior.
+    """
+
+    def __init__(self) -> None:
+        """Initialize an empty chat collection."""
+        self._chats: Dict[str, ChatStore] = {}
+
+    def __getitem__(self, key: str) -> 'ChatStore':
+        """Get a chat by its ID. Required for dict-like access."""
+        return self._chats[key]
+
+    def __setitem__(self, key: str, value: 'ChatStore') -> None:
+        """Set a chat by its ID. Required for dict-like access."""
+        if not isinstance(value, ChatStore):
+            raise TypeError("Value must be a ChatStore object")
+        self._chats[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        """Delete a chat by its ID. Required for dict-like access."""
+        del self._chats[key]
+
+    def __iter__(self):
+        """Iterate over chat IDs. Required for dict-like access."""
+        return iter(self._chats)
+
+    def __len__(self) -> int:
+        """Get number of chats. Required for dict-like access."""
+        return len(self._chats)
+
+    def get_chat(self, chat_id: str) -> Optional['ChatStore']:
+        """
+        Get a chat by its ID.
+
+        Args:
+            chat_id (str): The ID of the chat to retrieve
+
+        Returns:
+            Optional['ChatStore']: The chat if found, None otherwise
+        """
+        return self._chats.get(chat_id)
+
+    def add_chat(self, chat_id: str, chat: 'ChatStore') -> None:
+        """
+        Add a new chat to the collection.
+
+        Args:
+            chat_id (str): The ID for the chat
+            chat (ChatStore): The chat to add
+
+        Raises:
+            TypeError: If chat is not a ChatStore object
+        """
+        if not isinstance(chat, ChatStore):
+            raise TypeError("Chat must be a ChatStore object")
+        self._chats[chat_id] = chat
+        return self._chats[chat_id]
+
+    def remove_chat(self, chat_id: str) -> None:
+        """
+        Remove a chat from the collection.
+
+        Args:
+            chat_id (str): The ID of the chat to remove
+        """
+        if chat_id in self._chats:
+            del self._chats[chat_id]
+
+    def items(self):
+        """Get chat items (id, chat) pairs."""
+        return self._chats.items()
+
+    def values(self):
+        """Get all chats."""
+        return self._chats.values()
+
+    def keys(self):
+        """Get all chat IDs."""
+        return self._chats.keys()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the collection to a dictionary.
+
+        Returns:
+            Dict[str, Any]: Dictionary representation of all chats
+        """
+        return {chat_id: chat.to_json() for chat_id, chat in self._chats.items()}
 
 
 class ChatStore:
@@ -122,7 +214,7 @@ class ChatStore:
         """Get the most recent message in the chat."""
         return tuple(self._messages.values())[-1]
 
-    def get_messages(self) -> Dict[str, 'Message']:
+    def get_messages(self) -> 'Message':
         """Get all messages in the chat."""
         return self._messages.values()
 

@@ -32,9 +32,9 @@ def contacts(db, data, enrich_from_vcards):
     c.execute("""SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts; """)
     row = c.fetchone()
     while row is not None:
-        data[row["jid"]] = ChatStore(Device.ANDROID, row["display_name"])
+        current_chat = data.add_chat(row["jid"], ChatStore(Device.ANDROID, row["display_name"]))
         if row["status"] is not None:
-            data[row["jid"]].status = row["status"]
+            current_chat.status = row["status"]
         row = c.fetchone()
 
 
@@ -207,8 +207,10 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         else:
             break
     while content is not None:
-        if content["key_remote_jid"] not in data:
-            data[content["key_remote_jid"]] = ChatStore(Device.ANDROID, content["chat_subject"])
+        if not data.get_chat(content["key_remote_jid"]):
+            current_chat = data.add_chat(content["key_remote_jid"], ChatStore(Device.ANDROID, content["chat_subject"]))
+        else:
+            current_chat = data.get_chat(content["key_remote_jid"])
         if content["key_remote_jid"] is None:
             continue  # Not sure
         if "sender_jid_row_id" in content:
@@ -232,7 +234,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 f"""('Decode')&input={b64encode(b64encode(content["data"])).decode()}">""")
             message.data += b64encode(content["data"]).decode("utf-8") + "</a>"
             message.safe = message.meta = True
-            data[content["key_remote_jid"]].add_message(content["_id"], message)
+            current_chat.add_message(content["_id"], message)
             i += 1
             content = c.fetchone()
             continue
@@ -242,13 +244,13 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 if content["sender_jid_row_id"] > 0:
                     _jid = content["group_sender_jid"]
                     if _jid in data:
-                        name = data[_jid].name
+                        name = data.get_chat(_jid).name
                     if "@" in _jid:
                         fallback = _jid.split('@')[0]
             else:
                 if content["remote_resource"] is not None:
                     if content["remote_resource"] in data:
-                        name = data[content["remote_resource"]].name
+                        name = data.get_chat(content["remote_resource"]).name
                     if "@" in content["remote_resource"]:
                         fallback = content["remote_resource"].split('@')[0]
 
@@ -281,7 +283,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 if content["sender_jid_row_id"] > 0:
                     _jid = content["group_sender_jid"]
                     if _jid in data:
-                        name = data[_jid].name
+                        name = data.get_chat(_jid).name
                     if "@" in _jid:
                         fallback = _jid.split('@')[0]
                 else:
@@ -290,7 +292,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 _jid = content["remote_resource"]
                 if _jid is not None:
                     if _jid in data:
-                        name = data[_jid].name
+                        name = data.get_chat(_jid).name
                     if "@" in _jid:
                         fallback = _jid.split('@')[0]
                 else:
@@ -343,7 +345,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                                 msg = msg.replace("\n", " <br>")
             message.data = msg
 
-        data[content["key_remote_jid"]].add_message(content["_id"], message)
+        current_chat.add_message(content["_id"], message)
         i += 1
         if i % 1000 == 0:
             print(f"Processing messages...({i}/{total_row_number})", end="\r")
@@ -451,7 +453,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
         Path(f"{media_folder}/thumbnails").mkdir(parents=True, exist_ok=True)
     while content is not None:
         file_path = f"{media_folder}/{content['file_path']}"
-        message = data[content["key_remote_jid"]].get_message(content["message_row_id"])
+        current_chat = data.get_chat(content["key_remote_jid"])
+        message = current_chat.get_message(content["message_row_id"])
         message.media = True
         if os.path.isfile(file_path):
             message.data = file_path
@@ -464,7 +467,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
             else:
                 message.mime = content["mime_type"]
             if separate_media:
-                chat_display_name = slugify(data[content["key_remote_jid"]].name or message.sender \
+                chat_display_name = slugify(current_chat.name or message.sender \
                                             or content["key_remote_jid"].split('@')[0], True)
                 current_filename = file_path.split("/")[-1]
                 new_folder = os.path.join(media_folder, "separated", chat_display_name)
@@ -547,7 +550,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(row["vcard"])
-        message = data[row["key_remote_jid"]].get_message(row["message_row_id"])
+        message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
         message.data = "This media include the following vCard file(s):<br>" \
             f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
         message.mime = "text/x-vcard"
@@ -603,7 +606,7 @@ def calls(db, data, timezone_offset, filter_chat):
             read_timestamp=None # TODO: Add timestamp
         )
         _jid = content["raw_string"]
-        name = data[_jid].name if _jid in data else content["chat_subject"] or None
+        name = data.get_chat(_jid).name if _jid in data else content["chat_subject"] or None
         if _jid is not None and "@" in _jid:
             fallback = _jid.split('@')[0]
         else:
@@ -632,7 +635,7 @@ def calls(db, data, timezone_offset, filter_chat):
             call.data += "in an unknown state."
         chat.add_message(content["_id"], call)
         content = c.fetchone()
-    data["000000000000000"] = chat
+    data.add_chat("000000000000000", chat)
 
 
 def create_html(
@@ -657,8 +660,8 @@ def create_html(
     w3css = get_status_location(output_folder, offline_static)
 
     for current, contact in enumerate(data):
-        chat = data[contact]
-        safe_file_name, name = get_file_name(contact, chat)
+        current_chat = data.get_chat(contact)
+        safe_file_name, name = get_file_name(contact, current_chat)
 
         if maximum_size is not None:
             current_size = 0
@@ -666,8 +669,8 @@ def create_html(
             render_box = []
             if maximum_size == 0:
                 maximum_size = MAX_SIZE
-            last_msg = chat.get_last_message().key_id
-            for message in chat.get_messages():
+            last_msg = current_chat.get_last_message().key_id
+            for message in current_chat.get_messages():
                 if message.data is not None and not message.meta and not message.media:
                     current_size += len(message.data) + ROW_SIZE
                 else:
@@ -681,7 +684,7 @@ def create_html(
                         render_box,
                         contact,
                         w3css,
-                        chat,
+                        current_chat,
                         headline,
                         next=f"{safe_file_name}-{current_page + 1}.html",
                         previous=f"{safe_file_name}-{current_page - 1}.html" if current_page > 1 else False
@@ -703,7 +706,7 @@ def create_html(
                             render_box,
                             contact,
                             w3css,
-                            chat,
+                            current_chat,
                             headline,
                             False,
                             previous=f"{safe_file_name}-{current_page - 1}.html"
@@ -714,10 +717,10 @@ def create_html(
                 output_file_name,
                 template,
                 name,
-                chat.get_messages(),
+                current_chat.get_messages(),
                 contact,
                 w3css,
-                chat,
+                current_chat,
                 headline,
                 False
             )

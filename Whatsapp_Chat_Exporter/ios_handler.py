@@ -22,8 +22,9 @@ def contacts(db, data):
     while content is not None:
         if not content["ZWHATSAPPID"].endswith("@s.whatsapp.net"):
             ZWHATSAPPID = content["ZWHATSAPPID"] + "@s.whatsapp.net"
-        data[ZWHATSAPPID] = ChatStore(Device.IOS)
-        data[ZWHATSAPPID].status = content["ZABOUTTEXT"]
+        current_chat = ChatStore(Device.IOS)
+        current_chat.status = content["ZABOUTTEXT"]
+        data.add_chat(ZWHATSAPPID, current_chat)
         content = c.fetchone()
 
 
@@ -76,20 +77,21 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             contact_name = content["ZPUSHNAME"]
         contact_id = content["ZCONTACTJID"]
         if contact_id not in data:
-            data[contact_id] = ChatStore(Device.IOS, contact_name, media_folder)
+            current_chat = data.add_chat(contact_id, ChatStore(Device.IOS, contact_name, media_folder))
         else:
-            data[contact_id].name = contact_name
-            data[contact_id].my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
+            current_chat = data.get_chat(contact_id)
+            current_chat.name = contact_name
+            current_chat.my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
         path = f'{media_folder}/Media/Profile/{contact_id.split("@")[0]}'
         avatars = glob(f"{path}*")
         if 0 < len(avatars) <= 1:
-            data[contact_id].their_avatar = avatars[0]
+            current_chat.their_avatar = avatars[0]
         else:
             for avatar in avatars:
-                if avatar.endswith(".thumb") and data[content["ZCONTACTJID"]].their_avatar_thumb is None:
-                    data[contact_id].their_avatar_thumb = avatar
-                elif avatar.endswith(".jpg") and data[content["ZCONTACTJID"]].their_avatar is None:
-                    data[contact_id].their_avatar = avatar
+                if avatar.endswith(".thumb") and current_chat.their_avatar_thumb is None:
+                    current_chat.their_avatar_thumb = avatar
+                elif avatar.endswith(".jpg") and current_chat.their_avatar is None:
+                    current_chat.their_avatar = avatar
         content = c.fetchone()
 
     # Get message history
@@ -135,17 +137,19 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         Z_PK = content["Z_PK"]
         is_group_message = content["ZGROUPINFO"] is not None
         if ZCONTACTJID not in data:
-            data[ZCONTACTJID] = ChatStore(Device.IOS)
+            current_chat = data.add_chat(ZCONTACTJID, ChatStore(Device.IOS))
             path = f'{media_folder}/Media/Profile/{ZCONTACTJID.split("@")[0]}'
             avatars = glob(f"{path}*")
             if 0 < len(avatars) <= 1:
-                data[ZCONTACTJID].their_avatar = avatars[0]
+                current_chat.their_avatar = avatars[0]
             else:
                 for avatar in avatars:
                     if avatar.endswith(".thumb"):
-                        data[ZCONTACTJID].their_avatar_thumb = avatar
+                        current_chat.their_avatar_thumb = avatar
                     elif avatar.endswith(".jpg"):
-                        data[ZCONTACTJID].their_avatar = avatar
+                        current_chat.their_avatar = avatar
+        else:
+            current_chat = data.get_chat(ZCONTACTJID)
         ts = APPLE_TIME + content["ZMESSAGEDATE"]
         message = Message(
             from_me=content["ZISFROMME"],
@@ -162,7 +166,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             name = None
             if content["ZMEMBERJID"] is not None:
                 if content["ZMEMBERJID"] in data:
-                    name = data[content["ZMEMBERJID"]].name
+                    name = data.get_chat(content["ZMEMBERJID"]).name
                 if "@" in content["ZMEMBERJID"]:
                     fallback = content["ZMEMBERJID"].split('@')[0]
                 else:
@@ -230,7 +234,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                             msg = msg.replace("\n", "<br>")
             message.data = msg
         if not invalid:
-            data[ZCONTACTJID].add_message(Z_PK, message)
+            current_chat.add_message(Z_PK, message)
         i += 1
         if i % 1000 == 0:
             print(f"Processing messages...({i}/{total_row_number})", end="\r")
@@ -281,12 +285,11 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     mime = MimeTypes()
     while content is not None:
         file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
-        ZMESSAGE = content["ZMESSAGE"]
-        contact = data[content["ZCONTACTJID"]]
-        message = contact.get_message(ZMESSAGE)
+        current_chat = data.get_chat(content["ZCONTACTJID"])
+        message = current_chat.get_message(content["ZMESSAGE"])
         message.media = True
-        if contact.media_base == "":
-            contact.media_base = media_folder + "/"
+        if current_chat.media_base == "":
+            current_chat.media_base = media_folder + "/"
         if os.path.isfile(file_path):
             message.data = '/'.join(file_path.split("/")[1:])
             if content["ZVCARDSTRING"] is None:
@@ -298,7 +301,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
             else:
                 message.mime = content["ZVCARDSTRING"]
             if separate_media:
-                chat_display_name = slugify(contact.name or message.sender \
+                chat_display_name = slugify(current_chat.name or message.sender \
                                             or content["ZCONTACTJID"].split('@')[0], True)
                 current_filename = file_path.split("/")[-1]
                 new_folder = os.path.join(media_folder, "separated", chat_display_name)
@@ -367,7 +370,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
 
         vcard_summary = "This media include the following vCard file(s):<br>" 
         vcard_summary += " | ".join([f'<a href="{htmle(fp)}">{htmle(name)}</a>' for name, fp in zip(vcard_names, file_paths)])
-        message = data[content["ZCONTACTJID"]].get_message(content["ZMESSAGE"])
+        message = data.get_chat(content["ZCONTACTJID"]).get_message(content["ZMESSAGE"])
         message.data = vcard_summary
         message.mime = "text/x-vcard"
         message.media = True
@@ -415,7 +418,7 @@ def calls(db, data, timezone_offset, filter_chat):
             timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
         )
         _jid = content["ZGROUPCALLCREATORUSERJIDSTRING"]
-        name = data[_jid].name if _jid in data else None
+        name = data.get_chat(_jid).name if _jid in data else None
         if _jid is not None and "@" in _jid:
             fallback = _jid.split('@')[0]
         else:
@@ -443,4 +446,4 @@ def calls(db, data, timezone_offset, filter_chat):
             call.data += "in an unknown state."
         chat.add_message(call.key_id, call)
         content = c.fetchone()
-    data["000000000000000"] = chat
+    data.add_chat("000000000000000", chat)

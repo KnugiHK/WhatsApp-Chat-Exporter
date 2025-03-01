@@ -10,7 +10,7 @@ import glob
 import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.data_model import ChatStore
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, check_update, DbType
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, sanitize_filename
 from Whatsapp_Chat_Exporter.utility import import_from_json, bytes_to_readable
@@ -403,7 +403,7 @@ def main():
                 parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
 
-    data = {}
+    data = ChatCollection()
 
     if args.enrich_from_vcards is not None:
         if not vcards_deps_installed:
