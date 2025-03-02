@@ -235,10 +235,12 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
         chat.status = chat_data.get("status")
         for id, msg in chat_data.get("messages").items():
             message = Message(
-                msg["from_me"],
-                msg["timestamp"],
-                msg["time"],
-                msg["key_id"],
+                from_me=msg["from_me"],
+                timestamp=msg["timestamp"],
+                time=msg["time"],
+                key_id=msg["key_id"],
+                received_timestamp=msg.get("received_timestamp"),
+                read_timestamp=msg.get("read_timestamp")
             )
             message.media = msg.get("media")
             message.meta = msg.get("meta")
