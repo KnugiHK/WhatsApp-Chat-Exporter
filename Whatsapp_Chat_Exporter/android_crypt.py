@@ -114,12 +114,13 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
         )
     return db
 
-def _decrypt_crypt14(database: bytes, main_key: bytes) -> bytes:
+def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> bytes:
     """Decrypt a crypt14 database using multithreading for brute-force offset detection.
 
     Args:
         database (bytes): The encrypted database.
         main_key (bytes): The decryption key.
+        max_worker (int, optional): The maximum number of threads to use for brute force. Defaults to 10.
 
     Returns:
         bytes: The decrypted database.
@@ -164,7 +165,7 @@ def _decrypt_crypt14(database: bytes, main_key: bytes) -> bytes:
         except (zlib.error, ValueError):
             return None  # Decryption failed, move to next
 
-    with concurrent.futures.ThreadPoolExecutor(10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_worker) as executor:
         future_to_offset = {executor.submit(attempt_decrypt, offset): offset for offset in offset_combinations}
 
         try:
@@ -247,7 +248,8 @@ def decrypt_backup(
     db_type: DbType = DbType.MESSAGE,
     *,
     dry_run: bool = False,
-    keyfile_stream: bool = False
+    keyfile_stream: bool = False,
+    max_worker: int = 10
 ) -> int:
     """
     Decrypt the WhatsApp backup database.
@@ -308,7 +310,7 @@ def decrypt_backup(
 
     try:
         if crypt == Crypt.CRYPT14:
-            db = _decrypt_crypt14(database, main_key)
+            db = _decrypt_crypt14(database, main_key, max_worker)
         elif crypt == Crypt.CRYPT12:
             db = _decrypt_crypt12(database, main_key)
         elif crypt == Crypt.CRYPT15:

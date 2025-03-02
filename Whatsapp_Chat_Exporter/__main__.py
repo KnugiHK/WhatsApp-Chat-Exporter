@@ -229,6 +229,10 @@ def setup_argument_parser() -> ArgumentParser:
         "--decrypt-chunk-size", dest="decrypt_chunk_size", default=1 * 1024 * 1024, type=int,
         help="Specify the chunk size for decrypting iOS backup, which may affect the decryption speed."
     )
+    misc_group.add_argument(
+        "--max-bruteforce-worker", dest="max_bruteforce_worker", default=10, type=int,
+        help="Specify the maximum number of worker for bruteforce decryption."
+    )
     
     return parser
 
@@ -398,7 +402,8 @@ def decrypt_android_backup(args) -> int:
             crypt,
             args.showkey,
             DbType.CONTACT,
-            keyfile_stream=keyfile_stream
+            keyfile_stream=keyfile_stream,
+            max_worker=args.max_bruteforce_worker
         )
         if isinstance(key, io.IOBase):
             key.seek(0)
@@ -411,7 +416,8 @@ def decrypt_android_backup(args) -> int:
         crypt,
         args.showkey,
         DbType.MESSAGE,
-        keyfile_stream=keyfile_stream
+        keyfile_stream=keyfile_stream,
+        max_worker=args.max_bruteforce_worker
     )
     
     # Handle errors
