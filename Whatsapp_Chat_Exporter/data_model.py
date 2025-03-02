@@ -182,6 +182,10 @@ class ChatStore:
         self.their_avatar_thumb = None
         self.status = None
         self.media_base = ""
+    
+    def __len__(self) -> int:
+        """Get number of chats. Required for dict-like access."""
+        return len(self._messages)
 
     def add_message(self, id: str, message: 'Message') -> None:
         """Add a message to the chat store."""
