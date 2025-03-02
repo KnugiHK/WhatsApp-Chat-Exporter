@@ -661,6 +661,9 @@ def create_html(
 
     for current, contact in enumerate(data):
         current_chat = data.get_chat(contact)
+        if len(current_chat) == 0:
+            # Skip empty chats
+            continue
         safe_file_name, name = get_file_name(contact, current_chat)
 
         if maximum_size is not None:
@@ -733,6 +736,8 @@ def create_html(
 def create_txt(data, output):
     os.makedirs(output, exist_ok=True)
     for jik, chat in data.items():
+        if len(chat) == 0:
+            continue
         if chat.name is not None:
             contact = chat.name.replace('/', '')
         else:
