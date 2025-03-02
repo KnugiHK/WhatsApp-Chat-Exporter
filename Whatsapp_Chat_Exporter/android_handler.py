@@ -670,7 +670,7 @@ def create_html(
             if maximum_size == 0:
                 maximum_size = MAX_SIZE
             last_msg = current_chat.get_last_message().key_id
-            for message in current_chat.get_messages():
+            for message in current_chat.values():
                 if message.data is not None and not message.meta and not message.media:
                     current_size += len(message.data) + ROW_SIZE
                 else:
@@ -717,7 +717,7 @@ def create_html(
                 output_file_name,
                 template,
                 name,
-                current_chat.get_messages(),
+                current_chat.values(),
                 contact,
                 w3css,
                 current_chat,
@@ -739,7 +739,7 @@ def create_txt(data, output):
             contact = jik.replace('+', '')
         output_file = os.path.join(output, f"{contact}.txt")
         with open(output_file, "w", encoding="utf8") as f:
-            for message in chat.get_messages():
+            for message in chat.values():
                 date = datetime.fromtimestamp(message.timestamp).date()
                 if message.meta and message.mime != "media":
                     continue  # Skip any metadata in text format

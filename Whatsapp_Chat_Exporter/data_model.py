@@ -213,10 +213,18 @@ class ChatStore:
     def get_last_message(self) -> 'Message':
         """Get the most recent message in the chat."""
         return tuple(self._messages.values())[-1]
+    
+    def items(self):
+        """Get message items pairs."""
+        return self._messages.items()
 
-    def get_messages(self) -> 'Message':
+    def values(self):
         """Get all messages in the chat."""
         return self._messages.values()
+
+    def keys(self):
+        """Get all message keys in the chat."""
+        return self._messages.keys()
 
 
 class Message:
