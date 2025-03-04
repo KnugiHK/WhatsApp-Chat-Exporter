@@ -101,15 +101,16 @@ If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 ### Extracting
-Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
+To extract messages from iOS/iPadOS backups, run the following command in the shell, making sure to replace the username and device ID with the correct values. Keep in mind that there are at least two possible paths for the backups on Windows.
 #### Windows
-```sh
+```powershell
+# Possible path one
 wtsexporter -i -b "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
-```
-#### Windows (iTunes downloaded from Microsoft Store)
-```sh
+
+# Possible path two
 wtsexporter -i -b "C:\Users\[Username]\Apple\MobileSync\Backup\[device id]"
 ```
+
 #### Mac
 ```sh
 wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
