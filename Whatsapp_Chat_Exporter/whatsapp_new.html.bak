@@ -10,11 +10,11 @@
                     extend: {
                         colors: {
                             whatsapp: {
-                                light: '#128C7E',         /* Warna default (tidak dipakai langsung karena kita override untuk dark mode) */
+                                light: '#e7ffdb',
                                 DEFAULT: '#25D366',
-                                dark: '#202c33',          
-                                chat: '#2a2f32',          /* Warna untuk bubble pesan masuk (kiri) */
-                                'chat-light': '#121b21',   /* Background scrollable chat area */
+                                dark: '#075E54',
+                                chat: '#efeae2',
+                                'chat-light': '#f0f2f5',
                             }
                         }
                     }
@@ -22,14 +22,11 @@
             }
         </script>
         <style>
-        /* Background halaman (padding di kanan dan kiri) */
         body, html {
             height: 100%;
             margin: 0;
             padding: 0;
             scroll-behavior: smooth !important;
-            background-color: #0e141a; /* Warna untuk area yang tidak di-scroll (kanan dan kiri) */
-            color: #e5e5e5;
         }
         .chat-list {
             height: calc(100vh - 120px);
@@ -47,7 +44,7 @@
         header {
             position: fixed;
             z-index: 20;
-            border-bottom: 2px solid #d1d7db;
+            border-bottom: 2px solid #e3e6e7;
             font-size: 2em;
             font-weight: bolder;
             background-color: white;
@@ -58,9 +55,8 @@
             border-top: 2px solid #e3e6e7;
             padding: 20px 0 20px 0;
         }
-        /* Perlebar area chat */
         article {
-            width: 500px;
+            width:430px;
             margin: auto;
             z-index:10;
             font-size: 15px;
@@ -131,36 +127,6 @@
             --tw-translate-x: -50%;
             transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
         }
-        /* Incoming messages: Override elemen dengan bg-white agar tampil dark */
-        .message-list .bg-white {
-            background-color: #2a2f32 !important;
-            color: #e5e5e5;
-        }
-        .message-list .bg-white p {
-            color: #e5e5e5 !important;
-        }
-        /* Override untuk teks pesan umum (pesan keluar) */
-        .message-list p.message-text {
-            color: #e5e5e5 !important;
-        }
-        /* Override untuk teks waktu dan info kecil */
-        .message-list .text-10px {
-            color: #a0a0a0 !important;
-        }
-        /* --- Aturan khusus untuk dark mode chat keluaran --- */
-        /* Outgoing message bubble (kanan) */
-        .message-list .flex.justify-end > div.bg-whatsapp-light {
-            background-color: #054740 !important;
-        }
-        .message-list .flex.justify-end > div.bg-whatsapp-light p.message-text {
-            color: #e5e5e5 !important;
-        }
-        /* Reply box pada outgoing bubble */
-        .message-list .flex.justify-end > div.bg-whatsapp-light a > div.reply-box {
-            background-color: #0a7a65 !important;
-            border-color: #25D366 !important;
-        }
-        /* --- Akhir aturan khusus --- */
         </style>
         <script>
             function search(event) {
@@ -196,6 +162,14 @@
                         </div>
                     </div>
                     <div class="flex space-x-4">
+                        <!-- <button id="searchButton">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button> -->
+                        <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg> -->
                         {% if previous %}
                         <a href="./{{ previous }}" target="_self">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,7 +198,7 @@
             </div>
             <div class="flex-1 p-5 message-list">
                 <div class="flex flex-col space-y-2">
-                    <!-- Date -->
+                    <!--Date-->
                     {% set last = {'last': 946688461.001} %}
                     {% for msg in msgs -%}
                         {% if determine_day(last.last, msg.timestamp) is not none  %}
@@ -235,7 +209,7 @@
                             </div>
                             {% if last.update({'last': msg.timestamp}) %}{% endif %}
                         {% endif %}
-                        <!-- Actual messages -->
+                        <!--Actual messages-->
                         {% if msg.from_me == true %}
                         <div class="flex justify-end items-center group" id="{{ msg.key_id }}">
                             <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 relative mr-2">
@@ -256,7 +230,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Outgoing message bubble -->
                             <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
@@ -318,7 +291,6 @@
                         </div>
                         {% else %}
                         <div class="flex justify-start items-center group" id="{{ msg.key_id }}">
-                            <!-- Incoming message bubble -->
                             <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
@@ -385,6 +357,21 @@
                                     <span class="flex-shrink-0">{{ msg.time }}</span>
                                     </div>
                             </div>
+                            <!-- <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 relative ml-2">
+                                <div class="relative">
+                                    <div class="relative group/tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#8696a0] hover:text-[#54656f] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <use href="#info-icon"></use>
+                                        </svg>
+                                        <div class="absolute bottom-full info-box-tooltip mb-2 hidden group-hover/tooltip:block z-50">
+                                            <div class="bg-black text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                                Received at {{msg.received_timestamp or 'unknown'}}
+                                            </div>
+                                            <div class="absolute top-full right-3 ml-1 border-4 border-transparent border-t-black"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> -->
                         </div>
                         {% endif %}
                     {% endfor %}
