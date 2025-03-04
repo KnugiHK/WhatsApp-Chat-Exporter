@@ -297,8 +297,12 @@ def validate_chat_filters(parser: ArgumentParser, chat_filter: Optional[List[str
     """Validate chat filters to ensure they contain only phone numbers."""
     if chat_filter is not None:
         for chat in chat_filter:
-            if not chat.isnumeric():
-                parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
+            if chat.isnumeric():
+            	continue
+            parts = chat.split('-')
+            if len(parts) == 2 and all(part.isnumeric() for part in parts):
+            	continue
+            parser.error("Enter a phone number in the chat filter. See https://wts.knugi.dev/docs?dest=chat")
 
 
 def process_date_filter(parser: ArgumentParser, args) -> None:
@@ -381,12 +385,16 @@ def decrypt_android_backup(args) -> int:
         return 1
     
     # Get key
-    keyfile_stream = False
-    if not os.path.isfile(args.key) and all(char in string.hexdigits for char in args.key.replace(" ", "")):
-        key = bytes.fromhex(args.key.replace(" ", ""))
-    else:
-        key = open(args.key, "rb")
-        keyfile_stream = True
+    try:
+        keyfile_stream = False
+        if not os.path.isfile(args.key) and all(char in string.hexdigits for char in args.key.replace(" ", "")):
+            key = bytes.fromhex(args.key.replace(" ", ""))
+        else:
+            key = open(args.key, "rb")
+            keyfile_stream = True
+    except:
+        print("Please provide a valid encrypted_backup.key file or a valid 32 bytes hex key.")
+        exit()
     
     # Read backup
     db = open(args.backup, "rb").read()
@@ -484,13 +492,13 @@ def process_messages(args, data: ChatCollection) -> None:
         # Process media
         message_handler.media(
             db, data, args.media, args.filter_date, 
-            filter_chat, args.filter_empty, args.separate_media
+            filter_chat, args.filter_empty, args.separate_media, args.output
         )
         
         # Process vcards
         message_handler.vcard(
             db, data, args.media, args.filter_date, 
-            filter_chat, args.filter_empty
+            filter_chat, args.filter_empty, args.separate_media, args.output
         )
         
         # Process calls

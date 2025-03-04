@@ -271,33 +271,24 @@ def sanitize_filename(file_name: str) -> str:
 
 
 def get_file_name(contact: str, chat: ChatStore) -> Tuple[str, str]:
-    """Generates a sanitized filename and contact name for a chat.
-
-    Args:
-        contact: The contact identifier (e.g., a phone number or group ID).
-        chat: The ChatStore object for the chat.
-
-    Returns:
-        A tuple containing the sanitized filename and the contact name.
-
-    Raises:
-        ValueError: If the contact format is unexpected.
-    """
+    """Menghasilkan nama file yang menyertakan ID grup jika merupakan grup chat."""
+    
     if "@" not in contact and contact not in ("000000000000000", "000000000000001", "ExportedChat"):
         raise ValueError("Unexpected contact format: " + contact)
-    phone_number = contact.split('@')[0]
-    if "-" in contact and chat.name is not None:
-        file_name = ""
+
+    phone_id = contact.split('@')[0]
+    is_group = "-g.us" in contact or contact.endswith("@g.us")
+
+    if is_group:
+        file_name = f"{phone_id}-"
     else:
-        file_name = phone_number
+        file_name = phone_id
 
     if chat.name is not None:
-        if file_name != "":
-            file_name += "-"
         file_name += chat.name.replace("/", "-").replace("\\", "-")
         name = chat.name
     else:
-        name = phone_number
+        name = phone_id
 
     return sanitize_filename(file_name), name
 
