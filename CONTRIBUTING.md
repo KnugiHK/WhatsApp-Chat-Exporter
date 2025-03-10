@@ -50,7 +50,7 @@ Note that feature requests may be out of scope for the project, and if accepted,
 
 ## :memo: Copyright
 
-This repository is licensed under the MIT License. Contributions will be licensed under the same terms.
+This repository is licensed under the MIT License. **Any contributions you submit will be licensed under the same terms.**
 
 By contributing, you confirm that your contributions do not infringe on the rights of others.
 
