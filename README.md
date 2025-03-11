@@ -1,7 +1,9 @@
 # Whatsapp-Chat-Exporter
-[![Latest in Pypi](https://img.shields.io/pypi/v/whatsapp-chat-exporter?label=Latest%20in%20Pypi)](https://pypi.org/project/whatsapp-chat-exporter/)
-![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter)
+[![Latest in PyPI](https://img.shields.io/pypi/v/whatsapp-chat-exporter?label=Latest%20in%20PyPI)](https://pypi.org/project/whatsapp-chat-exporter/)
+[![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter?color=427B93)](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/Whatsapp-Chat-Exporter)](https://pypi.org/project/Whatsapp-Chat-Exporter/)
+[![Matrix Chat Room](https://img.shields.io/matrix/wtsexporter:matrix.org.svg?label=Matrix%20Chat%20Room)](https://matrix.to/#/#wtsexporter:matrix.org)
+![Since 2021](https://img.shields.io/github/created-at/knugihk/WhatsApp-Chat-Exporter?label=Since&color=purple)
 
 A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
 > [!TIP]
