@@ -102,7 +102,11 @@ class BackupExtractor:
             print("Failed to decrypt backup: incorrect password?")
             exit(7)
         except FileNotFoundError:
-            print("Essential WhatsApp files are missing from the iOS backup.")
+            print(
+                "Essential WhatsApp files are missing from the iOS backup. "
+                "Perhapse you enabled end-to-end encryption for the backup? "
+                "See https://wts.knugi.dev/docs.html?dest=iose2e"
+            )
             exit(6)
         else:
             print("Done")
@@ -142,6 +146,11 @@ class BackupExtractor:
                 print("WhatsApp database not found.")
             else:
                 print("WhatsApp Business database not found.")
+            print(
+                "Essential WhatsApp files are missing from the iOS backup. "
+                "Perhapse you enabled end-to-end encryption for the backup? "
+                "See https://wts.knugi.dev/docs.html?dest=iose2e"
+            )
             exit()
         else:
             shutil.copyfile(wts_db_path, self.identifiers.MESSAGE)
