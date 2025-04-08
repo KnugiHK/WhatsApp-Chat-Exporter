@@ -4,6 +4,7 @@ import zlib
 import concurrent.futures
 from typing import Tuple, Union
 from hashlib import sha256
+from sys import exit
 from Whatsapp_Chat_Exporter.utility import CRYPT14_OFFSETS, Crypt, DbType
 
 try:

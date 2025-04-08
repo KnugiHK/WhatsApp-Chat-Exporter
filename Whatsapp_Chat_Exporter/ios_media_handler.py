@@ -4,6 +4,7 @@ import shutil
 import sqlite3
 import os
 import getpass
+from sys import exit
 from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
 from Whatsapp_Chat_Exporter.bplist import BPListReader
 try:
@@ -151,7 +152,7 @@ class BackupExtractor:
                 "Perhapse you enabled end-to-end encryption for the backup? "
                 "See https://wts.knugi.dev/docs.html?dest=iose2e"
             )
-            exit()
+            exit(1)
         else:
             shutil.copyfile(wts_db_path, self.identifiers.MESSAGE)
 
