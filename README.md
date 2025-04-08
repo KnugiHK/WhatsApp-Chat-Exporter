@@ -113,6 +113,8 @@ If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone
 ```sh
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
+> [!NOTE]
+> You will need to disable the built-in end-to-end encryption for WhatsApp backups. See [WhatsApp's FAQ](https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup) for how to do it.
 ### Extracting
 To extract messages from iOS/iPadOS backups, run the following command in the shell, making sure to replace the username and device ID with the correct values. Keep in mind that there are at least two possible paths for the backups on Windows.
 #### Windows
