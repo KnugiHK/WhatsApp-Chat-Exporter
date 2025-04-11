@@ -13,7 +13,7 @@ from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, check_update, DbType
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, sanitize_filename
-from Whatsapp_Chat_Exporter.utility import import_from_json, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -206,6 +206,32 @@ def setup_argument_parser() -> ArgumentParser:
         "--default-country-code", dest="default_country_code", default=None,
         help="Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country"
     )
+
+    # Incremental merging
+    inc_merging_group = parser.add_argument_group('Incremental Merging')
+    inc_merging_group.add_argument(
+        "--incremental-merge",
+        dest="incremental_merge",
+        default=False,
+        action='store_true',
+        help=("Performs an incremental merge of two exports."
+              "Requires setting both --source-dir and --target-dir."
+              "The chats and media of the source directory will be merged into the target directory."
+              "No chats or media will be deleted from the target directory, only new chats and media will be added to it."
+        )
+    )
+    inc_merging_group.add_argument(
+        "--source-dir",
+        dest="source_dir",
+        default=None,
+        help="Sets the source directory. Used for performing incremental merges."
+    )
+    inc_merging_group.add_argument(
+        "--target-dir",
+        dest="target_dir",
+        default=None,
+        help="Sets the target directory. Used for performing incremental merges."
+    )
     
     # Miscellaneous
     misc_group = parser.add_argument_group('Miscellaneous')
@@ -250,6 +276,8 @@ def validate_args(parser: ArgumentParser, args) -> None:
         parser.error("You can only use --import with -j and without --no-html, -a, -i, -e.")
     elif args.import_json and not os.path.isfile(args.json):
         parser.error("JSON file not found.")
+    if args.incremental_merge and args.source_dir is None or args.target_dir is None:
+        parser.error("You must specify both --source-dir and --target-dir for incremental merge.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
     if "??" not in args.headline:
@@ -672,6 +700,8 @@ def main():
             args.whatsapp_theme,
             args.headline
         )
+    elif args.incremental_merge:
+        incremental_merge(args.source_dir, args.target_dir, args.media)
     elif args.exported:
         # Process exported chat
         process_exported_chat(args, data)

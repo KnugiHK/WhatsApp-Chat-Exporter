@@ -10,6 +10,7 @@ from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatStore
+import shutil
 from typing import Dict, List, Optional, Tuple
 try:
     from enum import StrEnum, IntEnum
@@ -256,6 +257,58 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
             chat.add_message(id, message)
         data[jid] = chat
         print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
+
+
+def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
+    json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
+    print("JSON files found:", json_files)
+    
+    for json_file in json_files:
+        source_path = os.path.join(source_dir, json_file)
+        target_path = os.path.join(target_dir, json_file)
+        
+        if not os.path.exists(target_path):
+            print(f"Copying {json_file} to target directory...")
+            os.makedirs(target_dir, exist_ok=True)
+            with open(source_path, 'rb') as src, open(target_path, 'wb') as dst:
+                dst.write(src.read())
+        else:
+            print(f"Merging {json_file} with existing file in target directory...")
+            with open(source_path, 'r') as src_file, open(target_path, 'r') as tgt_file:
+                source_data = json.load(src_file)
+                target_data = json.load(tgt_file)
+                
+                # Parse JSON into ChatStore objects using from_json()
+                source_chats = {jid: ChatStore.from_json(chat) for jid, chat in source_data.items()}
+                target_chats = {jid: ChatStore.from_json(chat) for jid, chat in target_data.items()}
+                
+                # Merge chats using merge_with()
+                for jid, chat in source_chats.items():
+                    if jid in target_chats:
+                        target_chats[jid].merge_with(chat)
+                    else:
+                        target_chats[jid] = chat
+                
+                # Write merged data back to the target file
+                with open(target_path, 'w') as merged_file:
+                    merged_data = {jid: chat.to_json() for jid, chat in target_chats.items()}
+                    json.dump(merged_data, merged_file, indent=2)
+
+    # Merge media directories
+    source_media_path = os.path.join(source_dir, media_dir)
+    target_media_path = os.path.join(target_dir, media_dir)
+    if os.path.exists(source_media_path):
+        for root, dirs, files in os.walk(source_media_path):
+            relative_path = os.path.relpath(root, source_media_path)
+            target_root = os.path.join(target_media_path, relative_path)
+            os.makedirs(target_root, exist_ok=True)
+            for file in files:
+                source_file = os.path.join(root, file)
+                target_file = os.path.join(target_root, file)
+                # we only copy if the file doesn't exist in the target or if the source is newer
+                if not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file):
+                    print(f"Copying {source_file} to {target_file}...")
+                    shutil.copy2(source_file, target_file)
 
 
 def sanitize_filename(file_name: str) -> str:
