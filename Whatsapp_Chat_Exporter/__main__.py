@@ -18,7 +18,7 @@ from Whatsapp_Chat_Exporter import exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, DbType, readable_to_bytes, check_update
-from Whatsapp_Chat_Exporter.utility import import_from_json, sanitize_filename, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, sanitize_filename, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from sys import exit
@@ -321,6 +321,30 @@ def main():
         default="Chat history with ??",
         help="The custom headline for the HTML output. Use '??' as a placeholder for the chat name"
     )
+    parser.add_argument(
+        "--incremental-merge",
+        dest="incremental_merge",
+        default=False,
+        action='store_true',
+        help=("Performs an incremental merge of two exports."
+              "Requires setting both --source-dir and --target-dir."
+              "The chats and media of the source directory will be merged into the target directory."
+              "No chats or media will be deleted from the target directory, only new chats and media will be added to it."
+        )
+    )
+    parser.add_argument(
+        "--source-dir",
+        dest="source_dir",
+        default=None,
+        help="Sets the source directory. Used for performing incremental merges."
+    )
+    parser.add_argument(
+        "--target-dir",
+        dest="target_dir",
+        default=None,
+        help="Sets the target directory. Used for performing incremental merges."
+    )
+    
 
     args = parser.parse_args()
 
@@ -339,6 +363,8 @@ def main():
         parser.error("You can only use --import with -j and without --no-html, -a, -i, -e.")
     elif args.import_json and not os.path.isfile(args.json):
         parser.error("JSON file not found.")
+    if args.incremental_merge and args.source_dir is None or args.target_dir is None:
+        parser.error("You must specify both --source-dir and --target-dir for incremental merge.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
     if "??" not in args.headline:
@@ -503,7 +529,7 @@ def main():
                 db.row_factory = sqlite3.Row
                 contacts(db, data)
 
-    if not args.exported and not args.import_json:
+    if not args.exported and not args.import_json and not args.incremental_merge:
         if os.path.isfile(msg_db):
             with sqlite3.connect(msg_db) as db:
                 db.row_factory = sqlite3.Row
@@ -584,6 +610,8 @@ def main():
             args.whatsapp_theme,
             args.headline
         )
+    elif args.incremental_merge:
+        incremental_merge(args.source_dir, args.target_dir, args.media)
 
     if args.text_format:
         print("Writing text file...")

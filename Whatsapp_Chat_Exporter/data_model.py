@@ -57,11 +57,38 @@ class ChatStore():
             'messages': serialized_msgs
         }
 
+    @classmethod
+    def from_json(cls, data):
+        chat = cls(data.get("type"), data.get("name"))
+        chat.my_avatar = data.get("my_avatar")
+        chat.their_avatar = data.get("their_avatar")
+        chat.their_avatar_thumb = data.get("their_avatar_thumb")
+        chat.status = data.get("status")
+        for id, msg_data in data.get("messages", {}).items():
+            message = Message.from_json(msg_data)
+            chat.add_message(id, message)
+        return chat
+
     def get_last_message(self):
         return tuple(self.messages.values())[-1]
 
     def get_messages(self):
         return self.messages.values()
+
+    def merge_with(self, other):
+        if not isinstance(other, ChatStore):
+            raise TypeError("Can only merge with another ChatStore object")
+        
+        # Update fields if they are not None in the other ChatStore
+        self.name = other.name or self.name
+        self.type = other.type or self.type
+        self.my_avatar = other.my_avatar or self.my_avatar
+        self.their_avatar = other.their_avatar or self.their_avatar
+        self.their_avatar_thumb = other.their_avatar_thumb or self.their_avatar_thumb
+        self.status = other.status or self.status
+        
+        # Merge messages
+        self.messages.update(other.messages)
 
 
 class Message():
@@ -107,3 +134,24 @@ class Message():
             'thumb'       : self.thumb,
             'sticker'     : self.sticker
         }
+
+    @classmethod
+    def from_json(cls, data):
+        message = cls(
+            data["from_me"],
+            data["timestamp"],
+            data["time"],
+            data["key_id"]
+        )
+        message.media = data.get("media")
+        message.meta = data.get("meta")
+        message.data = data.get("data")
+        message.sender = data.get("sender")
+        message.safe = data.get("safe")
+        message.mime = data.get("mime")
+        message.reply = data.get("reply")
+        message.quoted_data = data.get("quoted_data")
+        message.caption = data.get("caption")
+        message.thumb = data.get("thumb")
+        message.sticker = data.get("sticker")
+        return message
