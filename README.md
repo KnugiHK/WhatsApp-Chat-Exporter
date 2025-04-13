@@ -220,6 +220,14 @@ options:
   --call-db [CALL_DB_IOS]
                         Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only
   --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat name
+  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-dir and --target-dir.
+                        The chats (JSON files only) and media from the source directory will be merged into the target
+                        directory. No chats or media will be deleted from the target directory, only new chats and media
+                        will be added to it.
+  --source-dir SOURCE_DIR
+                        Sets the source directory. Used for performing incremental merges.
+  --target-dir TARGET_DIR
+                        Sets the target directory. Used for performing incremental merges.
 
 WhatsApp Chat Exporter: 0.11.2 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
