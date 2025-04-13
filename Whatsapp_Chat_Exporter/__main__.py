@@ -214,10 +214,11 @@ def setup_argument_parser() -> ArgumentParser:
         dest="incremental_merge",
         default=False,
         action='store_true',
-        help=("Performs an incremental merge of two exports."
-              "Requires setting both --source-dir and --target-dir."
-              "The chats and media of the source directory will be merged into the target directory."
-              "No chats or media will be deleted from the target directory, only new chats and media will be added to it."
+        help=("Performs an incremental merge of two exports. "
+              "Requires setting both --source-dir and --target-dir. "
+              "The chats (JSON files only) and media from the source directory will be merged into the target directory. "
+              "No chat messages or media will be deleted from the target directory; only new chat messages and media will be added to it. "
+              "This enables chat messages and media to be deleted from the device to free up space, while ensuring they are preserved in the exported backups."
         )
     )
     inc_merging_group.add_argument(
