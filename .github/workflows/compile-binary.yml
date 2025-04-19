@@ -16,16 +16,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.3
+        pip install pycryptodome vobject javaobj-py3 ordered-set zstandard nuitka==2.6.7
         pip install .
     - name: Build binary with Nuitka
       run: |
-        python -m nuitka --no-deployment-flag=self-execution --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --follow-imports Whatsapp_Chat_Exporter/__main__.py 
-        cp __main__.bin wtsexporter_linux_x64
+        python -m nuitka --no-deployment-flag=self-execution --onefile \
+          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
+          --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter/__main__.py --output-filename=wtsexporter_linux_x64
         sha256sum wtsexporter_linux_x64
     - uses: actions/upload-artifact@v4
       with:
@@ -40,16 +41,16 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.3
+        pip install pycryptodome vobject javaobj-py3 ordered-set zstandard nuitka==2.6.7
         pip install .
     - name: Build binary with Nuitka
       run: |
-        python -m nuitka --no-deployment-flag=self-execution --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter\__main__.py 
-        copy __main__.exe wtsexporter_x64.exe
+        python -m nuitka --no-deployment-flag=self-execution --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter\__main__.py --output-filename=wtsexporter 
+        copy wtsexporter.exe wtsexporter_x64.exe
         Get-FileHash wtsexporter_x64.exe
     - uses: actions/upload-artifact@v4
       with:
@@ -64,16 +65,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.3
+        pip install pycryptodome vobject javaobj-py3 ordered-set zstandard nuitka==2.6.7
         pip install .
     - name: Build binary with Nuitka
       run: |
-        python -m nuitka --no-deployment-flag=self-execution --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --follow-imports Whatsapp_Chat_Exporter/__main__.py 
-        cp __main__.bin wtsexporter_macos_x64
+        python -m nuitka --no-deployment-flag=self-execution --onefile \
+          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
+          --assume-yes-for-downloads --follow-imports Whatsapp_Chat_Exporter/__main__.py --output-filename=wtsexporter_macos_x64 
         shasum -a 256 wtsexporter_macos_x64
     - uses: actions/upload-artifact@v4
       with:

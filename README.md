@@ -1,7 +1,9 @@
 # Whatsapp-Chat-Exporter
-[![Latest in Pypi](https://img.shields.io/pypi/v/whatsapp-chat-exporter?label=Latest%20in%20Pypi)](https://pypi.org/project/whatsapp-chat-exporter/)
-![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter)
+[![Latest in PyPI](https://img.shields.io/pypi/v/whatsapp-chat-exporter?label=Latest%20in%20PyPI)](https://pypi.org/project/whatsapp-chat-exporter/)
+[![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter?color=427B93)](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/Whatsapp-Chat-Exporter)](https://pypi.org/project/Whatsapp-Chat-Exporter/)
+[![Matrix Chat Room](https://img.shields.io/matrix/wtsexporter:matrix.org.svg?label=Matrix%20Chat%20Room)](https://matrix.to/#/#wtsexporter:matrix.org)
+![Since 2021](https://img.shields.io/github/created-at/knugihk/WhatsApp-Chat-Exporter?label=Since&color=purple)
 
 A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
 > [!TIP]
@@ -30,7 +32,7 @@ cd working_wts
 
 ## Working with Android
 ### Unencrypted WhatsApp database
-Extract the WhatsApp database with whatever means, one possible means is to use the [WhatsApp-Key-DB-Extractor](https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor)
+Extract the WhatsApp database with whatever means, one possible means is to use the [WhatsApp-Key-DB-Extractor](https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor). Note that the extractor only works on Android 4.0 to 13.
 
 After you obtain your WhatsApp database, copy the WhatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.
 
@@ -43,8 +45,7 @@ Simply invoke the following command from shell.
 wtsexporter -a
 ```
 #### Enriching Contact from vCard
-Usually, the default WhatsApp contact database extracted from your phone will contains the contact names and the exporter will use it to map your chats. However, some reported cases showed that the database could has never been populated. 
-In this case, you can export your contacts to a vCard file from your phone or a cloud provider like Google Contacts. Then, install the necessary dependency and run the following command from the shell:
+The default WhatsApp contact database typically contained contact names extracted from your phone, which the exporter used to map your chats. However, in some reported cases, the database may have never been populated. In such case, you can export your contacts to a vCard file from your phone or a cloud provider like Google Contacts. Then, install the necessary dependency and run the following command from the shell:
 ```sh
 pip install whatsapp-chat-exporter["vcards"]
 wtsexporter -a --enrich-from-vcard contacts.vcf --default-country-code 852
@@ -112,12 +113,19 @@ If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone
 ```sh
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
+> [!NOTE]
+> You will need to disable the built-in end-to-end encryption for WhatsApp backups. See [WhatsApp's FAQ](https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup) for how to do it.
 ### Extracting
-Simply invoke the following command from shell, remember to replace the username and device id correspondingly in the command.
+To extract messages from iOS/iPadOS backups, run the following command in the shell, making sure to replace the username and device ID with the correct values. Keep in mind that there are at least two possible paths for the backups on Windows.
 #### Windows
-```sh
+```powershell
+# Possible path one
 wtsexporter -i -b "C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]"
+
+# Possible path two
+wtsexporter -i -b "C:\Users\[Username]\Apple\MobileSync\Backup\[device id]"
 ```
+
 #### Mac
 ```sh
 wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
@@ -238,7 +246,7 @@ licenses.
 # To do
 See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
 
-# Copyright
+# Legal Stuff & Disclaimer
 This is a MIT licensed project.
 
 The Telegram Desktop's export is the reference for whatsapp.html in this repo.

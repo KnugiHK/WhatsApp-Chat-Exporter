@@ -547,16 +547,17 @@ def slugify(value: str, allow_unicode: bool = False) -> str:
 
 
 class WhatsAppIdentifier(StrEnum):
-    MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
-    CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
-    CALL = "1b432994e958845fffe8e2f190f26d1511534088"
+    MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d" # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ChatStorage.sqlite
+    CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f" # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ContactsV2.sqlite
+    CALL = "1b432994e958845fffe8e2f190f26d1511534088" # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-CallHistory.sqlite
     DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
 
 
 class WhatsAppBusinessIdentifier(StrEnum):
-    MESSAGE = "724bd3b98b18518b455a87c1f3ac3a0d189c4466"
-    CONTACT = "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552"
-    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared"
+    MESSAGE = "724bd3b98b18518b455a87c1f3ac3a0d189c4466" # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-ChatStorage.sqlite
+    CONTACT = "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552" # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-ContactsV2.sqlite
+    CALL = "b463f7c4365eefc5a8723930d97928d4e907c603" # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-CallHistory.sqlite
+    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared" 
 
 class JidType(IntEnum):
     PM = 0
