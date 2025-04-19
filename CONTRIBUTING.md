@@ -48,6 +48,8 @@ Note that feature requests may be out of scope for the project, and if accepted,
 
 - Use spaces, not tabs.
 
+- Make sure all commits work with the new template — the old one is being deprecated.
+
 ## :memo: Copyright
 
 This repository is licensed under the MIT License. **Any contributions you submit will be licensed under the same terms.**
