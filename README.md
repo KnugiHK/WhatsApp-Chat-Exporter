@@ -11,6 +11,8 @@ A customizable Android and iPhone Whatsapp database parser that will give you th
 
 If you would like to support this project, all you need to do is to contribute or share this project! If you think otherwise and want to make a donation, please refer to the [Donation Guide](https://blog.knugi.com/DONATE.html).
 
+To contribute, see the [Contributing Guidelines](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/CONTRIBUTING.md).
+
 # Usage
 
 > [!NOTE]
