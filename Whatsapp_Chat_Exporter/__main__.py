@@ -277,7 +277,7 @@ def validate_args(parser: ArgumentParser, args) -> None:
         parser.error("You can only use --import with -j and without --no-html, -a, -i, -e.")
     elif args.import_json and not os.path.isfile(args.json):
         parser.error("JSON file not found.")
-    if args.incremental_merge and args.source_dir is None or args.target_dir is None:
+    if args.incremental_merge and (args.source_dir is None or args.target_dir is None):
         parser.error("You must specify both --source-dir and --target-dir for incremental merge.")
     if args.android and args.business:
         parser.error("WhatsApp Business is only available on iOS for now.")
