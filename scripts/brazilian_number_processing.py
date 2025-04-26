@@ -1,3 +1,8 @@
+"""
+This script processes a VCARD file to standardize telephone entries and add a second TEL line with the modified number (removing the extra ninth digit) for contacts with 9-digit subscribers.
+It handles numbers that may already include a "+55" prefix and ensures that the output format is consistent.
+Contributed by @magpires https://github.com/KnugiHK/WhatsApp-Chat-Exporter/issues/127#issuecomment-2646660625
+"""
 import re
 import argparse
 
