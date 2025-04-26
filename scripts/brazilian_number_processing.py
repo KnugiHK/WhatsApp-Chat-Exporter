@@ -24,27 +24,30 @@ def process_phone_number(raw_phone):
     (2 for area + 8 for subscriber) or 11 digits (2 for area + 9 for subscriber).
     If extra digits are present, it takes the last 11 (or 10) digits.
     """
-    # If the number starts with '+55', remove it for processing.
+    # Store the original input for processing
     number_to_process = raw_phone.strip()
-    if number_to_process.startswith("+55"):
-        number_to_process = number_to_process[3:].strip()
     
-    # Remove all non-digit characters.
+    # Remove all non-digit characters
     digits = re.sub(r'\D', '', number_to_process)
     
-    # Remove trunk zero if present.
+    # If the number starts with '55', remove it for processing
+    if digits.startswith("55") and len(digits) > 11:
+        digits = digits[2:]
+    
+    # Remove trunk zero if present
     if digits.startswith("0"):
         digits = digits[1:]
     
-    # After cleaning, we expect a valid number to have either 10 or 11 digits.
-    # If there are extra digits, use the last 11 (for a 9-digit subscriber) or last 10 (for an 8-digit subscriber).
+    # After cleaning, we expect a valid number to have either 10 or 11 digits
+    # If there are extra digits, use the last 11 (for a 9-digit subscriber) or last 10 (for an 8-digit subscriber)
     if len(digits) > 11:
-        # Here, we assume the valid number is the last 11 digits.
+        # Here, we assume the valid number is the last 11 digits
         digits = digits[-11:]
-    elif len(digits) == 12:
-        # In some cases with an 8-digit subscriber, take the last 10 digits.
+    elif len(digits) > 10 and len(digits) < 11:
+        # In some cases with an 8-digit subscriber, take the last 10 digits
         digits = digits[-10:]
     
+    # Check if we have a valid number after processing
     if len(digits) not in (10, 11):
         return None, None
 
@@ -61,10 +64,17 @@ def process_phone_number(raw_phone):
     elif len(subscriber) == 8:
         original_formatted = f"+55 {area} {subscriber[:4]}-{subscriber[4:]}"
         modified_formatted = None
+    else:
+        # This shouldn't happen given the earlier check, but just to be safe
+        return None, None
 
     return original_formatted, modified_formatted
 
 def process_vcard(input_vcard, output_vcard):
+    """
+    Process a VCARD file to standardize telephone entries and add a second TEL line
+    with the modified number (removing the extra ninth digit) for contacts with 9-digit subscribers.
+    """
     with open(input_vcard, 'r', encoding='utf-8') as file:
         lines = file.readlines()
     
