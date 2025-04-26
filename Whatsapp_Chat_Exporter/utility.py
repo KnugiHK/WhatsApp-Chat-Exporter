@@ -436,7 +436,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
         msg = "Someone joined this group by using a invite link"  # TODO: Find out who
     elif content["action_type"] == 27:
         msg += " changed the group description to:<br>"
-        msg += content['data'].replace("\n", '<br>')
+        msg += (content['data'] or "Unknown").replace("\n", '<br>')
     elif content["action_type"] == 28:
         try:
             old = content['old_jid'].split('@')[0]
