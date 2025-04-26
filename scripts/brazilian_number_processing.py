@@ -72,7 +72,7 @@ def process_vcard(input_vcard, output_vcard):
     
     # Regex to capture any telephone line.
     # It matches lines starting with "TEL:" or "TEL;TYPE=..." or with prefixes like "item1.TEL:".
-    phone_pattern = re.compile(r'^(?P<prefix>(?:TEL(?:;TYPE=[^:]+)?|(?:.*\.)?TEL)):(?P<number>.*)$')
+    phone_pattern = re.compile(r'^(?P<prefix>.*TEL(?:;TYPE=[^:]+)?):(?P<number>.*)$')
     
     for line in lines:
         stripped_line = line.rstrip("\n")
