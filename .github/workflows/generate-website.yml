@@ -1,0 +1,35 @@
+name: Generate Website from README
+
+on:
+  push:
+    paths:
+      - 'README.md'
+      - '.github/workflows/generate-website.yml'
+      - '.github/generate-website.js'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      
+      - name: Install dependencies
+        run: npm install marked fs-extra marked-alert
+      
+      - name: Generate website from README
+        run: node .github/generate-website.js
+      
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: docs
+          clean: true
