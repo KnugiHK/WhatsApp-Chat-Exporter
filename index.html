@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Exporter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #128C7E;
+            --secondary-color: #25D366;
+            --dark-color: #075E54;
+            --light-color: #DCF8C6;
+            --text-color: #333;
+            --light-text: #777;
+            --code-bg: #f6f8fa;
+            --border-color: #e1e4e8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f9f9f9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 60px 0 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 16px;
+        }
+        
+        .badges {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            margin: 5px;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .main-content {
+            background: white;
+            padding: 40px 0;
+            margin: 0;
+        }
+        
+        .inner-content {
+            padding: 0 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            color: var(--dark-color);
+            margin: 30px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--light-color);
+            font-size: 1.8rem;
+        }
+        
+        h3 {
+            color: var(--dark-color);
+            margin: 25px 0 15px;
+            font-size: 1.4rem;
+        }
+        
+        h4 {
+            color: var(--dark-color);
+            margin: 20px 0 10px;
+            font-size: 1.2rem;
+        }
+        
+        p, ul, ol {
+            margin-bottom: 16px;
+        }
+        
+        ul, ol {
+            padding-left: 25px;
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            background-color: #f8f9fa;
+            border-left: 4px solid #f0ad4e;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 3px;
+        }
+        
+        .alert--tip {
+            border-color: var(--secondary-color);
+            background-color: rgba(37, 211, 102, 0.1);
+        }
+        
+        .alert--note {
+            border-color: #0088cc;
+            background-color: rgba(0, 136, 204, 0.1);
+        }
+		 .markdown-alert {
+            background-color: #f8f9fa;
+            border-left: 4px solid #f0ad4e;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 3px;
+        }
+        
+        .markdown-alert-note {
+            border-color: #0088cc;
+            background-color: rgba(0, 136, 204, 0.1);
+        }
+        
+        .markdown-alert-tip {
+            border-color: var(--secondary-color);
+            background-color: rgba(37, 211, 102, 0.1);
+        }
+        
+        .markdown-alert-important {
+            border-color: #d9534f;
+            background-color: rgba(217, 83, 79, 0.1);
+        }
+        
+        .markdown-alert-warning {
+            border-color: #f0ad4e;
+            background-color: rgba(240, 173, 78, 0.1);
+        }
+        
+        .markdown-alert-caution {
+            border-color: #ff9800;
+            background-color: rgba(255, 152, 0, 0.1);
+        }
+        
+        .markdown-alert p {
+            margin: 0;
+        }
+        
+        .markdown-alert-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        pre {
+            background-color: var(--code-bg);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        code {
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+            font-size: 85%;
+            background-color: var(--code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+        
+        pre code {
+            padding: 0;
+            background-color: transparent;
+        }
+        
+        .screenshot {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background-color: var(--dark-color);
+            text-decoration: none;
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+        }
+        
+        .action-buttons {
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .table-of-contents {
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px 25px;
+            margin: 30px 0;
+        }
+        
+        .table-of-contents h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .table-of-contents ul {
+            margin-bottom: 0;
+        }
+        
+        .help-text {
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+        
+        .device-section {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            background-color: #fff;
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                padding: 40px 0 30px;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .tagline {
+                font-size: 1.1rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>WhatsApp Chat Exporter</h1>
+            <div class="badges">
+                <a href="https://pypi.org/project/whatsapp-chat-exporter/" class="badge"><img src="https://img.shields.io/pypi/v/whatsapp-chat-exporter?label=Latest%20in%20PyPI" alt="Latest in PyPI"></a>
+                <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/LICENSE" class="badge"><img src="https://img.shields.io/pypi/l/whatsapp-chat-exporter?color=427B93" alt="License MIT"></a>
+                <a href="https://pypi.org/project/Whatsapp-Chat-Exporter/" class="badge"><img src="https://img.shields.io/pypi/pyversions/Whatsapp-Chat-Exporter" alt="Python"></a>
+                <a href="https://matrix.to/#/#wtsexporter:matrix.org" class="badge"><img src="https://img.shields.io/matrix/wtsexporter:matrix.org.svg?label=Matrix%20Chat%20Room" alt="Matrix Chat Room"></a>
+            </div>
+            <p class="tagline">A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON</p>
+            <div class="action-buttons">
+                <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter" class="btn"><i class="fab fa-github"></i> GitHub</a>
+                <a href="https://pypi.org/project/whatsapp-chat-exporter/" class="btn btn-secondary"><i class="fab fa-python"></i> PyPI</a>
+            </div>
+        </div>
+    </header>
+    
+    <div class="main-content">
+        <div class="inner-content">
+            <div class="table-of-contents">
+                <h3>Table of Contents</h3>
+                <ul>
+                    <li><a href="#intro">Introduction</a></li>
+                    <li><a href="#usage">Usage</a></li>
+                    <li><a href="#todo">To Do</a></li>
+                    <li><a href="#legal">Legal Stuff & Disclaimer</a></li>
+                </ul>
+            </div>
+            
+            <div class="readme-content">
+                <h1>Whatsapp-Chat-Exporter</h1>
+<p>A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by <a href="https://telegram.org/blog/export-and-more">Telegram Chat Export Tool</a>.  </p>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p>If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops.</p>
+</div>
+<p>If you would like to support this project, all you need to do is to contribute or share this project! If you think otherwise and want to make a donation, please refer to the <a href="https://blog.knugi.com/DONATE.html">Donation Guide</a>.</p>
+<p>To contribute, see the <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/CONTRIBUTING.md">Contributing Guidelines</a>.</p>
+<h1>Usage</h1>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>Usage in README may be removed in the future. Check the usage in <a href="https://github.com/KnugiHK/Whatsapp-Chat-Exporter/wiki">Wiki</a></p>
+</div>
+<p>First, install the exporter by:</p>
+<pre><code class="language-shell">pip install whatsapp-chat-exporter
+pip install whatsapp-chat-exporter[android_backup]  :; # Optional, if you want it to support decrypting Android WhatsApp backup.
+</code></pre>
+<p>Then, create a working directory in somewhere you want</p>
+<pre><code class="language-shell">mkdir working_wts
+cd working_wts
+</code></pre>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p>macOS users should grant <em>Full Disk Access</em> to Terminal in the <em>Security &amp; Privacy</em> settings before using the exporter.</p>
+</div>
+<h2>Working with Android</h2>
+<h3>Unencrypted WhatsApp database</h3>
+<p>Extract the WhatsApp database with whatever means, one possible means is to use the <a href="https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor">WhatsApp-Key-DB-Extractor</a>. Note that the extractor only works on Android 4.0 to 13.</p>
+<p>After you obtain your WhatsApp database, copy the WhatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.</p>
+<p>And now, you should have something like this in the working directory.</p>
+<h4>Extracting</h4>
+<p>Simply invoke the following command from shell.</p>
+<pre><code class="language-sh">wtsexporter -a
+</code></pre>
+<h4>Enriching Contact from vCard</h4>
+<p>The default WhatsApp contact database typically contained contact names extracted from your phone, which the exporter used to map your chats. However, in some reported cases, the database may have never been populated. In such case, you can export your contacts to a vCard file from your phone or a cloud provider like Google Contacts. Then, install the necessary dependency and run the following command from the shell:</p>
+<pre><code class="language-sh">pip install whatsapp-chat-exporter[&quot;vcards&quot;]
+wtsexporter -a --enrich-from-vcard contacts.vcf --default-country-code 852
+</code></pre>
+<h3>Encrypted Android WhatsApp Backup</h3>
+<p>In order to support the decryption, install pycryptodome if it is not installed</p>
+<pre><code class="language-sh">pip install pycryptodome # Or 
+pip install whatsapp-chat-exporter[&quot;android_backup&quot;] # install along with this software
+</code></pre>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p>Crypt15 is now the easiest way to decrypt a backup. If you have the 32 bytes hex key generated when you enable End-to-End encrypted backup, you can use it to decrypt the backup. If you do not have the 32 bytes hex key, you can still use the key file extracted just like extacting key file for Crypt12 and Crypt14 to decrypt the backup.</p>
+</div>
+<h4>Crypt12 or Crypt14</h4>
+<p>You will need the decryption key file from your phone. If you have root access, you can find it as <code>/data/data/com.whatsapp/files/key</code>. Otherwise, if you used WhatsApp-Key-DB-Extractor before, it will appear in the WhatsApp backup directory as <code>WhatsApp/Databases/.nomedia</code>.</p>
+<p>Place the decryption key file (key) and the encrypted WhatsApp Backup (msgstore.db.crypt14) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.</p>
+<p>And now, you should have something like this in the working directory.</p>
+<h4>Extracting</h4>
+<p>Simply invoke the following command from shell.</p>
+<pre><code class="language-sh">wtsexporter -a -k key -b msgstore.db.crypt14
+</code></pre>
+<h4>Crypt15 (End-to-End Encrypted Backup)</h4>
+<p>To support Crypt15 backup, install javaobj-py3 if it is not installed</p>
+<pre><code class="language-sh">pip install javaobj-py3 # Or 
+pip install whatsapp-chat-exporter[&quot;crypt15&quot;] # install along with this software
+</code></pre>
+<p>Before proceeding with this method, you must first create an end-to-end encrypted backup. For detailed instructions, refer to <a href="https://faq.whatsapp.com/490592613091019">WhatsApp&#39;s help center</a>.</p>
+<p>Once you have copied the backup files to your computer, place the encrypted WhatsApp backup file (msgstore.db.crypt15) into the working directory. If you also wish to include your contacts&#39; names, obtain the contact database file, named wa.db. Additionally, copy the WhatsApp Media folder directly from your phone.</p>
+<p>If you do not have the 32 bytes hex key (64 hexdigits), place the decryption key file (encrypted_backup.key) extracted from Android. If you gave the 32 bytes hex key, simply put the key in the shell.</p>
+<p>Now, you should have something like this in the working directory (if you do not have 32 bytes hex key).</p>
+<h5>Extracting</h5>
+<p>If you do not have 32 bytes hex key but have the key file available, simply invoke the following command from shell.</p>
+<pre><code class="language-sh">wtsexporter -a -k encrypted_backup.key -b msgstore.db.crypt15
+</code></pre>
+<p>If you have the 32 bytes hex key, simply put the hex key in the -k option and invoke the command from shell like this:</p>
+<pre><code class="language-sh">wtsexporter -a -k 432435053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cdaa5a8 -b msgstore.db.crypt15
+</code></pre>
+<h2>Working with iOS/iPadOS (iPhone or iPad)</h2>
+<p>Do an iPhone/iPad Backup with iTunes/Finder first.</p>
+<ul>
+<li>iPhone backup on Mac: <a href="https://support.apple.com/HT211229">https://support.apple.com/HT211229</a></li>
+<li>iPhone backup on Windows: <a href="https://support.apple.com/HT212156">https://support.apple.com/HT212156</a></li>
+<li>iPad backup: <a href="https://support.apple.com/guide/ipad/ipad9a74df05xx/ipados">https://support.apple.com/guide/ipad/ipad9a74df05xx/ipados</a></li>
+</ul>
+<h3>Encrypted iOS/iPadOS Backup</h3>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>If you are working on unencrypted iOS/iPadOS backup, skip this.</p>
+</div>
+<p>If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone_backup_decrypt from <a href="https://github.com/KnugiHK/iphone_backup_decrypt">KnugiHK/iphone_backup_decrypt</a> before you run the extract_iphone_media.py.</p>
+<pre><code class="language-sh">pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
+</code></pre>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>You will need to disable the built-in end-to-end encryption for WhatsApp backups. See <a href="https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup">WhatsApp&#39;s FAQ</a> for how to do it.</p>
+</div>
+<h3>Extracting</h3>
+<p>To extract messages from iOS/iPadOS backups, run the following command in the shell, making sure to replace the username and device ID with the correct values. Keep in mind that there are at least two possible paths for the backups on Windows.</p>
+<h4>Windows</h4>
+<pre><code class="language-powershell"># Possible path one
+wtsexporter -i -b &quot;C:\Users\[Username]\AppData\Roaming\Apple Computer\MobileSync\Backup\[device id]&quot;
+
+# Possible path two
+wtsexporter -i -b &quot;C:\Users\[Username]\Apple\MobileSync\Backup\[device id]&quot;
+</code></pre>
+<h4>Mac</h4>
+<pre><code class="language-sh">wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
+</code></pre>
+<h2>Results</h2>
+<p>After extracting, you will get these:</p>
+<h4>Private Message</h4>
+<h4>Group Message</h4>
+<h2>More options</h2>
+<p>Invoke the wtsexporter with --help option will show you all options available.</p>
+<pre><code class="language-sh">&gt; wtsexporter --help
+usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-d DB] [-k [KEY]]
+                   [--call-db [CALL_DB_IOS]] [--wab WAB] [-o OUTPUT] [-j [JSON]] [--txt [TEXT_FORMAT]] [--no-html]
+                   [--size [SIZE]] [--avoid-encoding-json] [--pretty-print-json [PRETTY_PRINT_JSON]] [--per-chat]
+                   [--import] [-t TEMPLATE] [--offline OFFLINE] [--no-avatar] [--experimental-new-theme]
+                   [--headline HEADLINE] [-c] [--create-separated-media] [--time-offset {-12 to 14}] [--date DATE]
+                   [--date-format FORMAT] [--include [phone number ...]] [--exclude [phone number ...]]
+                   [--dont-filter-empty] [--enrich-from-vcards ENRICH_FROM_VCARDS]
+                   [--default-country-code DEFAULT_COUNTRY_CODE] [-s] [--check-update] [--assume-first-as-me]
+                   [--business] [--decrypt-chunk-size DECRYPT_CHUNK_SIZE]
+                   [--max-bruteforce-worker MAX_BRUTEFORCE_WORKER]
+
+A customizable Android and iOS/iPadOS WhatsApp database parser that will give you the history of your WhatsApp
+conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
+
+options:
+  -h, --help            show this help message and exit
+
+Device Type:
+  -a, --android         Define the target as Android
+  -i, --ios             Define the target as iPhone/iPad
+  -e, --exported EXPORTED
+                        Define the target as exported chat file and specify the path to the file
+
+Input Files:
+  -w, --wa WA           Path to contact database (default: wa.db/ContactsV2.sqlite)
+  -m, --media MEDIA     Path to WhatsApp media folder (default: WhatsApp)
+  -b, --backup BACKUP   Path to Android (must be used together with -k)/iOS WhatsApp backup
+  -d, --db DB           Path to database file (default: msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
+  -k, --key [KEY]       Path to key file. If this option is set for crypt15 backup but nothing is specified, you will
+                        be prompted to enter the key.
+  --call-db [CALL_DB_IOS]
+                        Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only
+  --wab, --wa-backup WAB
+                        Path to contact database in crypt15 format
+
+Output Options:
+  -o, --output OUTPUT   Output to specific directory (default: result)
+  -j, --json [JSON]     Save the result to a single JSON file (default if present: result.json)
+  --txt [TEXT_FORMAT]   Export chats in text format similar to what WhatsApp officially provided (default if present:
+                        result/)
+  --no-html             Do not output html files
+  --size, --output-size, --split [SIZE]
+                        Maximum (rough) size of a single output file in bytes, 0 for auto
+
+JSON Options:
+  --avoid-encoding-json
+                        Don&#39;t encode non-ascii characters in the output JSON files
+  --pretty-print-json [PRETTY_PRINT_JSON]
+                        Pretty print the output JSON.
+  --per-chat            Output the JSON file per chat
+  --import              Import JSON file and convert to HTML output
+
+HTML Options:
+  -t, --template TEMPLATE
+                        Path to custom HTML template
+  --offline OFFLINE     Relative path to offline static files
+  --no-avatar           Do not render avatar in HTML output
+  --experimental-new-theme
+                        Use the newly designed WhatsApp-alike theme
+  --headline HEADLINE   The custom headline for the HTML output. Use &#39;??&#39; as a placeholder for the chat name
+
+Media Handling:
+  -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
+  --create-separated-media
+                        Create a copy of the media seperated per chat in &lt;MEDIA&gt;/separated/ directory
+
+Filtering Options:
+  --time-offset {-12 to 14}
+                        Offset in hours (-12 to 14) for time displayed in the output
+  --date DATE           The date filter in specific format (inclusive)
+  --date-format FORMAT  The date format for the date filter
+  --include [phone number ...]
+                        Include chats that match the supplied phone number
+  --exclude [phone number ...]
+                        Exclude chats that match the supplied phone number
+  --dont-filter-empty   By default, the exporter will not render chats with no valid message. Setting this flag will
+                        cause the exporter to render those. This is useful if chat(s) are missing from the output
+
+Contact Enrichment:
+  --enrich-from-vcards ENRICH_FROM_VCARDS
+                        Path to an exported vcf file from Google contacts export. Add names missing from WhatsApp&#39;s
+                        default database
+  --default-country-code DEFAULT_COUNTRY_CODE
+                        Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this
+                        will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country
+
+Miscellaneous:
+  -s, --showkey         Show the HEX key used to decrypt the database
+  --check-update        Check for updates (require Internet access)
+  --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
+  --business            Use Whatsapp Business default files (iOS only)
+  --decrypt-chunk-size DECRYPT_CHUNK_SIZE
+                        Specify the chunk size for decrypting iOS backup, which may affect the decryption speed.
+  --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
+                        Specify the maximum number of worker for bruteforce decryption.
+
+WhatsApp Chat Exporter: 0.12.0 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+licenses.
+</code></pre>
+<h1>To do</h1>
+<p>See <a href="https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues">issues</a>.</p>
+<h1>Legal Stuff &amp; Disclaimer</h1>
+<p>This is a MIT licensed project.</p>
+<p>The Telegram Desktop&#39;s export is the reference for whatsapp.html in this repo.</p>
+<p><code>bplist.py</code> was released by Vladimir &quot;Farcaller&quot; Pouzanov under MIT license.</p>
+<p>Please also refer to any files prefixed with <code>LICENSE</code> to obtain copies of the various licenses.</p>
+<p>WhatsApp Chat Exporter is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the WhatsApp LLC, or any of its subsidiaries or its affiliates. The official WhatsApp LLC website can be found at <a href="https://www.whatsapp.com/">https://www.whatsapp.com/</a>.</p>
+
+            </div>
+            
+            <section id="features">
+                <h2>Key Features</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                        <h3 class="feature-title">Cross-Platform</h3>
+                        <p>Support for both Android and iOS/iPadOS WhatsApp databases</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-lock"></i></div>
+                        <h3 class="feature-title">Backup Decryption</h3>
+                        <p>Support for Crypt12, Crypt14, and Crypt15 (End-to-End) encrypted backups</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-file-export"></i></div>
+                        <h3 class="feature-title">Multiple Formats</h3>
+                        <p>Export your chats in HTML, JSON, and text formats</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-paint-brush"></i></div>
+                        <h3 class="feature-title">Customizable</h3>
+                        <p>Use custom HTML templates and styling for your chat exports</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-images"></i></div>
+                        <h3 class="feature-title">Media Support</h3>
+                        <p>Properly handles and organizes your media files in the exports</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-filter"></i></div>
+                        <h3 class="feature-title">Filtering Options</h3>
+                        <p>Filter chats by date, phone number, and more</p>
+                    </div>
+                </div>
+            </section>
+            
+            <div class="action-buttons">
+                <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter" class="btn"><i class="fab fa-github"></i> View on GitHub</a>
+                <a href="https://pypi.org/project/whatsapp-chat-exporter/" class="btn btn-secondary"><i class="fab fa-python"></i> PyPI Package</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>© 2021-2025 WhatsApp Chat Exporter</p>
+            <p>Licensed under MIT License</p>
+            <p>
+                <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter" style="color: white; margin: 0 10px;"><i class="fab fa-github fa-lg"></i></a>
+                <a href="https://matrix.to/#/#wtsexporter:matrix.org" style="color: white; margin: 0 10px;"><i class="fas fa-comments fa-lg"></i></a>
+            </p>
+            <p><small>Last updated: 4/27/2025</small></p>
+        </div>
+    </footer>
+    
+    <script>
+        // Simple script to handle smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 20,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
