@@ -99,7 +99,7 @@ wtsexporter -a -k encrypted_backup.key -b msgstore.db.crypt15
 ```
 If you have the 32 bytes hex key, simply put the hex key in the -k option and invoke the command from shell like this:
 ```sh
-wtsexporter -a -k 432435053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cdaa5a8 -b msgstore.db.crypt15
+wtsexporter -a -k 133735053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cda1337 -b msgstore.db.crypt15
 ```
 
 ## Working with iOS/iPadOS (iPhone or iPad)
