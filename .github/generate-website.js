@@ -12,6 +12,17 @@ if (fs.existsSync('imgs')) {
 
 const readmeContent = fs.readFileSync('README.md', 'utf8');
 
+const toc = `<div class="table-of-contents">
+                <h3>Table of Contents</h3>
+                <ul>
+                    <li><a href="#intro">Introduction</a></li>
+                    <li><a href="#usage">Usage</a></li>
+                    <li><a href="#todo">To Do</a></li>
+                    <li><a href="#legal">Legal Stuff & Disclaimer</a></li>
+                </ul>
+            </div>
+`
+
 const generateHTML = (content) => 
 `<!DOCTYPE html>
 <html lang="en">
@@ -366,20 +377,6 @@ const generateHTML = (content) =>
     
     <div class="main-content">
         <div class="inner-content">
-            <div class="table-of-contents">
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#intro">Introduction</a></li>
-                    <li><a href="#usage">Usage</a></li>
-                    <li><a href="#todo">To Do</a></li>
-                    <li><a href="#legal">Legal Stuff & Disclaimer</a></li>
-                </ul>
-            </div>
-            
-            <div class="readme-content">
-                ${content}
-            </div>
-            
             <section id="features">
                 <h2>Key Features</h2>
                 
@@ -421,6 +418,11 @@ const generateHTML = (content) =>
                     </div>
                 </div>
             </section>
+			
+            <div class="readme-content">
+                ${content}
+            </div>
+            
             
             <div class="action-buttons">
                 <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter" class="btn"><i class="fab fa-github"></i> View on GitHub</a>
