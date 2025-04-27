@@ -9,6 +9,9 @@ fs.ensureDirSync('docs/imgs');
 if (fs.existsSync('imgs')) {
   fs.copySync('imgs', 'docs/imgs');
 }
+if (fs.existsSync('.github/docs.html')) {
+  fs.copySync('.github/docs.html', 'docs/docs.html');
+}
 
 const readmeContent = fs.readFileSync('README.md', 'utf8');
 

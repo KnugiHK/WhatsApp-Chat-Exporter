@@ -2,10 +2,13 @@ name: Generate Website from README
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'README.md'
       - '.github/workflows/generate-website.yml'
       - '.github/generate-website.js'
+      - '.github/docs.html'
   workflow_dispatch:
 
 jobs:
