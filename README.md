@@ -145,55 +145,73 @@ After extracting, you will get these:
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-o OUTPUT] [-j [JSON]]
-                   [--avoid-encoding-json] [--pretty-print-json [PRETTY_PRINT_JSON]] [-d DB] [-k KEY] [-t TEMPLATE]
-                   [-s] [-c] [--offline OFFLINE] [--size [SIZE]] [--no-html] [--check-update] [--assume-first-as-me]
-                   [--no-avatar] [--import] [--business] [--wab WAB] [--time-offset {-12 to 14}] [--date DATE]
+usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-d DB] [-k [KEY]]
+                   [--call-db [CALL_DB_IOS]] [--wab WAB] [-o OUTPUT] [-j [JSON]] [--txt [TEXT_FORMAT]] [--no-html]
+                   [--size [SIZE]] [--avoid-encoding-json] [--pretty-print-json [PRETTY_PRINT_JSON]] [--per-chat]
+                   [--import] [-t TEMPLATE] [--offline OFFLINE] [--no-avatar] [--experimental-new-theme]
+                   [--headline HEADLINE] [-c] [--create-separated-media] [--time-offset {-12 to 14}] [--date DATE]
                    [--date-format FORMAT] [--include [phone number ...]] [--exclude [phone number ...]]
-                   [--dont-filter-empty] [--per-chat] [--create-separated-media]
-                   [--decrypt-chunk-size DECRYPT_CHUNK_SIZE] [--enrich-from-vcards ENRICH_FROM_VCARDS]
-                   [--default-country-code DEFAULT_CONTRY_CODE] [--txt [TEXT_FORMAT]] [--experimental-new-theme]
-                   [--call-db [CALL_DB_IOS]] [--headline HEADLINE]
+                   [--dont-filter-empty] [--enrich-from-vcards ENRICH_FROM_VCARDS]
+                   [--default-country-code DEFAULT_COUNTRY_CODE] [-s] [--check-update] [--assume-first-as-me]
+                   [--business] [--decrypt-chunk-size DECRYPT_CHUNK_SIZE]
+                   [--max-bruteforce-worker MAX_BRUTEFORCE_WORKER]
 
 A customizable Android and iOS/iPadOS WhatsApp database parser that will give you the history of your WhatsApp
 conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
 
 options:
   -h, --help            show this help message and exit
+
+Device Type:
   -a, --android         Define the target as Android
-  -i, --ios,            Define the target as iPhone/iPad
-  -e EXPORTED, --exported EXPORTED
+  -i, --ios             Define the target as iPhone/iPad
+  -e, --exported EXPORTED
                         Define the target as exported chat file and specify the path to the file
-  -w WA, --wa WA        Path to contact database (default: wa.db/ContactsV2.sqlite)
-  -m MEDIA, --media MEDIA
-                        Path to WhatsApp media folder (default: WhatsApp)
-  -b BACKUP, --backup BACKUP
-                        Path to Android (must be used together with -k)/iOS WhatsApp backup
-  -o OUTPUT, --output OUTPUT
-                        Output to specific directory (default: result)
-  -j [JSON], --json [JSON]
-                        Save the result to a single JSON file (default if present: result.json)
+
+Input Files:
+  -w, --wa WA           Path to contact database (default: wa.db/ContactsV2.sqlite)
+  -m, --media MEDIA     Path to WhatsApp media folder (default: WhatsApp)
+  -b, --backup BACKUP   Path to Android (must be used together with -k)/iOS WhatsApp backup
+  -d, --db DB           Path to database file (default: msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
+  -k, --key [KEY]       Path to key file. If this option is set for crypt15 backup but nothing is specified, you will
+                        be prompted to enter the key.
+  --call-db [CALL_DB_IOS]
+                        Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only
+  --wab, --wa-backup WAB
+                        Path to contact database in crypt15 format
+
+Output Options:
+  -o, --output OUTPUT   Output to specific directory (default: result)
+  -j, --json [JSON]     Save the result to a single JSON file (default if present: result.json)
+  --txt [TEXT_FORMAT]   Export chats in text format similar to what WhatsApp officially provided (default if present:
+                        result/)
+  --no-html             Do not output html files
+  --size, --output-size, --split [SIZE]
+                        Maximum (rough) size of a single output file in bytes, 0 for auto
+
+JSON Options:
   --avoid-encoding-json
                         Don't encode non-ascii characters in the output JSON files
   --pretty-print-json [PRETTY_PRINT_JSON]
                         Pretty print the output JSON.
-  -d DB, --db DB        Path to database file (default: msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
-  -k KEY, --key KEY     Path to key file
-  -t TEMPLATE, --template TEMPLATE
-                        Path to custom HTML template
-  -s, --showkey         Show the HEX key used to decrypt the database
-  -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
-  --offline OFFLINE     Relative path to offline static files
-  --size [SIZE], --output-size [SIZE], --split [SIZE]
-                        Maximum (rough) size of a single output file in bytes, 0 for auto
-  --no-html             Do not output html files
-  --check-update        Check for updates (require Internet access)
-  --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
-  --no-avatar           Do not render avatar in HTML output
+  --per-chat            Output the JSON file per chat
   --import              Import JSON file and convert to HTML output
-  --business            Use Whatsapp Business default files (iOS only)
-  --wab WAB, --wa-backup WAB
-                        Path to contact database in crypt15 format
+
+HTML Options:
+  -t, --template TEMPLATE
+                        Path to custom HTML template
+  --offline OFFLINE     Relative path to offline static files
+  --no-avatar           Do not render avatar in HTML output
+  --experimental-new-theme
+                        Use the newly designed WhatsApp-alike theme
+  --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat name
+
+Media Handling:
+  -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
+  --create-separated-media
+                        Create a copy of the media seperated per chat in <MEDIA>/separated/ directory
+
+Filtering Options:
   --time-offset {-12 to 14}
                         Offset in hours (-12 to 14) for time displayed in the output
   --date DATE           The date filter in specific format (inclusive)
@@ -204,26 +222,26 @@ options:
                         Exclude chats that match the supplied phone number
   --dont-filter-empty   By default, the exporter will not render chats with no valid message. Setting this flag will
                         cause the exporter to render those. This is useful if chat(s) are missing from the output
-  --per-chat            Output the JSON file per chat
-  --create-separated-media
-                        Create a copy of the media seperated per chat in <MEDIA>/separated/ directory
-  --decrypt-chunk-size DECRYPT_CHUNK_SIZE
-                        Specify the chunk size for decrypting iOS backup, which may affect the decryption speed.
+
+Contact Enrichment:
   --enrich-from-vcards ENRICH_FROM_VCARDS
                         Path to an exported vcf file from Google contacts export. Add names missing from WhatsApp's
                         default database
-  --default-country-code DEFAULT_CONTRY_CODE
+  --default-country-code DEFAULT_COUNTRY_CODE
                         Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this
                         will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country
-  --txt [TEXT_FORMAT]   Export chats in text format similar to what WhatsApp officially provided (default if present:
-                        result/)
-  --experimental-new-theme
-                        Use the newly designed WhatsApp-alike theme
-  --call-db [CALL_DB_IOS]
-                        Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only
-  --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat name
 
-WhatsApp Chat Exporter: 0.11.2 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+Miscellaneous:
+  -s, --showkey         Show the HEX key used to decrypt the database
+  --check-update        Check for updates (require Internet access)
+  --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
+  --business            Use Whatsapp Business default files (iOS only)
+  --decrypt-chunk-size DECRYPT_CHUNK_SIZE
+                        Specify the chunk size for decrypting iOS backup, which may affect the decryption speed.
+  --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
+                        Specify the maximum number of worker for bruteforce decryption.
+
+WhatsApp Chat Exporter: 0.12.0 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 ```
 

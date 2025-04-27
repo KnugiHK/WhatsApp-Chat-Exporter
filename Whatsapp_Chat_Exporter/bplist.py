@@ -234,7 +234,7 @@ class BPListReader(object):
         # read trailer
         self.offset_size, self.object_ref_size, self.number_of_objects, self.top_object, self.table_offset = struct.unpack('!6xBB4xI4xI4xI', self.data[-32:])
         #print "** plist offset_size:",self.offset_size,"objref_size:",self.object_ref_size,"num_objs:",self.number_of_objects,"top:",self.top_object,"table_ofs:",self.table_offset
-        
+
         # read offset table
         self.offset_table = self.data[self.table_offset:-32]
         self.offsets = []

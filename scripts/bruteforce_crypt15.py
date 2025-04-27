@@ -3,6 +3,7 @@ import javaobj
 import zlib
 from Crypto.Cipher import AES
 from hashlib import sha256
+from sys import exit
 
 
 def _generate_hmac_of_hmac(key_stream):
