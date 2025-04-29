@@ -468,7 +468,7 @@ const generateHTML = (content) =>
 </html>
 `;
 
-const processedContent = readmeContent.replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '').replace(/!\[.*?\]\(.*?\)/g, '')
+const processedContent = readmeContent.replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '')
 
 const htmlContent = marked.use(markedAlert()).parse(processedContent, {
   gfm: true,
