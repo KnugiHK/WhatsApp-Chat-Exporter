@@ -10,7 +10,9 @@ on:
       - '.github/generate-website.js'
       - '.github/docs.html'
   workflow_dispatch:
-
+permissions:
+  contents: write
+  pages: write
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
