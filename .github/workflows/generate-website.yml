@@ -30,9 +30,10 @@ jobs:
       - name: Generate website from README
         run: node .github/generate-website.js
       
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Deploy to gh-pages
+        if: github.ref == 'refs/heads/main'  # Ensure deployment only happens from main
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          branch: gh-pages
-          folder: docs
-          clean: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages  
