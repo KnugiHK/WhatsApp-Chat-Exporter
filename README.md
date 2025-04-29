@@ -3,7 +3,7 @@
 [![License MIT](https://img.shields.io/pypi/l/whatsapp-chat-exporter?color=427B93)](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/Whatsapp-Chat-Exporter)](https://pypi.org/project/Whatsapp-Chat-Exporter/)
 [![Matrix Chat Room](https://img.shields.io/matrix/wtsexporter:matrix.org.svg?label=Matrix%20Chat%20Room)](https://matrix.to/#/#wtsexporter:matrix.org)
-![Since 2021](https://img.shields.io/github/created-at/knugihk/WhatsApp-Chat-Exporter?label=Since&color=purple)
+[![Since 2021](https://img.shields.io/github/created-at/knugihk/WhatsApp-Chat-Exporter?label=Since&color=purple)](https://wts.knugi.dev)
 
 A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
 > [!TIP]
@@ -99,7 +99,7 @@ wtsexporter -a -k encrypted_backup.key -b msgstore.db.crypt15
 ```
 If you have the 32 bytes hex key, simply put the hex key in the -k option and invoke the command from shell like this:
 ```sh
-wtsexporter -a -k 432435053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cdaa5a8 -b msgstore.db.crypt15
+wtsexporter -a -k 133735053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cda1337 -b msgstore.db.crypt15
 ```
 
 ## Working with iOS/iPadOS (iPhone or iPad)
@@ -246,9 +246,11 @@ licenses.
 ```
 
 # To do
+
 See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
 
 # Legal Stuff & Disclaimer
+
 This is a MIT licensed project.
 
 The Telegram Desktop's export is the reference for whatsapp.html in this repo.
