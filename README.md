@@ -246,9 +246,11 @@ licenses.
 ```
 
 # To do
+
 See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
 
 # Legal Stuff & Disclaimer
+
 This is a MIT licensed project.
 
 The Telegram Desktop's export is the reference for whatsapp.html in this repo.
