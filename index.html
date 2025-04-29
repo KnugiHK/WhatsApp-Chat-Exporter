@@ -424,6 +424,7 @@ cd working_wts
 <p>Extract the WhatsApp database with whatever means, one possible means is to use the <a href="https://github.com/KnugiHK/WhatsApp-Key-DB-Extractor">WhatsApp-Key-DB-Extractor</a>. Note that the extractor only works on Android 4.0 to 13.</p>
 <p>After you obtain your WhatsApp database, copy the WhatsApp database and media folder to the working directory. The database is called msgstore.db. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.</p>
 <p>And now, you should have something like this in the working directory.</p>
+<p><img src="imgs/android_structure.png" alt="Android folder structure"></p>
 <h4>Extracting</h4>
 <p>Simply invoke the following command from shell.</p>
 <pre><code class="language-sh">wtsexporter -a
@@ -446,6 +447,7 @@ pip install whatsapp-chat-exporter[&quot;android_backup&quot;] # install along w
 <p>You will need the decryption key file from your phone. If you have root access, you can find it as <code>/data/data/com.whatsapp/files/key</code>. Otherwise, if you used WhatsApp-Key-DB-Extractor before, it will appear in the WhatsApp backup directory as <code>WhatsApp/Databases/.nomedia</code>.</p>
 <p>Place the decryption key file (key) and the encrypted WhatsApp Backup (msgstore.db.crypt14) in the working directory. If you also want the name of your contacts, get the contact database, which is called wa.db. And copy the WhatsApp (Media) directory from your phone directly.</p>
 <p>And now, you should have something like this in the working directory.</p>
+<p><img src="imgs/android_structure_backup.png" alt="Android folder structure with WhatsApp Backup"></p>
 <h4>Extracting</h4>
 <p>Simply invoke the following command from shell.</p>
 <pre><code class="language-sh">wtsexporter -a -k key -b msgstore.db.crypt14
@@ -459,6 +461,7 @@ pip install whatsapp-chat-exporter[&quot;crypt15&quot;] # install along with thi
 <p>Once you have copied the backup files to your computer, place the encrypted WhatsApp backup file (msgstore.db.crypt15) into the working directory. If you also wish to include your contacts&#39; names, obtain the contact database file, named wa.db. Additionally, copy the WhatsApp Media folder directly from your phone.</p>
 <p>If you do not have the 32 bytes hex key (64 hexdigits), place the decryption key file (encrypted_backup.key) extracted from Android. If you gave the 32 bytes hex key, simply put the key in the shell.</p>
 <p>Now, you should have something like this in the working directory (if you do not have 32 bytes hex key).</p>
+<p><img src="imgs/android_structure_backup_crypt15.png" alt="Android folder structure with WhatsApp Crypt15 Backup"></p>
 <h5>Extracting</h5>
 <p>If you do not have 32 bytes hex key but have the key file available, simply invoke the following command from shell.</p>
 <pre><code class="language-sh">wtsexporter -a -k encrypted_backup.key -b msgstore.db.crypt15
@@ -500,7 +503,9 @@ wtsexporter -i -b &quot;C:\Users\[Username]\Apple\MobileSync\Backup\[device id]&
 <h2>Results</h2>
 <p>After extracting, you will get these:</p>
 <h4>Private Message</h4>
+<p><img src="imgs/pm.png" alt="Private Message"></p>
 <h4>Group Message</h4>
+<p><img src="imgs/group.png" alt="Group Message"></p>
 <h2>More options</h2>
 <p>Invoke the wtsexporter with --help option will show you all options available.</p>
 <pre><code class="language-sh">&gt; wtsexporter --help
