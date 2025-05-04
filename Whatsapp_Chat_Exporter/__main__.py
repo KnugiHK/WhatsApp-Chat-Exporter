@@ -763,3 +763,7 @@ def main():
             handle_media_directory(args)
 
         print("Everything is done!")
+
+
+if __name__ == "__main__":
+    main()
