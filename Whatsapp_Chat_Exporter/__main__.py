@@ -701,8 +701,6 @@ def main():
             args.whatsapp_theme,
             args.headline
         )
-    elif args.incremental_merge:
-        incremental_merge(args.source_dir, args.target_dir, args.media)
     elif args.exported:
         # Process exported chat
         process_exported_chat(args, data)
@@ -749,16 +747,19 @@ def main():
             if args.wa is None:
                 args.wa = "ContactsV2.sqlite"
         
-        # Process contacts
-        process_contacts(args, data, contact_store)
-        
-        # Process messages, media, and calls
-        process_messages(args, data)
-        
-        # Create output files
-        create_output_files(args, data, contact_store)
-        
-        # Handle media directory
-        handle_media_directory(args)
+        if args.incremental_merge:
+            incremental_merge(args.source_dir, args.target_dir, args.media)
+        else:        
+            # Process contacts
+            process_contacts(args, data, contact_store)
+            
+            # Process messages, media, and calls
+            process_messages(args, data)
+            
+            # Create output files
+            create_output_files(args, data, contact_store)
+            
+            # Handle media directory
+            handle_media_directory(args)
 
         print("Everything is done!")

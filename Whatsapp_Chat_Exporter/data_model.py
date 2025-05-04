@@ -255,7 +255,7 @@ class ChatStore:
         self.status = other.status or self.status
         
         # Merge messages
-        self.messages.update(other.messages)
+        self._messages.update(other._messages)
 
 class Message:
     """
@@ -341,10 +341,12 @@ class Message:
     @classmethod
     def from_json(cls, data):
         message = cls(
-            data["from_me"],
-            data["timestamp"],
-            data["time"],
-            data["key_id"]
+            from_me = data["from_me"],
+            timestamp = data["timestamp"],
+            time = data["time"],
+            key_id = data["key_id"],
+            received_timestamp = data.get("received_timestamp"),
+            read_timestamp = data.get("read_timestamp")
         )
         message.media = data.get("media")
         message.meta = data.get("meta")
