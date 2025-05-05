@@ -317,9 +317,19 @@ class Message:
         self.safe = False
         self.mime = None
         self.message_type = message_type,
-        self.received_timestamp = timing.format_timestamp(received_timestamp, "%Y/%m/%d %H:%M")
-        self.read_timestamp = timing.format_timestamp(read_timestamp, "%Y/%m/%d %H:%M")
-        
+        if isinstance(received_timestamp, (int, float)):
+            self.received_timestamp = timing.format_timestamp(received_timestamp, "%Y/%m/%d %H:%M")
+        elif isinstance(received_timestamp, str):
+            self.received_timestamp = received_timestamp
+        else:
+            self.received_timestamp = None
+        if isinstance(read_timestamp, (int, float)):
+            self.read_timestamp = timing.format_timestamp(read_timestamp, "%Y/%m/%d %H:%M")
+        elif isinstance(read_timestamp, str):
+            self.read_timestamp = read_timestamp
+        else:
+            self.read_timestamp = None
+
         # Extra attributes
         self.reply = None
         self.quoted_data = None
