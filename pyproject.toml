@@ -60,3 +60,8 @@ include = ["Whatsapp_Chat_Exporter"]
 
 [tool.setuptools.package-data]
 Whatsapp_Chat_Exporter = ["*.html"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
