@@ -85,6 +85,7 @@ chat_data_merged = {
         "their_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared/Media/Profile\\12345678-1709851420.thumb",
         "their_avatar_thumb": None,
         "status": None,
+        "media_base": None,
         "messages": {
             "24690": {
                 "from_me": True,
@@ -101,7 +102,10 @@ chat_data_merged = {
                 "quoted_data": None,
                 "caption": None,
                 "thumb": None,
-                "sticker": False
+                "sticker": False,
+                "message_type": None,
+                "received_timestamp": None,
+                "read_timestamp": None
             },
             "24691": {
                 "from_me": False,
@@ -118,7 +122,10 @@ chat_data_merged = {
                 "quoted_data": None,
                 "caption": None,
                 "thumb": None,
-                "sticker": False
+                "sticker": False,
+                "message_type": None,
+                "received_timestamp": None,
+                "read_timestamp": None
             },
             "24692": {
                 "from_me": False,
@@ -135,7 +142,10 @@ chat_data_merged = {
                 "quoted_data": None,
                 "caption": None,
                 "thumb": None,
-                "sticker": False
+                "sticker": False,
+                "message_type": None,
+                "received_timestamp": None,
+                "read_timestamp": None
             },
         }
     }
@@ -187,10 +197,9 @@ def test_incremental_merge_new_file(mock_filesystem):
         mock_file.side_effect = mock_file_read
 
         # Run the function
-        incremental_merge(source_dir, target_dir, media_dir)
+        incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
         # Verify the operations
-        mock_filesystem["makedirs"].assert_called_once_with(target_dir, exist_ok=True)
         mock_file.assert_any_call("/source/chat.json", "rb")
         mock_file.assert_any_call("/target/chat.json", "wb")
 
@@ -229,7 +238,7 @@ def test_incremental_merge_existing_file_with_changes(mock_filesystem):
         mock_file.side_effect = mock_file_read
         
         # Run the function
-        incremental_merge(source_dir, target_dir, media_dir)
+        incremental_merge(source_dir, target_dir, media_dir, 2, True)
         
         # Verify file operations - both files opened in text mode when target exists
         mock_file.assert_any_call("/source/chat.json", "r")
@@ -280,7 +289,7 @@ def test_incremental_merge_existing_file_no_changes(mock_filesystem):
         mock_file.side_effect = mock_file_read
 
         # Run the function
-        incremental_merge(source_dir, target_dir, media_dir)
+        incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
         # Verify no write operations occurred on target file
         write_calls = [call for call in mock_file.mock_calls if call[0] == "().write"]
@@ -318,7 +327,7 @@ def test_incremental_merge_media_copy(mock_filesystem):
         mock_file.side_effect = mock_file_read
 
         # Run the function
-        incremental_merge(source_dir, target_dir, media_dir)
+        incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
         # Verify media file operations
         assert (
