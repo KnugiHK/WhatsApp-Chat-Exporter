@@ -316,7 +316,7 @@ class Message:
         self.sender = None
         self.safe = False
         self.mime = None
-        self.message_type = message_type,
+        self.message_type = message_type
         if isinstance(received_timestamp, (int, float)):
             self.received_timestamp = timing.format_timestamp(received_timestamp, "%Y/%m/%d %H:%M")
         elif isinstance(received_timestamp, str):
