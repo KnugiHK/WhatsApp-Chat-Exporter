@@ -367,6 +367,7 @@ class Message:
             timestamp = data["timestamp"],
             time = data["time"],
             key_id = data["key_id"],
+            message_type = data.get("message_type"),
             received_timestamp = data.get("received_timestamp"),
             read_timestamp = data.get("read_timestamp")
         )
