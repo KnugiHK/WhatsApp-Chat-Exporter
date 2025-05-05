@@ -223,6 +223,7 @@ class ChatStore:
         chat.their_avatar = data.get("their_avatar")
         chat.their_avatar_thumb = data.get("their_avatar_thumb")
         chat.status = data.get("status")
+        chat.media_base = data.get("media_base")
         for id, msg_data in data.get("messages", {}).items():
             message = Message.from_json(msg_data)
             chat.add_message(id, message)
