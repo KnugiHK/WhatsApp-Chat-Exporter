@@ -303,6 +303,7 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
     # Merge media directories
     source_media_path = os.path.join(source_dir, media_dir)
     target_media_path = os.path.join(target_dir, media_dir)
+    print(f"Merging media directories. Source dir: {source_media_path}, target dir: {target_media_path}")
     if os.path.exists(source_media_path):
         for root, dirs, files in os.walk(source_media_path):
             relative_path = os.path.relpath(root, source_media_path)
