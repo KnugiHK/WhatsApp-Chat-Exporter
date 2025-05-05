@@ -275,12 +275,12 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
         target_path = os.path.join(target_dir, json_file)
         
         if not os.path.exists(target_path):
-            print(f"Copying {json_file} to target directory...")
+            print(f"Copying '{json_file}' to target directory...")
             os.makedirs(target_dir, exist_ok=True)
             with open(source_path, 'rb') as src, open(target_path, 'wb') as dst:
                 dst.write(src.read())
         else:
-            print(f"Merging {json_file} with existing file in target directory...")
+            print(f"Merging '{json_file}' with existing file in target directory...")
             with open(source_path, 'r') as src_file, open(target_path, 'r') as tgt_file:
                 source_data = json.load(src_file)
                 target_data = json.load(tgt_file)
@@ -301,16 +301,16 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
                 
                 # Check if the merged data differs from the original target data
                 if json.dumps(merged_data, sort_keys=True) != json.dumps(target_data, sort_keys=True):
-                    print(f"Changes detected in {json_file}, updating target file...")
+                    print(f"Changes detected in '{json_file}', updating target file...")
                     with open(target_path, 'w') as merged_file:
                         json.dump(merged_data, merged_file, indent=2)
                 else:
-                    print(f"No changes detected in {json_file}, skipping update.")
+                    print(f"No changes detected in '{json_file}', skipping update.")
 
     # Merge media directories
     source_media_path = os.path.join(source_dir, media_dir)
     target_media_path = os.path.join(target_dir, media_dir)
-    print(f"Merging media directories. Source dir: {source_media_path}, target dir: {target_media_path}")
+    print(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
     if os.path.exists(source_media_path):
         for root, dirs, files in os.walk(source_media_path):
             relative_path = os.path.relpath(root, source_media_path)
@@ -321,7 +321,7 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
                 target_file = os.path.join(target_root, file)
                 # we only copy if the file doesn't exist in the target or if the source is newer
                 if not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file):
-                    print(f"Copying {source_file} to {target_file}...")
+                    print(f"Copying '{source_file}' to '{target_file}'...")
                     shutil.copy2(source_file, target_file)
 
 
