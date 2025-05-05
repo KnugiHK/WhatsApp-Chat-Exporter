@@ -211,6 +211,7 @@ class ChatStore:
             'their_avatar': self.their_avatar,
             'their_avatar_thumb': self.their_avatar_thumb,
             'status': self.status,
+            'media_base': self.media_base,
             'messages': {id: msg.to_json() for id, msg in self._messages.items()}
         }
     
@@ -342,7 +343,10 @@ class Message:
             'quoted_data': self.quoted_data,
             'caption': self.caption,
             'thumb': self.thumb,
-            'sticker': self.sticker
+            'sticker': self.sticker,
+            'message_type': self.message_type,
+            'received_timestamp': self.received_timestamp,
+            'read_timestamp': self.read_timestamp
         }
 
     @classmethod
