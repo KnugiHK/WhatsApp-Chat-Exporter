@@ -269,7 +269,7 @@ def validate_args(parser: ArgumentParser, args) -> None:
     # Basic validation checks
     if args.android and args.ios and args.exported and args.import_json:
         parser.error("You must define only one device type.")
-    if not args.android and not args.ios and not args.exported and not args.import_json:
+    if not args.android and not args.ios and not args.exported and not args.import_json and not args.incremental_merge:
         parser.error("You must define the device type.")
     if args.no_html and not args.json and not args.text_format:
         parser.error("You must either specify a JSON output file, text file output directory or enable HTML output.")
@@ -748,7 +748,14 @@ def main():
                 args.wa = "ContactsV2.sqlite"
         
         if args.incremental_merge:
-            incremental_merge(args.source_dir, args.target_dir, args.media)
+            incremental_merge(
+                args.source_dir,
+                args.target_dir,
+                args.media,
+                args.pretty_print_json,
+                args.avoid_encoding_json
+            )
+            print("Incremental merge completed successfully.")
         else:        
             # Process contacts
             process_contacts(args, data, contact_store)

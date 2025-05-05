@@ -259,7 +259,7 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
         print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
 
 
-def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
+def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
     """Merges JSON files from the source directory into the target directory.
 
     Args:
@@ -303,7 +303,12 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
                 if json.dumps(merged_data, sort_keys=True) != json.dumps(target_data, sort_keys=True):
                     print(f"Changes detected in '{json_file}', updating target file...")
                     with open(target_path, 'w') as merged_file:
-                        json.dump(merged_data, merged_file, indent=2)
+                        json.dump(
+                            merged_data,
+                            merged_file,
+                            indent=pretty_print_json,
+                            ensure_ascii=not avoid_encoding_json,
+                        )
                 else:
                     print(f"No changes detected in '{json_file}', skipping update.")
 
