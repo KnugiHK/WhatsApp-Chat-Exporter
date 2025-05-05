@@ -289,10 +289,16 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
                     else:
                         target_chats[jid] = chat
                 
-                # Write merged data back to the target file
-                with open(target_path, 'w') as merged_file:
-                    merged_data = {jid: chat.to_json() for jid, chat in target_chats.items()}
-                    json.dump(merged_data, merged_file, indent=2)
+                # Serialize merged data
+                merged_data = {jid: chat.to_json() for jid, chat in target_chats.items()}
+                
+                # Check if the merged data differs from the original target data
+                if json.dumps(merged_data, sort_keys=True) != json.dumps(target_data, sort_keys=True):
+                    print(f"Changes detected in {json_file}, updating target file...")
+                    with open(target_path, 'w') as merged_file:
+                        json.dump(merged_data, merged_file, indent=2)
+                else:
+                    print(f"No changes detected in {json_file}, skipping update.")
 
     # Merge media directories
     source_media_path = os.path.join(source_dir, media_dir)
