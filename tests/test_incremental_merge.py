@@ -177,31 +177,20 @@ def test_incremental_merge_new_file(mock_filesystem):
     source_dir = "/source"
     target_dir = "/target"
     media_dir = "media"
-
+    
     # Setup mock filesystem
     mock_filesystem["exists"].side_effect = lambda x: x == "/source"
     mock_filesystem["listdir"].return_value = ["chat.json"]
-
-    # Mock file operations
-    mock_file_content = {
-        "/source/chat.json": json.dumps(chat_data_1),
-    }
-
-    with patch("builtins.open", mock_open()) as mock_file:
-
-        def mock_file_read(filename, mode="r"):
-            content = mock_file_content.get(filename)
-            file_mock = mock_open(read_data=content).return_value
-            return file_mock
-
-        mock_file.side_effect = mock_file_read
-
-        # Run the function
-        incremental_merge(source_dir, target_dir, media_dir, 2, True)
-
-        # Verify the operations
-        mock_file.assert_any_call("/source/chat.json", "rb")
-        mock_file.assert_any_call("/target/chat.json", "wb")
+    
+    # Run the function
+    incremental_merge(source_dir, target_dir, media_dir, 2, True)
+    
+    # Verify the operations
+    mock_filesystem["makedirs"].assert_called_once_with(target_dir, exist_ok=True)
+    mock_filesystem["copy2"].assert_called_once_with(
+        os.path.join(source_dir, "chat.json"),
+        os.path.join(target_dir, "chat.json")
+    )
 
 
 def test_incremental_merge_existing_file_with_changes(mock_filesystem):

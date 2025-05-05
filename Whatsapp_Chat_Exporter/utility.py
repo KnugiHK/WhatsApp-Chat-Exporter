@@ -284,8 +284,7 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
         if not os.path.exists(target_path):
             print(f"Copying '{json_file}' to target directory...")
             os.makedirs(target_dir, exist_ok=True)
-            with open(source_path, 'rb') as src, open(target_path, 'wb') as dst:
-                dst.write(src.read())
+            shutil.copy2(source_path, target_path)
         else:
             print(
                 f"Merging '{json_file}' with existing file in target directory...")
