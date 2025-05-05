@@ -269,7 +269,7 @@ def validate_args(parser: ArgumentParser, args) -> None:
     # Basic validation checks
     if args.android and args.ios and args.exported and args.import_json:
         parser.error("You must define only one device type.")
-    if not args.android and not args.ios and not args.exported and not args.import_json and not args.incremental_merge:
+    if not args.android and not args.ios and not args.exported and not args.import_json:
         parser.error("You must define the device type.")
     if args.no_html and not args.json and not args.text_format:
         parser.error("You must either specify a JSON output file, text file output directory or enable HTML output.")
