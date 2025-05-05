@@ -7,6 +7,7 @@ class Timing:
     """
     Handles timestamp formatting with timezone support.
     """
+
     def __init__(self, timezone_offset: Optional[int]) -> None:
         """
         Initialize Timing object.
@@ -37,6 +38,7 @@ class TimeZone(tzinfo):
     """
     Custom timezone class with fixed offset.
     """
+
     def __init__(self, offset: int) -> None:
         """
         Initialize TimeZone object.
@@ -151,6 +153,7 @@ class ChatStore:
     """
     Stores chat information and messages.
     """
+
     def __init__(self, type: str, name: Optional[str] = None, media: Optional[str] = None) -> None:
         """
         Initialize ChatStore object.
@@ -159,7 +162,7 @@ class ChatStore:
             type (str): Device type (IOS or ANDROID)
             name (Optional[str]): Chat name
             media (Optional[str]): Path to media folder
-        
+
         Raises:
             TypeError: If name is not a string or None
         """
@@ -182,7 +185,7 @@ class ChatStore:
         self.their_avatar_thumb = None
         self.status = None
         self.media_base = ""
-    
+
     def __len__(self) -> int:
         """Get number of chats. Required for dict-like access."""
         return len(self._messages)
@@ -192,7 +195,7 @@ class ChatStore:
         if not isinstance(message, Message):
             raise TypeError("message must be a Message object")
         self._messages[id] = message
-    
+
     def get_message(self, id: str) -> 'Message':
         """Get a message from the chat store."""
         return self._messages.get(id)
@@ -214,7 +217,7 @@ class ChatStore:
             'media_base': self.media_base,
             'messages': {id: msg.to_json() for id, msg in self._messages.items()}
         }
-    
+
     @classmethod
     def from_json(cls, data: Dict) -> 'ChatStore':
         """Create a chat store from JSON data."""
@@ -232,7 +235,7 @@ class ChatStore:
     def get_last_message(self) -> 'Message':
         """Get the most recent message in the chat."""
         return tuple(self._messages.values())[-1]
-    
+
     def items(self):
         """Get message items pairs."""
         return self._messages.items()
@@ -250,11 +253,11 @@ class ChatStore:
 
         Args:
             other (ChatStore): The ChatStore to merge with
-        
+
         """
         if not isinstance(other, ChatStore):
             raise TypeError("Can only merge with another ChatStore object")
-        
+
         # Update fields if they are not None in the other ChatStore
         self.name = other.name or self.name
         self.type = other.type or self.type
@@ -262,14 +265,16 @@ class ChatStore:
         self.their_avatar = other.their_avatar or self.their_avatar
         self.their_avatar_thumb = other.their_avatar_thumb or self.their_avatar_thumb
         self.status = other.status or self.status
-        
+
         # Merge messages
         self._messages.update(other._messages)
+
 
 class Message:
     """
     Represents a single message in a chat.
     """
+
     def __init__(
             self,
             *,
@@ -301,7 +306,7 @@ class Message:
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
         timing = Timing(timezone_offset)
-        
+
         if isinstance(time, (int, float)):
             self.time = timing.format_timestamp(self.timestamp, "%H:%M")
         elif isinstance(time, str):
@@ -318,13 +323,15 @@ class Message:
         self.mime = None
         self.message_type = message_type
         if isinstance(received_timestamp, (int, float)):
-            self.received_timestamp = timing.format_timestamp(received_timestamp, "%Y/%m/%d %H:%M")
+            self.received_timestamp = timing.format_timestamp(
+                received_timestamp, "%Y/%m/%d %H:%M")
         elif isinstance(received_timestamp, str):
             self.received_timestamp = received_timestamp
         else:
             self.received_timestamp = None
         if isinstance(read_timestamp, (int, float)):
-            self.read_timestamp = timing.format_timestamp(read_timestamp, "%Y/%m/%d %H:%M")
+            self.read_timestamp = timing.format_timestamp(
+                read_timestamp, "%Y/%m/%d %H:%M")
         elif isinstance(read_timestamp, str):
             self.read_timestamp = read_timestamp
         else:
@@ -363,13 +370,13 @@ class Message:
     @classmethod
     def from_json(cls, data: Dict) -> 'Message':
         message = cls(
-            from_me = data["from_me"],
-            timestamp = data["timestamp"],
-            time = data["time"],
-            key_id = data["key_id"],
-            message_type = data.get("message_type"),
-            received_timestamp = data.get("received_timestamp"),
-            read_timestamp = data.get("read_timestamp")
+            from_me=data["from_me"],
+            timestamp=data["timestamp"],
+            time=data["time"],
+            key_id=data["key_id"],
+            message_type=data.get("message_type"),
+            received_timestamp=data.get("received_timestamp"),
+            read_timestamp=data.get("read_timestamp")
         )
         message.media = data.get("media")
         message.meta = data.get("meta")

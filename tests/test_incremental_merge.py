@@ -209,24 +209,24 @@ def test_incremental_merge_existing_file_with_changes(mock_filesystem):
     source_dir = "/source"
     target_dir = "/target"
     media_dir = "media"
-    
+
     # Setup mock filesystem
     mock_filesystem["exists"].side_effect = lambda x: True
     mock_filesystem["listdir"].return_value = ["chat.json"]
-    
+
     # Mock file operations
     mock_file_content = {
         "/source/chat.json": json.dumps(chat_data_2),
         "/target/chat.json": json.dumps(chat_data_1),
     }
-    
+
     written_chunks = []
-    
+
     def mock_file_write(data):
         written_chunks.append(data)
-    
+
     mock_write = MagicMock(side_effect=mock_file_write)
-    
+
     with patch("builtins.open", mock_open()) as mock_file:
         def mock_file_read(filename, mode="r"):
             content = mock_file_content.get(filename)
@@ -234,27 +234,27 @@ def test_incremental_merge_existing_file_with_changes(mock_filesystem):
             if mode == 'w':
                 file_mock.write.side_effect = mock_write
             return file_mock
-        
+
         mock_file.side_effect = mock_file_read
-        
+
         # Run the function
         incremental_merge(source_dir, target_dir, media_dir, 2, True)
-        
+
         # Verify file operations - both files opened in text mode when target exists
         mock_file.assert_any_call("/source/chat.json", "r")
         mock_file.assert_any_call("/target/chat.json", "r")
         mock_file.assert_any_call("/target/chat.json", "w")
-        
+
         # Verify write was called
         assert mock_write.called, "Write method was never called"
-        
+
         # Combine chunks and parse JSON
         written_data = json.loads(''.join(written_chunks))
-        
+
         # Verify the merged data is correct
         assert written_data is not None, "No data was written"
         assert written_data == chat_data_merged, "Merged data does not match expected result"
-        
+
         # Verify specific message retention
         messages = written_data["12345678@s.whatsapp.net"]["messages"]
         assert "24690" in messages, "Common message should be present"
@@ -292,7 +292,8 @@ def test_incremental_merge_existing_file_no_changes(mock_filesystem):
         incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
         # Verify no write operations occurred on target file
-        write_calls = [call for call in mock_file.mock_calls if call[0] == "().write"]
+        write_calls = [
+            call for call in mock_file.mock_calls if call[0] == "().write"]
         assert len(write_calls) == 0
 
 
@@ -333,4 +334,5 @@ def test_incremental_merge_media_copy(mock_filesystem):
         assert (
             mock_filesystem["makedirs"].call_count >= 2
         )  # At least target dir and media dir
-        assert mock_filesystem["copy2"].call_count == 2  # Two media files copied
+        # Two media files copied
+        assert mock_filesystem["copy2"].call_count == 2

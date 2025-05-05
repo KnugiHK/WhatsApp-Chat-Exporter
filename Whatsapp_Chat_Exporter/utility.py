@@ -18,6 +18,7 @@ except ImportError:
     # < Python 3.11
     # This should be removed when the support for Python 3.10 ends. (31 Oct 2026)
     from enum import Enum
+
     class StrEnum(str, Enum):
         pass
 
@@ -72,7 +73,7 @@ def bytes_to_readable(size_bytes: int) -> str:
         A human-readable string representing the file size.
     """
     if size_bytes == 0:
-       return "0B"
+        return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
@@ -100,7 +101,7 @@ def readable_to_bytes(size_str: str) -> int:
         'TB': 1024**4,
         'PB': 1024**5,
         'EB': 1024**6,
-        'ZB': 1024**7, 
+        'ZB': 1024**7,
         'YB': 1024**8
     }
     size_str = size_str.upper().strip()
@@ -155,7 +156,8 @@ def check_update():
     else:
         with raw:
             package_info = json.load(raw)
-            latest_version = tuple(map(int, package_info["info"]["version"].split(".")))
+            latest_version = tuple(
+                map(int, package_info["info"]["version"].split(".")))
             __version__ = importlib.metadata.version("whatsapp_chat_exporter")
             current_version = tuple(map(int, __version__.split(".")))
             if current_version < latest_version:
@@ -174,17 +176,17 @@ def check_update():
 
 
 def rendering(
-        output_file_name,
-        template,
-        name,
-        msgs,
-        contact,
-        w3css,
-        chat,
-        headline,
-        next=False,
-        previous=False
-    ):
+    output_file_name,
+    template,
+    name,
+    msgs,
+    contact,
+    w3css,
+    chat,
+    headline,
+    next=False,
+    previous=False
+):
     if chat.their_avatar_thumb is None and chat.their_avatar is not None:
         their_avatar_thumb = chat.their_avatar
     else:
@@ -256,7 +258,8 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
             message.sticker = msg.get("sticker")
             chat.add_message(id, message)
         data[jid] = chat
-        print(f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
+        print(
+            f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
@@ -273,39 +276,44 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
         return
 
     print("JSON files found:", json_files)
-    
+
     for json_file in json_files:
         source_path = os.path.join(source_dir, json_file)
         target_path = os.path.join(target_dir, json_file)
-        
+
         if not os.path.exists(target_path):
             print(f"Copying '{json_file}' to target directory...")
             os.makedirs(target_dir, exist_ok=True)
             with open(source_path, 'rb') as src, open(target_path, 'wb') as dst:
                 dst.write(src.read())
         else:
-            print(f"Merging '{json_file}' with existing file in target directory...")
+            print(
+                f"Merging '{json_file}' with existing file in target directory...")
             with open(source_path, 'r') as src_file, open(target_path, 'r') as tgt_file:
                 source_data = json.load(src_file)
                 target_data = json.load(tgt_file)
-                
+
                 # Parse JSON into ChatStore objects using from_json()
-                source_chats = {jid: ChatStore.from_json(chat) for jid, chat in source_data.items()}
-                target_chats = {jid: ChatStore.from_json(chat) for jid, chat in target_data.items()}
-                
+                source_chats = {jid: ChatStore.from_json(
+                    chat) for jid, chat in source_data.items()}
+                target_chats = {jid: ChatStore.from_json(
+                    chat) for jid, chat in target_data.items()}
+
                 # Merge chats using merge_with()
                 for jid, chat in source_chats.items():
                     if jid in target_chats:
                         target_chats[jid].merge_with(chat)
                     else:
                         target_chats[jid] = chat
-                
+
                 # Serialize merged data
-                merged_data = {jid: chat.to_json() for jid, chat in target_chats.items()}
-                
+                merged_data = {jid: chat.to_json()
+                               for jid, chat in target_chats.items()}
+
                 # Check if the merged data differs from the original target data
                 if json.dumps(merged_data, sort_keys=True) != json.dumps(target_data, sort_keys=True):
-                    print(f"Changes detected in '{json_file}', updating target file...")
+                    print(
+                        f"Changes detected in '{json_file}', updating target file...")
                     with open(target_path, 'w') as merged_file:
                         json.dump(
                             merged_data,
@@ -314,12 +322,14 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
                             ensure_ascii=not avoid_encoding_json,
                         )
                 else:
-                    print(f"No changes detected in '{json_file}', skipping update.")
+                    print(
+                        f"No changes detected in '{json_file}', skipping update.")
 
     # Merge media directories
     source_media_path = os.path.join(source_dir, media_dir)
     target_media_path = os.path.join(target_dir, media_dir)
-    print(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
+    print(
+        f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
     if os.path.exists(source_media_path):
         for root, _, files in os.walk(source_media_path):
             relative_path = os.path.relpath(root, source_media_path)
@@ -411,23 +421,29 @@ def get_chat_condition(filter: Optional[List[str]], include: bool, columns: List
     if filter is not None:
         conditions = []
         if len(columns) < 2 and jid is not None:
-            raise ValueError("There must be at least two elements in argument columns if jid is not None")
+            raise ValueError(
+                "There must be at least two elements in argument columns if jid is not None")
         if jid is not None:
             if platform == "android":
                 is_group = f"{jid}.type == 1"
             elif platform == "ios":
                 is_group = f"{jid} IS NOT NULL"
             else:
-                raise ValueError("Only android and ios are supported for argument platform if jid is not None")
+                raise ValueError(
+                    "Only android and ios are supported for argument platform if jid is not None")
         for index, chat in enumerate(filter):
             if include:
-                conditions.append(f"{' OR' if index > 0 else ''} {columns[0]} LIKE '%{chat}%'")
+                conditions.append(
+                    f"{' OR' if index > 0 else ''} {columns[0]} LIKE '%{chat}%'")
                 if len(columns) > 1:
-                    conditions.append(f" OR ({columns[1]} LIKE '%{chat}%' AND {is_group})")
+                    conditions.append(
+                        f" OR ({columns[1]} LIKE '%{chat}%' AND {is_group})")
             else:
-                conditions.append(f"{' AND' if index > 0 else ''} {columns[0]} NOT LIKE '%{chat}%'")
+                conditions.append(
+                    f"{' AND' if index > 0 else ''} {columns[0]} NOT LIKE '%{chat}%'")
                 if len(columns) > 1:
-                    conditions.append(f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {is_group})")
+                    conditions.append(
+                        f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {is_group})")
         return f"AND ({' '.join(conditions)})"
     else:
         return ""
@@ -522,7 +538,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
         else:
             msg = f"{old} changed their number to {new}"
     elif content["action_type"] == 46:
-        return # Voice message in PM??? Seems no need to handle.
+        return  # Voice message in PM??? Seems no need to handle.
     elif content["action_type"] == 47:
         msg = "The contact is an official business account"
     elif content["action_type"] == 50:
@@ -539,7 +555,8 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
     elif content["action_type"] == 67:
         return  # (PM) this contact use secure service from Facebook???
     elif content["action_type"] == 69:
-        return  # (PM) this contact use secure service from Facebook??? What's the difference with 67????
+        # (PM) this contact use secure service from Facebook??? What's the difference with 67????
+        return
     else:
         return  # Unsupported
     return msg
@@ -566,7 +583,8 @@ def get_status_location(output_folder: str, offline_static: str) -> str:
     w3css_path = os.path.join(static_folder, "w3.css")
     if not os.path.isfile(w3css_path):
         with urllib.request.urlopen(w3css) as resp:
-            with open(w3css_path, "wb") as f: f.write(resp.read())
+            with open(w3css_path, "wb") as f:
+                f.write(resp.read())
     w3css = os.path.join(offline_static, "w3.css")
 
 
@@ -597,6 +615,7 @@ def setup_template(template: Optional[str], no_avatar: bool, experimental: bool 
     template_env.filters['sanitize_except'] = sanitize_except
     return template_env.get_template(template_file)
 
+
 # iOS Specific
 APPLE_TIME = 978307200
 
@@ -617,23 +636,31 @@ def slugify(value: str, allow_unicode: bool = False) -> str:
     if allow_unicode:
         value = unicodedata.normalize('NFKC', value)
     else:
-        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+        value = unicodedata.normalize('NFKD', value).encode(
+            'ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value.lower())
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 
 class WhatsAppIdentifier(StrEnum):
-    MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d" # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ChatStorage.sqlite
-    CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f" # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ContactsV2.sqlite
-    CALL = "1b432994e958845fffe8e2f190f26d1511534088" # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-CallHistory.sqlite
+    # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ChatStorage.sqlite
+    MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"
+    # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ContactsV2.sqlite
+    CONTACT = "b8548dc30aa1030df0ce18ef08b882cf7ab5212f"
+    # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-CallHistory.sqlite
+    CALL = "1b432994e958845fffe8e2f190f26d1511534088"
     DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
 
 
 class WhatsAppBusinessIdentifier(StrEnum):
-    MESSAGE = "724bd3b98b18518b455a87c1f3ac3a0d189c4466" # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-ChatStorage.sqlite
-    CONTACT = "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552" # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-ContactsV2.sqlite
-    CALL = "b463f7c4365eefc5a8723930d97928d4e907c603" # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-CallHistory.sqlite
-    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared" 
+    # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-ChatStorage.sqlite
+    MESSAGE = "724bd3b98b18518b455a87c1f3ac3a0d189c4466"
+    # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-ContactsV2.sqlite
+    CONTACT = "d7246a707f51ddf8b17ee2dddabd9e0a4da5c552"
+    # AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared-CallHistory.sqlite
+    CALL = "b463f7c4365eefc5a8723930d97928d4e907c603"
+    DOMAIN = "AppDomainGroup-group.net.whatsapp.WhatsAppSMB.shared"
+
 
 class JidType(IntEnum):
     PM = 0
