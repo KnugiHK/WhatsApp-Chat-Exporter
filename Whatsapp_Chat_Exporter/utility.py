@@ -5,18 +5,18 @@ import os
 import unicodedata
 import re
 import math
+import shutil
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-import shutil
 from typing import Dict, List, Optional, Tuple
 try:
     from enum import StrEnum, IntEnum
 except ImportError:
     # < Python 3.11
-    # This should be removed when the support for Python 3.10 ends.
+    # This should be removed when the support for Python 3.10 ends. (31 Oct 2026)
     from enum import Enum
     class StrEnum(str, Enum):
         pass
@@ -260,6 +260,13 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str):
+    """Merges JSON files from the source directory into the target directory.
+
+    Args:
+        source_dir (str): The path to the source directory containing JSON files.
+        target_dir (str): The path to the target directory to merge into.
+        media_dir (str): The path to the media directory.
+    """
     json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
     print("JSON files found:", json_files)
     

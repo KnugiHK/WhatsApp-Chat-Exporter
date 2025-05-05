@@ -215,7 +215,8 @@ class ChatStore:
         }
     
     @classmethod
-    def from_json(cls, data):
+    def from_json(cls, data: Dict) -> 'ChatStore':
+        """Create a chat store from JSON data."""
         chat = cls(data.get("type"), data.get("name"))
         chat.my_avatar = data.get("my_avatar")
         chat.their_avatar = data.get("their_avatar")
@@ -242,7 +243,13 @@ class ChatStore:
         """Get all message keys in the chat."""
         return self._messages.keys()
 
-    def merge_with(self, other):
+    def merge_with(self, other: 'ChatStore'):
+        """Merge another ChatStore into this one.
+
+        Args:
+            other (ChatStore): The ChatStore to merge with
+        
+        """
         if not isinstance(other, ChatStore):
             raise TypeError("Can only merge with another ChatStore object")
         
@@ -339,7 +346,7 @@ class Message:
         }
 
     @classmethod
-    def from_json(cls, data):
+    def from_json(cls, data: Dict) -> 'Message':
         message = cls(
             from_me = data["from_me"],
             timestamp = data["timestamp"],
