@@ -268,6 +268,10 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
         media_dir (str): The path to the media directory.
     """
     json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
+    if not json_files:
+        print("No JSON files found in the source directory.")
+        return
+
     print("JSON files found:", json_files)
     
     for json_file in json_files:
