@@ -6,12 +6,13 @@ from Whatsapp_Chat_Exporter.utility import incremental_merge
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 
 # Test data setup
+BASE_PATH = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"
 chat_data_1 = {
     "12345678@s.whatsapp.net": {
         "name": "Friend",
         "type": "ios",
-        "my_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared\\Media/Profile/Photo.jpg",
-        "their_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared/Media/Profile\\12345678-1709851420.thumb",
+        "my_avatar": os.path.join(BASE_PATH, "Media", "Profile", "Photo.jpg"),
+        "their_avatar": os.path.join(BASE_PATH, "Media", "Profile", "12345678-1709851420.thumb"),
         "their_avatar_thumb": None,
         "status": None,
         "messages": {
@@ -45,8 +46,8 @@ chat_data_2 = {
     "12345678@s.whatsapp.net": {
         "name": "Friend",
         "type": "ios",
-        "my_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared\\Media/Profile/Photo.jpg",
-        "their_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared/Media/Profile\\12345678-1709851420.thumb",
+        "my_avatar": os.path.join(BASE_PATH, "Media", "Profile", "Photo.jpg"),
+        "their_avatar": os.path.join(BASE_PATH, "Media", "Profile", "12345678-1709851420.thumb"),
         "their_avatar_thumb": None,
         "status": None,
         "messages": {
@@ -81,8 +82,8 @@ chat_data_merged = {
     "12345678@s.whatsapp.net": {
         "name": "Friend",
         "type": "ios",
-        "my_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared\\Media/Profile/Photo.jpg",
-        "their_avatar": "AppDomainGroup-group.net.whatsapp.WhatsApp.shared/Media/Profile\\12345678-1709851420.thumb",
+        "my_avatar": os.path.join(BASE_PATH, "Media", "Profile", "Photo.jpg"),
+        "their_avatar": os.path.join(BASE_PATH, "Media", "Profile", "12345678-1709851420.thumb"),
         "their_avatar_thumb": None,
         "status": None,
         "media_base": None,
@@ -195,18 +196,20 @@ def test_incremental_merge_new_file(mock_filesystem):
 
 def test_incremental_merge_existing_file_with_changes(mock_filesystem):
     """Test merging when target file exists and has changes"""
-    source_dir = "/source"
-    target_dir = "/target"
+    source_dir = "source"
+    target_dir = "target"
     media_dir = "media"
 
     # Setup mock filesystem
     mock_filesystem["exists"].side_effect = lambda x: True
     mock_filesystem["listdir"].return_value = ["chat.json"]
 
-    # Mock file operations
+    # Mock file operations with consistent path separators
+    source_file = os.path.join(source_dir, "chat.json")
+    target_file = os.path.join(target_dir, "chat.json")
     mock_file_content = {
-        "/source/chat.json": json.dumps(chat_data_2),
-        "/target/chat.json": json.dumps(chat_data_1),
+        source_file: json.dumps(chat_data_2),
+        target_file: json.dumps(chat_data_1),
     }
 
     written_chunks = []
@@ -218,33 +221,33 @@ def test_incremental_merge_existing_file_with_changes(mock_filesystem):
 
     with patch("builtins.open", mock_open()) as mock_file:
         def mock_file_read(filename, mode="r"):
-            content = mock_file_content.get(filename)
-            file_mock = mock_open(read_data=content).return_value
             if mode == 'w':
+                file_mock = mock_open().return_value
                 file_mock.write.side_effect = mock_write
-            return file_mock
+                return file_mock
+            else:
+                # Use normalized path for lookup
+                norm_filename = os.path.normpath(filename)
+                content = mock_file_content.get(norm_filename, '')
+                file_mock = mock_open(read_data=content).return_value
+                return file_mock
 
         mock_file.side_effect = mock_file_read
 
         # Run the function
         incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
-        # Verify file operations - both files opened in text mode when target exists
-        mock_file.assert_any_call("/source/chat.json", "r")
-        mock_file.assert_any_call("/target/chat.json", "r")
-        mock_file.assert_any_call("/target/chat.json", "w")
+        # Verify file operations using os.path.join
+        mock_file.assert_any_call(source_file, "r")
+        mock_file.assert_any_call(target_file, "r")
+        mock_file.assert_any_call(target_file, "w")
 
-        # Verify write was called
+        # Rest of verification code...
         assert mock_write.called, "Write method was never called"
-
-        # Combine chunks and parse JSON
         written_data = json.loads(''.join(written_chunks))
-
-        # Verify the merged data is correct
         assert written_data is not None, "No data was written"
         assert written_data == chat_data_merged, "Merged data does not match expected result"
 
-        # Verify specific message retention
         messages = written_data["12345678@s.whatsapp.net"]["messages"]
         assert "24690" in messages, "Common message should be present"
         assert "24691" in messages, "Target-only message should be preserved"
@@ -254,26 +257,33 @@ def test_incremental_merge_existing_file_with_changes(mock_filesystem):
 
 def test_incremental_merge_existing_file_no_changes(mock_filesystem):
     """Test merging when target file exists but has no changes"""
-    source_dir = "/source"
-    target_dir = "/target"
+    source_dir = "source"
+    target_dir = "target"
     media_dir = "media"
 
     # Setup mock filesystem
     mock_filesystem["exists"].side_effect = lambda x: True
     mock_filesystem["listdir"].return_value = ["chat.json"]
 
-    # Mock file operations
+    # Mock file operations with consistent path separators
+    source_file = os.path.join(source_dir, "chat.json")
+    target_file = os.path.join(target_dir, "chat.json")
     mock_file_content = {
-        "/source/chat.json": json.dumps(chat_data_1),
-        "/target/chat.json": json.dumps(chat_data_1),
+        source_file: json.dumps(chat_data_1),
+        target_file: json.dumps(chat_data_1),
     }
 
     with patch("builtins.open", mock_open()) as mock_file:
-
         def mock_file_read(filename, mode="r"):
-            content = mock_file_content.get(filename)
-            file_mock = mock_open(read_data=content).return_value
-            return file_mock
+            if mode == 'w':
+                file_mock = mock_open().return_value
+                return file_mock
+            else:
+                # Use normalized path for lookup
+                norm_filename = os.path.normpath(filename)
+                content = mock_file_content.get(norm_filename, '')
+                file_mock = mock_open(read_data=content).return_value
+                return file_mock
 
         mock_file.side_effect = mock_file_read
 
@@ -288,31 +298,38 @@ def test_incremental_merge_existing_file_no_changes(mock_filesystem):
 
 def test_incremental_merge_media_copy(mock_filesystem):
     """Test media file copying during merge"""
-    source_dir = "/source"
-    target_dir = "/target"
+    source_dir = "source"
+    target_dir = "target"
     media_dir = "media"
 
     # Setup mock filesystem
     mock_filesystem["exists"].side_effect = lambda x: True
     mock_filesystem["listdir"].return_value = ["chat.json"]
     mock_filesystem["walk"].return_value = [
-        ("/source/media", ["subfolder"], ["file1.jpg"]),
-        ("/source/media/subfolder", [], ["file2.jpg"]),
+        (os.path.join(source_dir, "media"), ["subfolder"], ["file1.jpg"]),
+        (os.path.join(source_dir, "media", "subfolder"), [], ["file2.jpg"]),
     ]
     mock_filesystem["getmtime"].side_effect = lambda x: 1000 if "source" in x else 500
 
-    # Mock file operations
+    # Mock file operations with consistent path separators
+    source_file = os.path.join(source_dir, "chat.json")
+    target_file = os.path.join(target_dir, "chat.json")
     mock_file_content = {
-        "/source/chat.json": json.dumps(chat_data_1),
-        "/target/chat.json": json.dumps(chat_data_1),
+        source_file: json.dumps(chat_data_1),
+        target_file: json.dumps(chat_data_1),
     }
 
     with patch("builtins.open", mock_open()) as mock_file:
-
         def mock_file_read(filename, mode="r"):
-            content = mock_file_content.get(filename)
-            file_mock = mock_open(read_data=content).return_value
-            return file_mock
+            if mode == 'w':
+                file_mock = mock_open().return_value
+                return file_mock
+            else:
+                # Use normalized path for lookup
+                norm_filename = os.path.normpath(filename)
+                content = mock_file_content.get(norm_filename, '')
+                file_mock = mock_open(read_data=content).return_value
+                return file_mock
 
         mock_file.side_effect = mock_file_read
 
@@ -320,8 +337,5 @@ def test_incremental_merge_media_copy(mock_filesystem):
         incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
         # Verify media file operations
-        assert (
-            mock_filesystem["makedirs"].call_count >= 2
-        )  # At least target dir and media dir
-        # Two media files copied
-        assert mock_filesystem["copy2"].call_count == 2
+        assert mock_filesystem["makedirs"].call_count >= 2  # At least target dir and media dir
+        assert mock_filesystem["copy2"].call_count == 2  # Two media files copied
