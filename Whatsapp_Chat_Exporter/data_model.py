@@ -276,7 +276,7 @@ class Message:
             from_me: Union[bool, int],
             timestamp: int,
             time: Union[int, float, str],
-            key_id: int,
+            key_id: Union[int, str],
             received_timestamp: int,
             read_timestamp: int,
             timezone_offset: int = 0,
