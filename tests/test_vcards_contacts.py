@@ -1,10 +1,12 @@
 # from contacts_names_from_vcards import readVCardsFile
 
+import os
 from Whatsapp_Chat_Exporter.vcards_contacts import normalize_number, read_vcards_file
 
 
 def test_readVCardsFile():
-    assert len(read_vcards_file("contacts.vcf", "973")) > 0
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    assert len(read_vcards_file(os.path.join(data_dir, "contacts.vcf"), "852")) > 0
 
 def test_create_number_to_name_dicts():
     pass

@@ -4,7 +4,7 @@ import tempfile
 import os
 from unittest.mock import patch
 
-from brazilian_number_processing import process_phone_number, process_vcard
+from scripts.brazilian_number_processing import process_phone_number, process_vcard
 
 class TestVCardProcessor(unittest.TestCase):
     
@@ -248,7 +248,7 @@ END:VCARD
         output_path = input_path + '.out'
         
         try:
-            test_args = ['python' if os.name == 'nt' else 'python3', 'brazilian_number_processing.py', input_path, output_path]
+            test_args = ['python' if os.name == 'nt' else 'python3', 'scripts/brazilian_number_processing.py', input_path, output_path]
             # We're just testing that the argument parsing works
             subprocess.call(
                 test_args,
