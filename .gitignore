@@ -138,7 +138,9 @@ __main__
 
 # Dev time intermidiates & temp files
 result/
+output/
 WhatsApp/
+AppDomainGroup-group.net.whatsapp.WhatsApp.shared/
 /*.db
 /*.db-*
 /myout
