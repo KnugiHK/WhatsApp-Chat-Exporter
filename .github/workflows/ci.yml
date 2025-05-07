@@ -7,16 +7,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }} on ${{ matrix.os }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -27,4 +28,4 @@ jobs:
           pip install .[all] pytest nuitka
 
       - name: Run pytest
-        run: pytest  # Execute your pytest tests
+        run: pytest
