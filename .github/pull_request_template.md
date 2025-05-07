@@ -1,6 +1,6 @@
 # Important Note
 
-**All PRs (except for changes unrelated to source files) should target the `dev` branch.**
+**All PRs (except for changes unrelated to source files) should target and start from the `dev` branch.**
 
 ## Related Issue
 
