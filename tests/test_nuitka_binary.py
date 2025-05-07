@@ -54,7 +54,7 @@ def test_nuitka_binary():
     )
     print(f"Nuitka compilation output: {compile_result.stdout}")
 
-    binary_path = "wtsexporter.exe"
+    binary_path = "./wtsexporter.exe"
     assert os.path.exists(binary_path), f"Binary {binary_path} was not created."
 
     try:
