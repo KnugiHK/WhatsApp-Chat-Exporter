@@ -77,6 +77,6 @@ def normalize_number(number: str, country_code: str):
             return number[len(starting_char):]
 
     # leading zero should be removed
-    if starting_char == '0':
+    if number.startswith('0'):
         number = number[1:]
     return country_code + number  # fall back
