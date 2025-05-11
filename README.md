@@ -245,10 +245,6 @@ WhatsApp Chat Exporter: 0.12.0 Licensed with MIT. See https://wts.knugi.dev/docs
 licenses.
 ```
 
-# To do
-
-See [issues](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/issues).
-
 # Legal Stuff & Disclaimer
 
 This is a MIT licensed project.
