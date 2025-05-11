@@ -86,7 +86,7 @@ chat_data_merged = {
         "their_avatar": os.path.join(BASE_PATH, "Media", "Profile", "12345678-1709851420.thumb"),
         "their_avatar_thumb": None,
         "status": None,
-        "media_base": None,
+        "media_base": "",
         "messages": {
             "24690": {
                 "from_me": True,
