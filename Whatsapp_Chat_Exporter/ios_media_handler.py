@@ -87,8 +87,8 @@ class BackupExtractor:
             check_same_thread=False,
             decrypt_chunk_size=self.decrypt_chunk_size,
         )
-        logger.info(f"iOS backup decrypted successfully!{CLEAR_LINE}")
-        logger.info("Decrypting WhatsApp database...\n")
+        logger.info(f"iOS backup decrypted successfully{CLEAR_LINE}")
+        logger.info("Decrypting WhatsApp database...\r")
         try:
             self.backup.extract_file(
                 relative_path=RelativePath.WHATSAPP_MESSAGES,
@@ -116,7 +116,7 @@ class BackupExtractor:
             )
             exit(6)
         else:
-            logger.info(f"Done{CLEAR_LINE}")
+            logger.info(f"WhatsApp database decrypted successfully{CLEAR_LINE}")
 
     def _extract_decrypted_files(self):
         """Extract all WhatsApp files after decryption"""
