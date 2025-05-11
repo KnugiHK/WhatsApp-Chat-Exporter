@@ -719,7 +719,8 @@ def setup_logging(level):
     log_handler_stdout.terminator = ""
     handlers = [log_handler_stdout]
     if level == logging.DEBUG:
-        handlers.append(logging.FileHandler("debug.log", mode="w"))
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        handlers.append(logging.FileHandler(f"wtsexpoter-debug-{timestamp}.log", mode="w"))
     logging.basicConfig(
         level=level,
         format="[%(levelname)s] %(message)s",
