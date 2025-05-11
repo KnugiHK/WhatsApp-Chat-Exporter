@@ -277,8 +277,8 @@ class Message:
             timestamp: int,
             time: Union[int, float, str],
             key_id: Union[int, str],
-            received_timestamp: int,
-            read_timestamp: int,
+            received_timestamp: int = None,
+            read_timestamp: int = None,
             timezone_offset: int = 0,
             message_type: Optional[int] = None
     ) -> None:
@@ -290,8 +290,8 @@ class Message:
             timestamp (int): Message timestamp
             time (Union[int, float, str]): Message time
             key_id (int): Message unique identifier
-            received_timestamp (int): When message was received
-            read_timestamp (int): When message was read
+            received_timestamp (int, optional): When message was received. Defaults to None
+            read_timestamp (int, optional): When message was read. Defaults to None
             timezone_offset (int, optional): Hours offset from UTC. Defaults to 0
             message_type (Optional[int], optional): Type of message. Defaults to None
 
