@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import jinja2
 import json
@@ -28,7 +29,9 @@ except ImportError:
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
 CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().seconds / 3600
+CLEAR_LINE = "\x1b[K\n"
 
+logger = logging.getLogger(__name__)
 
 def convert_time_unit(time_second: int) -> str:
     """Converts a time duration in seconds to a human-readable string.
@@ -151,7 +154,7 @@ def check_update():
     try:
         raw = urllib.request.urlopen(PACKAGE_JSON)
     except Exception:
-        print("Failed to check for updates.")
+        logger.error("Failed to check for updates.")
         return 1
     else:
         with raw:
@@ -161,17 +164,19 @@ def check_update():
             __version__ = importlib.metadata.version("whatsapp_chat_exporter")
             current_version = tuple(map(int, __version__.split(".")))
             if current_version < latest_version:
-                print("===============Update===============")
-                print("A newer version of WhatsApp Chat Exporter is available.")
-                print("Current version: " + __version__)
-                print("Latest version: " + package_info["info"]["version"])
+                logger.info(
+                    "===============Update===============\n"
+                    "A newer version of WhatsApp Chat Exporter is available.\n"
+                    f"Current version: {__version__}\n"
+                    f"Latest version: {package_info['info']['version']}\n" 
+                )
                 if platform == "win32":
-                    print("Update with: pip install --upgrade whatsapp-chat-exporter")
+                    logger.info("Update with: pip install --upgrade whatsapp-chat-exporter\n")
                 else:
-                    print("Update with: pip3 install --upgrade whatsapp-chat-exporter")
-                print("====================================")
+                    logger.info("Update with: pip3 install --upgrade whatsapp-chat-exporter\n")
+                logger.info("====================================\n")
             else:
-                print("You are using the latest version of WhatsApp Chat Exporter.")
+                logger.info("You are using the latest version of WhatsApp Chat Exporter.\n")
     return 0
 
 
@@ -229,7 +234,7 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
     with open(json_file, "r") as f:
         temp_data = json.loads(f.read())
     total_row_number = len(tuple(temp_data.keys()))
-    print(f"Importing chats from JSON...(0/{total_row_number})", end="\r")
+    logger.info(f"Importing chats from JSON...(0/{total_row_number})\r")
     for index, (jid, chat_data) in enumerate(temp_data.items()):
         chat = ChatStore(chat_data.get("type"), chat_data.get("name"))
         chat.my_avatar = chat_data.get("my_avatar")
@@ -258,8 +263,9 @@ def import_from_json(json_file: str, data: Dict[str, ChatStore]):
             message.sticker = msg.get("sticker")
             chat.add_message(id, message)
         data[jid] = chat
-        print(
-            f"Importing chats from JSON...({index + 1}/{total_row_number})", end="\r")
+        logger.info(
+            f"Importing chats from JSON...({index + 1}/{total_row_number})\r")
+    logger.info(f"Imported chats from JSON...({total_row_number}){CLEAR_LINE}")
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
@@ -272,21 +278,21 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
     """
     json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
     if not json_files:
-        print("No JSON files found in the source directory.")
+        logger.error("No JSON files found in the source directory.")
         return
 
-    print("JSON files found:", json_files)
+    logger.info("JSON files found:", json_files)
 
     for json_file in json_files:
         source_path = os.path.join(source_dir, json_file)
         target_path = os.path.join(target_dir, json_file)
 
         if not os.path.exists(target_path):
-            print(f"Copying '{json_file}' to target directory...")
+            logger.info(f"Copying '{json_file}' to target directory...")
             os.makedirs(target_dir, exist_ok=True)
             shutil.copy2(source_path, target_path)
         else:
-            print(
+            logger.info(
                 f"Merging '{json_file}' with existing file in target directory...")
             with open(source_path, 'r') as src_file, open(target_path, 'r') as tgt_file:
                 source_data = json.load(src_file)
@@ -311,7 +317,7 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
 
                 # Check if the merged data differs from the original target data
                 if json.dumps(merged_data, sort_keys=True) != json.dumps(target_data, sort_keys=True):
-                    print(
+                    logger.info(
                         f"Changes detected in '{json_file}', updating target file...")
                     with open(target_path, 'w') as merged_file:
                         json.dump(
@@ -321,13 +327,13 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
                             ensure_ascii=not avoid_encoding_json,
                         )
                 else:
-                    print(
+                    logger.info(
                         f"No changes detected in '{json_file}', skipping update.")
 
     # Merge media directories
     source_media_path = os.path.join(source_dir, media_dir)
     target_media_path = os.path.join(target_dir, media_dir)
-    print(
+    logger.info(
         f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
     if os.path.exists(source_media_path):
         for root, _, files in os.walk(source_media_path):
@@ -339,7 +345,7 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
                 target_file = os.path.join(target_root, file)
                 # we only copy if the file doesn't exist in the target or if the source is newer
                 if not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file):
-                    print(f"Copying '{source_file}' to '{target_file}'...")
+                    logger.info(f"Copying '{source_file}' to '{target_file}'...")
                     shutil.copy2(source_file, target_file)
 
 

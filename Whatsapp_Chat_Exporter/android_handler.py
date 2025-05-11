@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import logging
 import sqlite3
 import os
 import shutil
@@ -9,10 +10,13 @@ from markupsafe import escape as htmle
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, JidType, Device
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, JidType, Device
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
 from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, determine_metadata
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, bytes_to_readable
+
+
+logger = logging.getLogger(__name__)
 
 
 def contacts(db, data, enrich_from_vcards):
@@ -33,12 +37,12 @@ def contacts(db, data, enrich_from_vcards):
     
     if total_row_number == 0:
         if enrich_from_vcards is not None:
-            print("No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
+            logger.info("No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
         else:
-            print("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
+            logger.warning("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
         return False
     else:
-        print(f"Processing contacts...({total_row_number})")
+        logger.info(f"Processed {total_row_number} contacts\n")
 
     c.execute("SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts;")
     row = c.fetchone()
@@ -66,7 +70,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c = db.cursor()
     total_row_number = _get_message_count(c, filter_empty, filter_date, filter_chat)
-    print(f"Processing messages...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing messages...(0/{total_row_number})\r")
 
     try:
         content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
@@ -87,12 +91,12 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         
         i += 1
         if i % 1000 == 0:
-            print(f"Processing messages...({i}/{total_row_number})", end="\r")
+            logger.info(f"Processing messages...({i}/{total_row_number})\r")
         
         # Fetch the next row safely
         content = _fetch_row_safely(content_cursor)
     
-    print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
+    logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
 
 
 # Helper functions for message processing
@@ -482,7 +486,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     """
     c = db.cursor()
     total_row_number = _get_media_count(c, filter_empty, filter_date, filter_chat)
-    print(f"\nProcessing media...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing media...(0/{total_row_number})\r")
     
     try:
         content_cursor = _get_media_cursor_legacy(c, filter_empty, filter_date, filter_chat)
@@ -501,11 +505,11 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
         
         i += 1
         if i % 100 == 0:
-            print(f"Processing media...({i}/{total_row_number})", end="\r")
+            logger.info(f"Processing media...({i}/{total_row_number})\r")
         
         content = content_cursor.fetchone()
     
-    print(f"Processing media...({total_row_number}/{total_row_number})", end="\r")
+    logger.info(f"Processed {total_row_number} media{CLEAR_LINE}")
 
 
 # Helper functions for media processing
@@ -676,7 +680,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
         rows = _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty)
 
     total_row_number = len(rows)
-    print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing vCards...(0/{total_row_number})\r")
     
     # Create vCards directory if it doesn't exist
     path = os.path.join(media_folder, "vCards")
@@ -684,7 +688,8 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     
     for index, row in enumerate(rows):
         _process_vcard_row(row, path, data)
-        print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
+        logger.info(f"Processing vCards...({index + 1}/{total_row_number})\r")
+    logger.info(f"Processed {total_row_number} vCards{CLEAR_LINE}")
 
 
 def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
@@ -777,7 +782,7 @@ def calls(db, data, timezone_offset, filter_chat):
     if total_row_number == 0:
         return
         
-    print(f"\nProcessing calls...({total_row_number})", end="\r")
+    logger.info(f"Processing calls...({total_row_number})\r")
     
     # Fetch call data
     calls_data = _fetch_calls_data(c, filter_chat)
@@ -793,6 +798,7 @@ def calls(db, data, timezone_offset, filter_chat):
         
     # Add the calls chat to the data
     data.add_chat("000000000000000", chat)
+    logger.info(f"Processed {total_row_number} calls{CLEAR_LINE}")
 
 
 def _get_calls_count(c, filter_chat):
@@ -917,7 +923,7 @@ def create_html(
     template = setup_template(template, no_avatar, experimental)
 
     total_row_number = len(data)
-    print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
+    logger.info(f"Generating chats...(0/{total_row_number})\r")
 
     # Create output directory if it doesn't exist
     if not os.path.isdir(output_folder):
@@ -958,9 +964,9 @@ def create_html(
             )
             
         if current % 10 == 0:
-            print(f"Generating chats...({current}/{total_row_number})", end="\r")
+            logger.info(f"Generating chats...({current}/{total_row_number})\r")
 
-    print(f"Generating chats...({total_row_number}/{total_row_number})", end="\r")
+    logger.info(f"Generated {total_row_number} chats{CLEAR_LINE}")
 
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):

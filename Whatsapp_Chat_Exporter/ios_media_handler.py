@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 
+import logging
 import shutil
 import sqlite3
 import os
 import getpass
 from sys import exit
-from Whatsapp_Chat_Exporter.utility import WhatsAppIdentifier
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier
 from Whatsapp_Chat_Exporter.bplist import BPListReader
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
@@ -14,6 +15,8 @@ except ModuleNotFoundError:
 else:
     support_encrypted = True
 
+
+logger = logging.getLogger(__name__)
 
 class BackupExtractor:
     """
@@ -57,12 +60,13 @@ class BackupExtractor:
         Handles the extraction of data from an encrypted iOS backup.
         """
         if not support_encrypted:
-            print("You don't have the dependencies to handle encrypted backup.")
-            print("Read more on how to deal with encrypted backup:")
-            print("https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage")
+            logger.error("You don't have the dependencies to handle encrypted backup."
+                        "Read more on how to deal with encrypted backup:"
+                        "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
+            )
             return
 
-        print("Encryption detected on the backup!")
+        logger.info(f"Encryption detected on the backup!{CLEAR_LINE}")
         password = getpass.getpass("Enter the password for the backup:")
         self._decrypt_backup(password)
         self._extract_decrypted_files()
@@ -74,7 +78,7 @@ class BackupExtractor:
         Args:
             password (str): The password for the encrypted backup.
         """
-        print("Trying to decrypt the iOS backup...", end="")
+        logger.info(f"Trying to decrypt the iOS backup...{CLEAR_LINE}")
         self.backup = EncryptedBackup(
             backup_directory=self.base_dir,
             passphrase=password,
@@ -82,7 +86,8 @@ class BackupExtractor:
             check_same_thread=False,
             decrypt_chunk_size=self.decrypt_chunk_size,
         )
-        print("Done\nDecrypting WhatsApp database...", end="")
+        logger.info(f"iOS backup decrypted successfully!{CLEAR_LINE}")
+        logger.info("Decrypting WhatsApp database...\n")
         try:
             self.backup.extract_file(
                 relative_path=RelativePath.WHATSAPP_MESSAGES,
@@ -100,23 +105,23 @@ class BackupExtractor:
                 output_filename=self.identifiers.CALL,
             )
         except ValueError:
-            print("Failed to decrypt backup: incorrect password?")
+            logger.error("Failed to decrypt backup: incorrect password?")
             exit(7)
         except FileNotFoundError:
-            print(
+            logger.error(
                 "Essential WhatsApp files are missing from the iOS backup. "
                 "Perhapse you enabled end-to-end encryption for the backup? "
                 "See https://wts.knugi.dev/docs.html?dest=iose2e"
             )
             exit(6)
         else:
-            print("Done")
+            logger.info(f"Done{CLEAR_LINE}")
     
     def _extract_decrypted_files(self):
         """Extract all WhatsApp files after decryption"""
         def extract_progress_handler(file_id, domain, relative_path, n, total_files):
             if n % 100 == 0:
-                print(f"Decrypting and extracting files...({n}/{total_files})", end="\r")   
+                logger.info(f"Decrypting and extracting files...({n}/{total_files})\r")   
             return True
 
         self.backup.extract_files(
@@ -125,7 +130,7 @@ class BackupExtractor:
             preserve_folders=True,
             filter_callback=extract_progress_handler
         )
-        print(f"All required files are decrypted and extracted.          ", end="\n")
+        logger.info(f"All required files are decrypted and extracted.{CLEAR_LINE}")
 
     def _extract_unencrypted_backup(self):
         """
@@ -144,10 +149,10 @@ class BackupExtractor:
 
         if not os.path.isfile(wts_db_path):
             if self.identifiers is WhatsAppIdentifier:
-                print("WhatsApp database not found.")
+                logger.error("WhatsApp database not found.")
             else:
-                print("WhatsApp Business database not found.")
-            print(
+                logger.error("WhatsApp Business database not found.")
+            logger.error(
                 "Essential WhatsApp files are missing from the iOS backup. "
                 "Perhapse you enabled end-to-end encryption for the backup? "
                 "See https://wts.knugi.dev/docs.html?dest=iose2e"
@@ -157,12 +162,12 @@ class BackupExtractor:
             shutil.copyfile(wts_db_path, self.identifiers.MESSAGE)
 
         if not os.path.isfile(contact_db_path):
-            print("Contact database not found. Skipping...")
+            logger.warning(f"Contact database not found. Skipping...{CLEAR_LINE}")
         else:
             shutil.copyfile(contact_db_path, self.identifiers.CONTACT)
 
         if not os.path.isfile(call_db_path):
-            print("Call database not found. Skipping...")
+            logger.warning(f"Call database not found. Skipping...{CLEAR_LINE}")
         else:
             shutil.copyfile(call_db_path, self.identifiers.CALL)
 
@@ -176,7 +181,7 @@ class BackupExtractor:
             c = manifest.cursor()
             c.execute(f"SELECT count() FROM Files WHERE domain = '{_wts_id}'")
             total_row_number = c.fetchone()[0]
-            print(f"Extracting WhatsApp files...(0/{total_row_number})", end="\r")
+            logger.info(f"Extracting WhatsApp files...(0/{total_row_number})\r")
             c.execute(
                 f"""
                 SELECT fileID, relativePath, flags, file AS metadata,
@@ -213,9 +218,9 @@ class BackupExtractor:
                     os.utime(destination, (modification, modification))
 
                 if row["_index"] % 100 == 0:
-                    print(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})", end="\r")
+                    logger.info(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})\r")
                 row = c.fetchone()
-            print(f"Extracting WhatsApp files...({total_row_number}/{total_row_number})", end="\n")
+            logger.info(f"Extracted WhatsApp files...({total_row_number}){CLEAR_LINE}")
 
 
 def extract_media(base_dir, identifiers, decrypt_chunk_size):

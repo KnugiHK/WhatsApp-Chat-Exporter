@@ -1,10 +1,14 @@
 #!/usr/bin/python3
 
 import os
+import logging
 from datetime import datetime
 from mimetypes import MimeTypes
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import Device
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, Device
+
+
+logger = logging.getLogger(__name__)
 
 
 def messages(path, data, assume_first_as_me=False):
@@ -38,9 +42,9 @@ def messages(path, data, assume_first_as_me=False):
 
             # Show progress
             if index % 1000 == 0:
-                print(f"Processing messages & media...({index}/{total_row_number})", end="\r")
+                logger.info(f"Processing messages & media...({index}/{total_row_number})\r")
 
-    print(f"Processing messages & media...({total_row_number}/{total_row_number})")
+    logger.info(f"Processed {total_row_number} messages & media{CLEAR_LINE}")
     return data
 
 

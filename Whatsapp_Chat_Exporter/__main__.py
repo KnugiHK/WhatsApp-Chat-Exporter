@@ -7,11 +7,12 @@ import shutil
 import json
 import string
 import glob
+import logging
 import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt, check_update, DbType
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update, DbType
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, sanitize_filename
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, bytes_to_readable
 from argparse import ArgumentParser, SUPPRESS
@@ -30,16 +31,43 @@ else:
     vcards_deps_installed = True
 
 
+logger = logging.getLogger(__name__)
+__version__ = importlib.metadata.version("whatsapp_chat_exporter")
+WTSEXPORTER_BANNER = f"""========================================================================================================
+                  ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗ █████╗ ██████╗ ██████╗
+                  ██║    ██║██║  ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗
+                  ██║ █╗ ██║███████║███████║   ██║   ███████╗███████║██████╔╝██████╔╝
+                  ██║███╗██║██╔══██║██╔══██║   ██║   ╚════██║██╔══██║██╔═══╝ ██╔═══╝
+                  ╚███╔███╔╝██║  ██║██║  ██║   ██║   ███████║██║  ██║██║     ██║
+                   ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝
+
+ ██████╗██╗  ██╗ █████╗ ████████╗    ███████╗██╗  ██╗██████╗  ██████╗ ██████╗ ████████╗███████╗██████╗
+██╔════╝██║  ██║██╔══██╗╚══██╔══╝    ██╔════╝╚██╗██╔╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝██╔══██╗
+██║     ███████║███████║   ██║       █████╗   ╚███╔╝ ██████╔╝██║   ██║██████╔╝   ██║   █████╗  ██████╔╝
+██║     ██╔══██║██╔══██║   ██║       ██╔══╝   ██╔██╗ ██╔═══╝ ██║   ██║██╔══██╗   ██║   ██╔══╝  ██╔══██╗
+╚██████╗██║  ██║██║  ██║   ██║       ███████╗██╔╝ ██╗██║     ╚██████╔╝██║  ██║   ██║   ███████╗██║  ██║
+ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
+
+        WhatsApp Chat Exporter: A customizable Android and iOS/iPadOS WhatsApp database parser
+                                     Version: {__version__}
+========================================================================================================"""
+
+
 def setup_argument_parser() -> ArgumentParser:
     """Set up and return the argument parser with all options."""
     parser = ArgumentParser(
         description='A customizable Android and iOS/iPadOS WhatsApp database parser that '
         'will give you the history of your WhatsApp conversations in HTML '
         'and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.',
-        epilog=f'WhatsApp Chat Exporter: {importlib.metadata.version("whatsapp_chat_exporter")} Licensed with MIT. See '
+        epilog=f'WhatsApp Chat Exporter: {__version__} Licensed with MIT. See '
         'https://wts.knugi.dev/docs?dest=osl for all open source licenses.'
     )
 
+    # General options
+    parser.add_argument(
+        "--debug", dest="debug", default=False, action='store_true',
+        help="Enable debug mode"
+    )
     # Device type arguments
     device_group = parser.add_argument_group('Device Type')
     device_group.add_argument(
@@ -260,6 +288,10 @@ def setup_argument_parser() -> ArgumentParser:
         "--max-bruteforce-worker", dest="max_bruteforce_worker", default=10, type=int,
         help="Specify the maximum number of worker for bruteforce decryption."
     )
+    misc_group.add_argument(
+        "--no-banner", dest="no_banner", default=False, action='store_true',
+        help="Do not show the banner"
+    )
 
     return parser
 
@@ -391,10 +423,10 @@ def setup_contact_store(args) -> Optional['ContactsFromVCards']:
     """Set up and return a contact store if needed."""
     if args.enrich_from_vcards is not None:
         if not vcards_deps_installed:
-            print(
+            logger.error(
                 "You don't have the dependency to enrich contacts with vCard.\n"
                 "Read more on how to deal with enriching contacts:\n"
-                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
+                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage\n"
             )
             exit(1)
         contact_store = ContactsFromVCards()
@@ -407,10 +439,10 @@ def setup_contact_store(args) -> Optional['ContactsFromVCards']:
 def decrypt_android_backup(args) -> int:
     """Decrypt Android backup files and return error code."""
     if args.key is None or args.backup is None:
-        print("You must specify the backup file with -b and a key with -k")
+        logger.error(f"You must specify the backup file with -b and a key with -k{CLEAR_LINE}")
         return 1
 
-    print("Decryption key specified, decrypting WhatsApp backup...")
+    logger.info(f"Decryption key specified, decrypting WhatsApp backup...{CLEAR_LINE}")
 
     # Determine crypt type
     if "crypt12" in args.backup:
@@ -420,7 +452,7 @@ def decrypt_android_backup(args) -> int:
     elif "crypt15" in args.backup:
         crypt = Crypt.CRYPT15
     else:
-        print("Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.")
+        logger.error(f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.{CLEAR_LINE}")
         return 1
 
     # Get key
@@ -472,15 +504,15 @@ def decrypt_android_backup(args) -> int:
 def handle_decrypt_error(error: int) -> None:
     """Handle decryption errors with appropriate messages."""
     if error == 1:
-        print("Dependencies of decrypt_backup and/or extract_encrypted_key"
-              " are not present. For details, see README.md.")
+        logger.error("Dependencies of decrypt_backup and/or extract_encrypted_key"
+              " are not present. For details, see README.md.\n")
         exit(3)
     elif error == 2:
-        print("Failed when decompressing the decrypted backup. "
-              "Possibly incorrect offsets used in decryption.")
+        logger.error("Failed when decompressing the decrypted backup. "
+              "Possibly incorrect offsets used in decryption.\n")
         exit(4)
     else:
-        print("Unknown error occurred.", error)
+        logger.error("Unknown error occurred.\n")
         exit(5)
 
 
@@ -502,9 +534,9 @@ def process_messages(args, data: ChatCollection) -> None:
     msg_db = args.db if args.db else "msgstore.db" if args.android else args.identifiers.MESSAGE
 
     if not os.path.isfile(msg_db):
-        print(
+        logger.error(
             "The message database does not exist. You may specify the path "
-            "to database file with option -d or check your provided path."
+            "to database file with option -d or check your provided path.\n"
         )
         exit(6)
 
@@ -556,19 +588,21 @@ def handle_media_directory(args) -> None:
         media_path = os.path.join(args.output, args.media)
 
         if os.path.isdir(media_path):
-            print(
-                "\nWhatsApp directory already exists in output directory. Skipping...", end="\n")
+            logger.info(
+                f"WhatsApp directory already exists in output directory. Skipping...{CLEAR_LINE}")
         else:
             if args.move_media:
                 try:
-                    print("\nMoving media directory...", end="\n")
+                    logger.info(f"Moving media directory...\r")
                     shutil.move(args.media, f"{args.output}/")
+                    logger.info(f"Media directory has been moved to the output directory{CLEAR_LINE}")
                 except PermissionError:
-                    print("\nCannot remove original WhatsApp directory. "
-                          "Perhaps the directory is opened?", end="\n")
+                    logger.warning("Cannot remove original WhatsApp directory. "
+                          "Perhaps the directory is opened?\n")
             else:
-                print("\nCopying media directory...", end="\n")
+                logger.info(f"Copying media directory...\r")
                 shutil.copytree(args.media, media_path)
+                logger.info(f"Media directory has been copied to the output directory{CLEAR_LINE}")
 
 
 def create_output_files(args, data: ChatCollection, contact_store=None) -> None:
@@ -593,7 +627,7 @@ def create_output_files(args, data: ChatCollection, contact_store=None) -> None:
 
     # Create text files if requested
     if args.text_format:
-        print("Writing text file...")
+        logger.info(f"Writing text file...{CLEAR_LINE}")
         android_handler.create_txt(data, args.text_format)
 
     # Create JSON files if requested
@@ -626,8 +660,9 @@ def export_single_json(args, data: Dict) -> None:
             ensure_ascii=not args.avoid_encoding_json,
             indent=args.pretty_print_json
         )
-        print(f"\nWriting JSON file...({bytes_to_readable(len(json_data))})")
+        logger.info(f"Writing JSON file...\r")
         f.write(json_data)
+    logger.info(f"JSON file saved...({bytes_to_readable(len(json_data))}){CLEAR_LINE}")
 
 
 def export_multiple_json(args, data: Dict) -> None:
@@ -654,8 +689,7 @@ def export_multiple_json(args, data: Dict) -> None:
                 indent=args.pretty_print_json
             )
             f.write(file_content)
-            print(f"Writing JSON file...({index + 1}/{total})", end="\r")
-    print()
+            logger.info(f"Writing JSON file...({index + 1}/{total})\r")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:
@@ -680,6 +714,19 @@ def process_exported_chat(args, data: ChatCollection) -> None:
         shutil.copy(file, args.output)
 
 
+def setup_logging(level):
+    log_handler_stdout = logging.StreamHandler()
+    log_handler_stdout.terminator = ""
+    handlers = [log_handler_stdout]
+    if level == logging.DEBUG:
+        handlers.append(logging.FileHandler("debug.log", mode="w"))
+    logging.basicConfig(
+        level=level,
+        format="[%(levelname)s] %(message)s",
+        handlers=handlers
+    )
+
+
 def main():
     """Main function to run the WhatsApp Chat Exporter."""
     # Set up and parse arguments
@@ -692,6 +739,16 @@ def main():
 
     # Validate arguments
     validate_args(parser, args)
+
+    # Print banner if not suppressed
+    if not args.no_banner:
+        print(WTSEXPORTER_BANNER)
+
+    if args.debug:
+        setup_logging(logging.DEBUG)
+        logger.debug("Debug mode enabled.\n")
+    else:
+        setup_logging(logging.INFO)
 
     # Create output directory if it doesn't exist
     os.makedirs(args.output, exist_ok=True)
@@ -755,8 +812,8 @@ def main():
                     ios_media_handler.extract_media(
                         args.backup, identifiers, args.decrypt_chunk_size)
                 else:
-                    print(
-                        "WhatsApp directory already exists, skipping WhatsApp file extraction.")
+                    logger.info(
+                        f"WhatsApp directory already exists, skipping WhatsApp file extraction.{CLEAR_LINE}")
 
             # Set default DB paths if not provided
             if args.db is None:
@@ -772,7 +829,7 @@ def main():
                 args.pretty_print_json,
                 args.avoid_encoding_json
             )
-            print("Incremental merge completed successfully.")
+            logger.info(f"Incremental merge completed successfully.{CLEAR_LINE}")
         else:
             # Process contacts
             process_contacts(args, data, contact_store)
@@ -786,7 +843,7 @@ def main():
             # Handle media directory
             handle_media_directory(args)
 
-        print("Everything is done!")
+        logger.info("Everything is done!")
 
 
 if __name__ == "__main__":

@@ -1,14 +1,18 @@
 #!/usr/bin/python3
 
 import os
+import logging
 import shutil
 from glob import glob
 from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CURRENT_TZ_OFFSET, get_chat_condition
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OFFSET, get_chat_condition
 from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, slugify, Device
+
+
+logger = logging.getLogger(__name__)
 
 
 def contacts(db, data):
@@ -16,7 +20,7 @@ def contacts(db, data):
     c = db.cursor()
     c.execute("""SELECT count() FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
     total_row_number = c.fetchone()[0]
-    print(f"Pre-processing contacts...({total_row_number})")
+    logger.info(f"Pre-processing contacts...({total_row_number})\r")
     
     c.execute("""SELECT ZWHATSAPPID, ZABOUTTEXT FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
     content = c.fetchone()
@@ -29,6 +33,7 @@ def contacts(db, data):
         current_chat.status = content["ZABOUTTEXT"]
         data.add_chat(zwhatsapp_id, current_chat)
         content = c.fetchone()
+    logger.info(f"Pre-processed {total_row_number} contacts{CLEAR_LINE}")
 
 
 def process_contact_avatars(current_chat, media_folder, contact_id):
@@ -85,7 +90,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(contact_query)
     total_row_number = c.fetchone()[0]
-    print(f"Processing contacts...({total_row_number})")
+    logger.info(f"Processing contacts...({total_row_number})\r")
 
     # Get distinct contacts
     contacts_query = f"""
@@ -123,6 +128,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         # Process avatar images
         process_contact_avatars(current_chat, media_folder, contact_id)
         content = c.fetchone()
+    
+    logger.info(f"Processed {total_row_number} contacts{CLEAR_LINE}")
 
     # Get message count
     message_count_query = f"""
@@ -139,7 +146,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(message_count_query)
     total_row_number = c.fetchone()[0]
-    print(f"Processing messages...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing messages...(0/{total_row_number})\r")
     
     # Fetch messages
     messages_query = f"""
@@ -207,10 +214,9 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         # Update progress
         i += 1
         if i % 1000 == 0:
-            print(f"Processing messages...({i}/{total_row_number})", end="\r")
+            logger.info(f"Processing messages...({i}/{total_row_number})\r")
         content = c.fetchone()
-    
-    print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
+    logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
 
 
 def process_message_data(message, content, is_group_message, data, cursor2):
@@ -329,7 +335,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     """
     c.execute(media_count_query)
     total_row_number = c.fetchone()[0]
-    print(f"\nProcessing media...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing media...(0/{total_row_number})\r")
     
     # Fetch media items
     media_query = f"""
@@ -365,10 +371,9 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
         # Update progress
         i += 1
         if i % 100 == 0:
-            print(f"Processing media...({i}/{total_row_number})", end="\r")
+            logger.info(f"Processing media...({i}/{total_row_number})\r")
         content = c.fetchone()
-    
-    print(f"Processing media...({total_row_number}/{total_row_number})", end="\r")
+    logger.info(f"Processed {total_row_number} media{CLEAR_LINE}")
 
 
 def process_media_item(content, data, media_folder, mime, separate_media):
@@ -444,7 +449,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     c.execute(vcard_query)
     contents = c.fetchall()
     total_row_number = len(contents)
-    print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing vCards...(0/{total_row_number})\r")
     
     # Create vCards directory
     path = f'{media_folder}/Message/vCards'
@@ -453,7 +458,8 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     # Process each vCard
     for index, content in enumerate(contents):
         process_vcard_item(content, path, data)
-        print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
+        logger.info(f"Processing vCards...({index + 1}/{total_row_number})\r")
+    logger.info(f"Processed {total_row_number} vCards{CLEAR_LINE}")
 
 
 def process_vcard_item(content, path, data):
@@ -510,7 +516,7 @@ def calls(db, data, timezone_offset, filter_chat):
     if total_row_number == 0:
         return
     
-    print(f"\nProcessing calls...({total_row_number})", end="\r")
+    logger.info(f"Processed {total_row_number} calls{CLEAR_LINE}\n")
     
     # Fetch call records
     calls_query = f"""
