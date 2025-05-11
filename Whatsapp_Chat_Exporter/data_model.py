@@ -207,26 +207,21 @@ class ChatStore:
 
     def to_json(self) -> Dict[str, Any]:
         """Convert chat store to JSON-serializable dict."""
-        return {
-            'name': self.name,
-            'type': self.type,
-            'my_avatar': self.my_avatar,
-            'their_avatar': self.their_avatar,
-            'their_avatar_thumb': self.their_avatar_thumb,
-            'status': self.status,
-            'media_base': self.media_base,
-            'messages': {id: msg.to_json() for id, msg in self._messages.items()}
+        json_dict = {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != '_messages'
         }
+        json_dict['messages'] = {id: msg.to_json() for id, msg in self._messages.items()}
+        return json_dict
 
     @classmethod
     def from_json(cls, data: Dict) -> 'ChatStore':
         """Create a chat store from JSON data."""
         chat = cls(data.get("type"), data.get("name"))
-        chat.my_avatar = data.get("my_avatar")
-        chat.their_avatar = data.get("their_avatar")
-        chat.their_avatar_thumb = data.get("their_avatar_thumb")
-        chat.status = data.get("status")
-        chat.media_base = data.get("media_base")
+        for key, value in data.items():
+            if hasattr(chat, key) and key not in ("messages", "type", "name"):
+                setattr(chat, key, value)
         for id, msg_data in data.get("messages", {}).items():
             message = Message.from_json(msg_data)
             chat.add_message(id, message)
@@ -347,24 +342,8 @@ class Message:
     def to_json(self) -> Dict[str, Any]:
         """Convert message to JSON-serializable dict."""
         return {
-            'from_me': self.from_me,
-            'timestamp': self.timestamp,
-            'time': self.time,
-            'media': self.media,
-            'key_id': self.key_id,
-            'meta': self.meta,
-            'data': self.data,
-            'sender': self.sender,
-            'safe': self.safe,
-            'mime': self.mime,
-            'reply': self.reply,
-            'quoted_data': self.quoted_data,
-            'caption': self.caption,
-            'thumb': self.thumb,
-            'sticker': self.sticker,
-            'message_type': self.message_type,
-            'received_timestamp': self.received_timestamp,
-            'read_timestamp': self.read_timestamp
+            key: value
+            for key, value in self.__dict__.items()
         }
 
     @classmethod
@@ -378,15 +357,9 @@ class Message:
             received_timestamp=data.get("received_timestamp"),
             read_timestamp=data.get("read_timestamp")
         )
-        message.media = data.get("media")
-        message.meta = data.get("meta")
-        message.data = data.get("data")
-        message.sender = data.get("sender")
-        message.safe = data.get("safe")
-        message.mime = data.get("mime")
-        message.reply = data.get("reply")
-        message.quoted_data = data.get("quoted_data")
-        message.caption = data.get("caption")
-        message.thumb = data.get("thumb")
-        message.sticker = data.get("sticker")
+        added = ("from_me", "timestamp", "time", "key_id", "message_type",
+                 "received_timestamp", "read_timestamp")
+        for key, value in data.items():
+            if hasattr(message, key) and key not in added:
+                setattr(message, key, value)
         return message
