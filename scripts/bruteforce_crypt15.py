@@ -26,6 +26,7 @@ def _extract_encrypted_key(keyfile):
 
     return _generate_hmac_of_hmac(key_stream)
 
+
 if __name__ == "__main__":
     key = open("encrypted_backup.key", "rb").read()
     database = open("wa.db.crypt15", "rb").read()

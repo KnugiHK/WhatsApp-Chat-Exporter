@@ -178,14 +178,14 @@ def test_incremental_merge_new_file(mock_filesystem):
     source_dir = "/source"
     target_dir = "/target"
     media_dir = "media"
-    
+
     # Setup mock filesystem
     mock_filesystem["exists"].side_effect = lambda x: x == "/source"
     mock_filesystem["listdir"].return_value = ["chat.json"]
-    
+
     # Run the function
     incremental_merge(source_dir, target_dir, media_dir, 2, True)
-    
+
     # Verify the operations
     mock_filesystem["makedirs"].assert_called_once_with(target_dir, exist_ok=True)
     mock_filesystem["copy2"].assert_called_once_with(

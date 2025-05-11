@@ -121,6 +121,7 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
         )
     return db
 
+
 def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> bytes:
     """Decrypt a crypt14 database using multithreading for brute-force offset detection.
 
@@ -194,7 +195,8 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
             return db
 
     with concurrent.futures.ThreadPoolExecutor(max_worker) as executor:
-        future_to_offset = {executor.submit(attempt_decrypt, offset): offset for offset in offset_combinations}
+        future_to_offset = {executor.submit(attempt_decrypt, offset)
+                                            : offset for offset in offset_combinations}
 
         try:
             for future in concurrent.futures.as_completed(future_to_offset):
@@ -215,7 +217,6 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
             anim_thread.join()
 
     raise OffsetNotFoundError("Could not find the correct offsets for decryption.")
-
 
 
 def _decrypt_crypt12(database: bytes, main_key: bytes) -> bytes:
@@ -319,7 +320,7 @@ def decrypt_backup(
     if crypt is not Crypt.CRYPT15 and len(key) != 158:
         raise InvalidKeyError("The key file must be 158 bytes")
 
-    #signature check, this is check is used in crypt 12 and 14
+    # signature check, this is check is used in crypt 12 and 14
     if crypt != Crypt.CRYPT15:
         t1 = key[30:62]
 
@@ -328,7 +329,6 @@ def decrypt_backup(
 
         if t1 != database[3:35] and crypt == Crypt.CRYPT12:
             raise ValueError("The signature of key file and backup file mismatch")
-
 
     if crypt == Crypt.CRYPT15:
         if keyfile_stream:
@@ -352,7 +352,6 @@ def decrypt_backup(
             raise ValueError(f"Unsupported crypt type: {crypt}")
     except (InvalidFileFormatError, OffsetNotFoundError, ValueError) as e:
         raise DecryptionError(f"Decryption failed: {e}") from e
-
 
     if not dry_run:
         with open(output, "wb") as f:

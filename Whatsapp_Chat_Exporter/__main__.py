@@ -452,7 +452,8 @@ def decrypt_android_backup(args) -> int:
     elif "crypt15" in args.backup:
         crypt = Crypt.CRYPT15
     else:
-        logger.error(f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.{CLEAR_LINE}")
+        logger.error(
+            f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.{CLEAR_LINE}")
         return 1
 
     # Get key
@@ -505,11 +506,11 @@ def handle_decrypt_error(error: int) -> None:
     """Handle decryption errors with appropriate messages."""
     if error == 1:
         logger.error("Dependencies of decrypt_backup and/or extract_encrypted_key"
-              " are not present. For details, see README.md.\n")
+                     " are not present. For details, see README.md.\n")
         exit(3)
     elif error == 2:
         logger.error("Failed when decompressing the decrypted backup. "
-              "Possibly incorrect offsets used in decryption.\n")
+                     "Possibly incorrect offsets used in decryption.\n")
         exit(4)
     else:
         logger.error("Unknown error occurred.\n")
@@ -598,7 +599,7 @@ def handle_media_directory(args) -> None:
                     logger.info(f"Media directory has been moved to the output directory{CLEAR_LINE}")
                 except PermissionError:
                     logger.warning("Cannot remove original WhatsApp directory. "
-                          "Perhaps the directory is opened?\n")
+                                   "Perhaps the directory is opened?\n")
             else:
                 logger.info(f"Copying media directory...\r")
                 shutil.copytree(args.media, media_path)

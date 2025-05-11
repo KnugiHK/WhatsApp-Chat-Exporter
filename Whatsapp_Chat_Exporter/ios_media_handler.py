@@ -18,6 +18,7 @@ else:
 
 logger = logging.getLogger(__name__)
 
+
 class BackupExtractor:
     """
     A class to handle the extraction of WhatsApp data from iOS backups,
@@ -61,9 +62,9 @@ class BackupExtractor:
         """
         if not support_encrypted:
             logger.error("You don't have the dependencies to handle encrypted backup."
-                        "Read more on how to deal with encrypted backup:"
-                        "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
-            )
+                         "Read more on how to deal with encrypted backup:"
+                         "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
+                         )
             return
 
         logger.info(f"Encryption detected on the backup!{CLEAR_LINE}")
@@ -116,12 +117,12 @@ class BackupExtractor:
             exit(6)
         else:
             logger.info(f"Done{CLEAR_LINE}")
-    
+
     def _extract_decrypted_files(self):
         """Extract all WhatsApp files after decryption"""
         def extract_progress_handler(file_id, domain, relative_path, n, total_files):
             if n % 100 == 0:
-                logger.info(f"Decrypting and extracting files...({n}/{total_files})\r")   
+                logger.info(f"Decrypting and extracting files...({n}/{total_files})\r")
             return True
 
         self.backup.extract_files(
@@ -234,4 +235,3 @@ def extract_media(base_dir, identifiers, decrypt_chunk_size):
     """
     extractor = BackupExtractor(base_dir, identifiers, decrypt_chunk_size)
     extractor.extract()
-

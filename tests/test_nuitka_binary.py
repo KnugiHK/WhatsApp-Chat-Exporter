@@ -43,9 +43,9 @@ def test_nuitka_binary():
         "--assume-yes-for-downloads",
         "--follow-imports",
         "Whatsapp_Chat_Exporter/__main__.py",
-        "--output-filename=wtsexporter.exe" # use .exe on all platforms for compatibility
+        "--output-filename=wtsexporter.exe"  # use .exe on all platforms for compatibility
     ]
-    
+
     compile_result = subprocess.run(
         nuitka_command,
         capture_output=True,

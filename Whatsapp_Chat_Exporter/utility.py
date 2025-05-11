@@ -33,6 +33,7 @@ CLEAR_LINE = "\x1b[K\n"
 
 logger = logging.getLogger(__name__)
 
+
 def convert_time_unit(time_second: int) -> str:
     """Converts a time duration in seconds to a human-readable string.
 
@@ -168,7 +169,7 @@ def check_update():
                     "===============Update===============\n"
                     "A newer version of WhatsApp Chat Exporter is available.\n"
                     f"Current version: {__version__}\n"
-                    f"Latest version: {package_info['info']['version']}\n" 
+                    f"Latest version: {package_info['info']['version']}\n"
                 )
                 if platform == "win32":
                     logger.info("Update with: pip install --upgrade whatsapp-chat-exporter\n")
