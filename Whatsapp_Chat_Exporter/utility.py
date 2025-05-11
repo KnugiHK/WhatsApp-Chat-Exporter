@@ -11,7 +11,7 @@ from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
-from Whatsapp_Chat_Exporter.data_model import ChatStore
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
 from typing import Dict, List, Optional, Tuple
 try:
     from enum import StrEnum, IntEnum
@@ -223,49 +223,23 @@ class Device(StrEnum):
     EXPORTED = "exported"
 
 
-def import_from_json(json_file: str, data: Dict[str, ChatStore]):
+def import_from_json(json_file: str, data: ChatCollection):
     """Imports chat data from a JSON file into the data dictionary.
 
     Args:
         json_file: The path to the JSON file.
         data: The dictionary to store the imported chat data.
     """
-    from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
     with open(json_file, "r") as f:
         temp_data = json.loads(f.read())
     total_row_number = len(tuple(temp_data.keys()))
     logger.info(f"Importing chats from JSON...(0/{total_row_number})\r")
     for index, (jid, chat_data) in enumerate(temp_data.items()):
-        chat = ChatStore(chat_data.get("type"), chat_data.get("name"))
-        chat.my_avatar = chat_data.get("my_avatar")
-        chat.their_avatar = chat_data.get("their_avatar")
-        chat.their_avatar_thumb = chat_data.get("their_avatar_thumb")
-        chat.status = chat_data.get("status")
-        for id, msg in chat_data.get("messages").items():
-            message = Message(
-                from_me=msg["from_me"],
-                timestamp=msg["timestamp"],
-                time=msg["time"],
-                key_id=msg["key_id"],
-                received_timestamp=msg.get("received_timestamp"),
-                read_timestamp=msg.get("read_timestamp")
-            )
-            message.media = msg.get("media")
-            message.meta = msg.get("meta")
-            message.data = msg.get("data")
-            message.sender = msg.get("sender")
-            message.safe = msg.get("safe")
-            message.mime = msg.get("mime")
-            message.reply = msg.get("reply")
-            message.quoted_data = msg.get("quoted_data")
-            message.caption = msg.get("caption")
-            message.thumb = msg.get("thumb")
-            message.sticker = msg.get("sticker")
-            chat.add_message(id, message)
-        data[jid] = chat
+        chat = ChatStore.from_json(chat_data)
+        data.add_chat(jid, chat)
         logger.info(
             f"Importing chats from JSON...({index + 1}/{total_row_number})\r")
-    logger.info(f"Imported chats from JSON...({total_row_number}){CLEAR_LINE}")
+    logger.info(f"Imported {total_row_number} chats from JSON{CLEAR_LINE}")
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
