@@ -149,7 +149,7 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
             pass  # Try next offset
         else:
             logger.debug(
-                f"Decryption successful with known offsets: IV {offsets["iv"]}, DB {offsets["db"]}{CLEAR_LINE}"
+                f"Decryption successful with known offsets: IV {offsets['iv']}, DB {offsets['db']}{CLEAR_LINE}"
             )
             return decrypted_db  # Successful decryption
 
