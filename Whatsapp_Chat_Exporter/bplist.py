@@ -25,40 +25,6 @@ import codecs
 from datetime import datetime, timedelta
 
 
-class BPListWriter(object):
-    def __init__(self, objects):
-        self.bplist = ""
-        self.objects = objects
-
-    def binary(self):
-        '''binary -> string
-
-        Generates bplist
-        '''
-        self.data = 'bplist00'
-
-        # TODO: flatten objects and count max length size
-
-        # TODO: write objects and save offsets
-
-        # TODO: write offsets
-
-        # TODO: write metadata
-
-        return self.data
-
-    def write(self, filename):
-        '''
-
-        Writes bplist to file
-        '''
-        if self.bplist != "":
-            pass
-            # TODO: save self.bplist to file
-        else:
-            raise Exception('BPlist not yet generated')
-
-
 class BPListReader(object):
     def __init__(self, s):
         self.data = s
@@ -277,33 +243,3 @@ class BPListReader(object):
     def plistWithString(cls, s):
         parser = cls(s)
         return parser.parse()
-
-# helpers for testing
-
-
-def plist(obj):
-    from Foundation import NSPropertyListSerialization, NSPropertyListBinaryFormat_v1_0
-    b = NSPropertyListSerialization.dataWithPropertyList_format_options_error_(
-        obj,  NSPropertyListBinaryFormat_v1_0, 0, None)
-    return str(b.bytes())
-
-
-def unplist(s):
-    from Foundation import NSData, NSPropertyListSerialization
-    d = NSData.dataWithBytes_length_(s, len(s))
-    return NSPropertyListSerialization.propertyListWithData_options_format_error_(d, 0, None, None)
-
-
-if __name__ == "__main__":
-    import os
-    import sys
-    import json
-    file_path = sys.argv[1]
-
-    with open(file_path, "rb") as fp:
-        data = fp.read()
-
-    out = BPListReader(data).parse()
-
-    with open(file_path + ".json", "w") as fp:
-        json.dump(out, indent=4)
