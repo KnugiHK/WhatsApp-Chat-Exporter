@@ -334,18 +334,6 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
                     shutil.copy2(source_file, target_file)
 
 
-def sanitize_filename(file_name: str) -> str:
-    """Sanitizes a filename by removing invalid and unsafe characters.
-
-    Args:
-        file_name: The filename to sanitize.
-
-    Returns:
-        The sanitized filename.
-    """
-    return "".join(x for x in file_name if x.isalnum() or x in "- ")
-
-
 def get_file_name(contact: str, chat: ChatStore) -> Tuple[str, str]:
     """Generates a sanitized filename and contact name for a chat.
 
@@ -375,7 +363,7 @@ def get_file_name(contact: str, chat: ChatStore) -> Tuple[str, str]:
     else:
         name = phone_number
 
-    return sanitize_filename(file_name), name
+    return safe_name(file_name), name
 
 
 def get_cond_for_empty(enable: bool, jid_field: str, broadcast_field: str) -> str:

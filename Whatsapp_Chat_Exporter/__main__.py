@@ -12,9 +12,9 @@ import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update, DbType
-from Whatsapp_Chat_Exporter.utility import readable_to_bytes, sanitize_filename
-from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update
+from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, DbType
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -683,7 +683,7 @@ def export_multiple_json(args, data: Dict) -> None:
         else:
             contact = jik.replace('+', '')
 
-        with open(f"{json_path}/{sanitize_filename(contact)}.json", "w") as f:
+        with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
             file_content = json.dumps(
                 {jik: data[jik]},
                 ensure_ascii=not args.avoid_encoding_json,
