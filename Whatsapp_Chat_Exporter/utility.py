@@ -601,7 +601,7 @@ def setup_template(template: Optional[str], no_avatar: bool, experimental: bool 
 APPLE_TIME = 978307200
 
 
-def safe_name(text: Union[str|bytes]) -> str:
+def safe_name(text: Union[str, bytes]) -> str:
     """
     Sanitize the input text and generates a safe file name.
     This function serves a similar purpose to slugify() from
