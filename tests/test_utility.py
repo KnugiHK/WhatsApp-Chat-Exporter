@@ -23,8 +23,8 @@ def test_convert_time_unit():
 
 
 class TestBytesToReadable:
-    assert bytes_to_readable(0) == "0B"
-    assert bytes_to_readable(500) == "500.0 B"
+    assert bytes_to_readable(0) == "0 B"
+    assert bytes_to_readable(500) == "500 B"
     assert bytes_to_readable(1024) == "1.0 KB"
     assert bytes_to_readable(2048) == "2.0 KB"
     assert bytes_to_readable(1536) == "1.5 KB"
@@ -40,6 +40,7 @@ class TestBytesToReadable:
 
 class TestReadableToBytes:
     def test_conversion(self):
+        assert readable_to_bytes("0B") == 0
         assert readable_to_bytes("100B") == 100
         assert readable_to_bytes("50 B") == 50
         assert readable_to_bytes("1KB") == 1024

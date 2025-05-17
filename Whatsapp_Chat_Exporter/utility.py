@@ -85,8 +85,8 @@ def bytes_to_readable(size_bytes: int) -> str:
     Returns:
         A human-readable string representing the file size.
     """
-    if size_bytes == 0:
-        return "0B"
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
