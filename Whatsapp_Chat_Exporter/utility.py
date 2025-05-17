@@ -118,10 +118,11 @@ def readable_to_bytes(size_str: str) -> int:
         'YB': 1024**8
     }
     size_str = size_str.upper().strip()
-    number, unit = size_str[:-2].strip(), size_str[-2:].strip()
-    if unit not in SIZE_UNITS or not number.isnumeric():
+    unit = ''.join(filter(str.isalpha, size_str)).strip()
+    number = ''.join(c for c in size_str if c.isdigit() or c == '.').strip()
+    if unit not in SIZE_UNITS:
         raise ValueError("Invalid input for size_str. Example: 1024GB")
-    return int(number) * SIZE_UNITS[unit]
+    return int(float(number) * SIZE_UNITS[unit])
 
 
 def sanitize_except(html: str) -> Markup:
