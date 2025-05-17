@@ -567,6 +567,7 @@ def get_status_location(output_folder: str, offline_static: str) -> str:
             with open(w3css_path, "wb") as f:
                 f.write(resp.read())
     w3css = os.path.join(offline_static, "w3.css")
+    return w3css
 
 
 def setup_template(template: Optional[str], no_avatar: bool, experimental: bool = False) -> jinja2.Template:
