@@ -44,23 +44,31 @@ def convert_time_unit(time_second: int) -> str:
     Returns:
         str: A human-readable string representing the time duration.
     """
-    time = str(timedelta(seconds=time_second))
-    if "day" not in time:
-        if time_second < 1:
-            time = "less than a second"
-        elif time_second == 1:
-            time = "a second"
-        elif time_second < 60:
-            time = time[5:][1 if time_second < 10 else 0:] + " seconds"
-        elif time_second == 60:
-            time = "a minute"
-        elif time_second < 3600:
-            time = time[2:] + " minutes"
-        elif time_second == 3600:
-            time = "an hour"
-        else:
-            time += " hour"
-    return time
+    if time_second < 1:
+        return "less than a second"
+    elif time_second == 1:
+        return "a second"
+
+    delta = timedelta(seconds=time_second)
+    parts = []
+
+    days = delta.days
+    if days > 0:
+        parts.append(f"{days} day{'s' if days > 1 else ''}")
+
+    hours = delta.seconds // 3600
+    if hours > 0:
+        parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
+
+    minutes = (delta.seconds % 3600) // 60
+    if minutes > 0:
+        parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+
+    seconds = delta.seconds % 60
+    if seconds > 0:
+        parts.append(f"{seconds} second{'s' if seconds > 1 else ''}")
+
+    return " ".join(parts)
 
 
 def bytes_to_readable(size_bytes: int) -> str:
