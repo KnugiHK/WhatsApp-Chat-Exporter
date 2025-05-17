@@ -13,7 +13,7 @@ from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, JidType, Device
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
 from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, determine_metadata
-from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable
 
 
 logger = logging.getLogger(__name__)
@@ -668,8 +668,8 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
 
         # Copy media to separate folder if needed
         if separate_media:
-            chat_display_name = slugify(current_chat.name or message.sender
-                                        or content["key_remote_jid"].split('@')[0], True)
+            chat_display_name = safe_name(current_chat.name or message.sender
+                                        or content["key_remote_jid"].split('@')[0])
             current_filename = file_path.split("/")[-1]
             new_folder = os.path.join(media_folder, "separated", chat_display_name)
             Path(new_folder).mkdir(parents=True, exist_ok=True)

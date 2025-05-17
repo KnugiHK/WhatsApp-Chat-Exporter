@@ -5,6 +5,7 @@ import json
 import os
 import unicodedata
 import re
+import string
 import math
 import shutil
 from bleach import clean as sanitize
@@ -12,7 +13,7 @@ from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 try:
     from enum import StrEnum, IntEnum
 except ImportError:
@@ -600,26 +601,28 @@ def setup_template(template: Optional[str], no_avatar: bool, experimental: bool 
 APPLE_TIME = 978307200
 
 
-def slugify(value: str, allow_unicode: bool = False) -> str:
+def safe_name(text: Union[str|bytes]) -> str:
     """
-    Convert text to ASCII-only slugs for URL-safe strings.
-    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Sanitize the input text and generates a safe file name.
+    This function serves a similar purpose to slugify() from
+    Django previously used in this project, but is a clean-room
+    Reimplementation tailored for performance and a narrower
+    Use case for this project. Licensed under the same terms
+    As the project (MIT).
 
     Args:
-        value (str): The string to convert to a slug.
-        allow_unicode (bool, optional): Whether to allow Unicode characters. Defaults to False.
+        text (str|bytes): The string to be sanitized.
 
     Returns:
-        str: The slugified string with only alphanumerics, underscores, or hyphens.
+        str: The sanitized string with only alphanumerics, underscores, or hyphens.
     """
-    value = str(value)
-    if allow_unicode:
-        value = unicodedata.normalize('NFKC', value)
-    else:
-        value = unicodedata.normalize('NFKD', value).encode(
-            'ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s-]', '', value.lower())
-    return re.sub(r'[-\s]+', '-', value).strip('-_')
+    if isinstance(text, bytes):
+        text = text.decode("utf-8", "ignore")
+    elif not isinstance(text, str):
+        raise TypeError("value must be a string or bytes")
+    normalized_text = unicodedata.normalize("NFKC", text)
+    safe_chars = [char for char in normalized_text if char.isalnum() or char in "-_ ."]
+    return "-".join(''.join(safe_chars).split())
 
 
 class WhatsAppIdentifier(StrEnum):

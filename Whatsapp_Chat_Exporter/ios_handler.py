@@ -9,7 +9,7 @@ from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OFFSET, get_chat_condition
-from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, slugify, Device
+from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name, Device
 
 
 logger = logging.getLogger(__name__)
@@ -402,8 +402,8 @@ def process_media_item(content, data, media_folder, mime, separate_media):
 
         # Handle separate media option
         if separate_media:
-            chat_display_name = slugify(
-                current_chat.name or message.sender or content["ZCONTACTJID"].split('@')[0], True)
+            chat_display_name = safe_name(
+                current_chat.name or message.sender or content["ZCONTACTJID"].split('@')[0])
             current_filename = file_path.split("/")[-1]
             new_folder = os.path.join(media_folder, "separated", chat_display_name)
             Path(new_folder).mkdir(parents=True, exist_ok=True)
