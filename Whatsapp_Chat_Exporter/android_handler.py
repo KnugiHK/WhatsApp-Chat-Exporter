@@ -998,7 +998,7 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
         else:
             current_size += ROW_SIZE + 100  # Assume media and meta HTML are 100 bytes
             
-        if current_size > maximum_size:
+        if current_size > int(maximum_size):
             # Create a new page
             output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
             rendering(
