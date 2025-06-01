@@ -332,13 +332,18 @@ def validate_args(parser: ArgumentParser, args) -> None:
         parser.error(
             "When --enrich-from-vcards is provided, you must also set --default-country-code")
 
-    # Size validation
-    if args.size is not None and not isinstance(args.size, int) and not args.size.isnumeric():
-        try:
-            args.size = readable_to_bytes(args.size)
-        except ValueError:
-            parser.error(
-                "The value for --split must be ended in pure bytes or with a proper unit (e.g., 1048576 or 1MB)")
+    # Size validation and conversion
+    if args.size is not None:
+        stripped_size = args.size.strip()
+        if stripped_size.isnumeric():
+            args.size = int(stripped_size)
+        else:
+            try:
+                args.size = readable_to_bytes(stripped_size)
+            except ValueError:
+                parser.error(
+                    "The value for --split must be pure bytes or use a proper unit (e.g., 1048576 or 1MB)"
+                )
 
     # Date filter validation and processing
     if args.filter_date is not None:
