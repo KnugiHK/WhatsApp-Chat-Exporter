@@ -66,13 +66,13 @@ class TestReadableToBytes:
         assert readable_to_bytes(" 1 MB") == 1024**2
 
     def test_invalid_unit(self):
-        with pytest.raises(ValueError, match="Invalid input for size_str"):
+        with pytest.raises(ValueError, match="Invalid size format for size_str"):
             readable_to_bytes("100X")
             readable_to_bytes("A100")
             readable_to_bytes("100$$$$$")
 
     def test_invalid_number(self):
-        with pytest.raises(ValueError, match="Invalid input for size_str"):
+        with pytest.raises(ValueError, match="Invalid size format for size_str"):
             readable_to_bytes("ABC KB")
 
     def test_missing_unit(self):

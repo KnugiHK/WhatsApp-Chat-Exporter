@@ -123,11 +123,9 @@ def readable_to_bytes(size_str: str) -> int:
         # If the string is purely numeric, assume it's in bytes
         return int(size_str)
     if not match:
-        raise ValueError("Invalid size format. Expected format like '10MB', '1024GB', or '512'.")
+        raise ValueError("Invalid size format for size_str. Expected format like '10MB', '1024GB', or '512'.")
     unit = ''.join(filter(str.isalpha, size_str)).strip()
     number = ''.join(c for c in size_str if c.isdigit() or c == '.').strip()
-    if unit not in SIZE_UNITS:
-        raise ValueError("Invalid input for size_str. Example: 1024GB")
     return int(float(number) * SIZE_UNITS[unit])
 
 
