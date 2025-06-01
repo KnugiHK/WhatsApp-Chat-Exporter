@@ -118,6 +118,9 @@ def readable_to_bytes(size_str: str) -> int:
         'YB': 1024**8
     }
     size_str = size_str.upper().strip()
+    match = re.fullmatch(r'^(\d+(\.\d+)?)\s*([KMGTPEZY]?B)?$', size_str)
+    if not match:
+        raise ValueError("Invalid size format. Expected format like '10MB', '1024GB', or '512'.")
     unit = ''.join(filter(str.isalpha, size_str)).strip()
     number = ''.join(c for c in size_str if c.isdigit() or c == '.').strip()
     if unit not in SIZE_UNITS:
