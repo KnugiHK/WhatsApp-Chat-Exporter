@@ -76,8 +76,7 @@ class TestReadableToBytes:
             readable_to_bytes("ABC KB")
 
     def test_missing_unit(self):
-        with pytest.raises(ValueError, match="Invalid input for size_str"):
-            readable_to_bytes("100")
+        assert readable_to_bytes("100") == 100
 
 
 class TestSanitizeExcept:

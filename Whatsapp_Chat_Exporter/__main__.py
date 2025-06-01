@@ -334,16 +334,12 @@ def validate_args(parser: ArgumentParser, args) -> None:
 
     # Size validation and conversion
     if args.size is not None:
-        stripped_size = args.size.strip()
-        if stripped_size.isnumeric():
-            args.size = int(stripped_size)
-        else:
-            try:
-                args.size = readable_to_bytes(stripped_size)
-            except ValueError:
-                parser.error(
-                    "The value for --split must be pure bytes or use a proper unit (e.g., 1048576 or 1MB)"
-                )
+        try:
+            args.size = readable_to_bytes(args.size)
+        except ValueError:
+            parser.error(
+                "The value for --split must be pure bytes or use a proper unit (e.g., 1048576 or 1MB)"
+            )
 
     # Date filter validation and processing
     if args.filter_date is not None:
