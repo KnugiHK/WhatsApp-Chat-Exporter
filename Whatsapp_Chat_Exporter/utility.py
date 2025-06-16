@@ -627,6 +627,72 @@ def safe_name(text: Union[str, bytes]) -> str:
     return "-".join(''.join(safe_chars).split())
 
 
+def get_from_string(msg: Dict, chat_id: str) -> str:
+    """Return the number or name for the sender"""
+    if msg["from_me"]:
+        return "Me"
+    if msg["sender"]:
+        return str(msg["sender"])
+    return str(chat_id)
+
+
+def get_from_id(msg: Dict, chat_id: str) -> str:
+    """Return the user id for the sender"""
+    if msg["from_me"]:
+        return "user00000"
+    if msg["sender"]:
+        return "user" + msg["sender"]
+    return f"user{chat_id}"
+
+
+def get_reply_id(data: Dict, reply_key: str) -> Optional[str]:
+    """Get the id of the message corresponding to the reply"""
+    if not reply_key:
+        return None
+    for msg_id, msg in data["messages"].items():
+        if msg["key_id"] == reply_key:
+            return int(msg_id)
+    return None
+
+
+def telegram_json_format(jik: str, data: Dict) -> Dict:
+    """Convert the data to the Telegram export format"""
+    try:
+        chat_id = int(''.join([c for c in jik if c.isdigit()]))
+    except ValueError:
+        # not a real chat: e.g. statusbroadcast
+        chat_id = 0
+    obj = {
+            "name": data["name"] if data["name"] else jik,
+            # TODO can we do better than this?
+            "type": "private_group" if data["name"] else "personal_chat",
+            "id": chat_id,
+            "messages": [ {
+                "id": int(msgId),
+                "type": "message",
+                "date": datetime.fromtimestamp(msg["timestamp"]).isoformat().split(".")[0],
+                "date_unixtime": int(msg["timestamp"]),
+                "from": get_from_string(msg, chat_id),
+                "from_id": get_from_id(msg, chat_id),
+                "reply_to_message_id": get_reply_id(data, msg["reply"]),
+                "text": msg["data"],
+                "text_entities": [
+                    {
+                        # TODO this will lose formatting and different types
+                        "type": "plain",
+                        "text": msg["data"],
+                        }
+                    ],
+                } for msgId, msg in data["messages"].items()]
+            }
+    # remove empty messages and replies
+    for msg_id, msg in enumerate(obj["messages"]):
+        if not msg["reply_to_message_id"]:
+            del obj["messages"][msg_id]["reply_to_message_id"]
+    obj["messages"] = [m for m in obj["messages"] if m["text"]]
+    return obj
+
+
 class WhatsAppIdentifier(StrEnum):
     # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ChatStorage.sqlite
     MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"

@@ -15,6 +15,7 @@ from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, DbType
+from Whatsapp_Chat_Exporter.utility import telegram_json_format
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -147,6 +148,10 @@ def setup_argument_parser() -> ArgumentParser:
     json_group.add_argument(
         '--pretty-print-json', dest='pretty_print_json', default=None, nargs='?', const=2, type=int,
         help="Pretty print the output JSON."
+    )
+    json_group.add_argument(
+        "--telegram", dest="telegram", default=False, action='store_true',
+        help="Output the JSON in a format compatible with Telegram export (implies json-per-chat)"
     )
     json_group.add_argument(
         "--per-chat", dest="json_per_chat", default=False, action='store_true',
@@ -648,7 +653,7 @@ def export_json(args, data: ChatCollection, contact_store=None) -> None:
         data = {jik: chat.to_json() for jik, chat in data.items()}
 
     # Export as a single file or per chat
-    if not args.json_per_chat:
+    if not args.json_per_chat and not args.telegram:
         export_single_json(args, data)
     else:
         export_multiple_json(args, data)
@@ -684,9 +689,13 @@ def export_multiple_json(args, data: Dict) -> None:
         else:
             contact = jik.replace('+', '')
 
+        if args.telegram:
+            obj = telegram_json_format(jik, data[jik])
+        else:
+            obj = {jik: data[jik]}
         with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
             file_content = json.dumps(
-                {jik: data[jik]},
+                obj,
                 ensure_ascii=not args.avoid_encoding_json,
                 indent=args.pretty_print_json
             )
