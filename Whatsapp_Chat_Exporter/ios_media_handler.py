@@ -5,7 +5,7 @@ import shutil
 import sqlite3
 import os
 import getpass
-from sys import exit
+from sys import exit, platform as osname
 from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier
 from Whatsapp_Chat_Exporter.bplist import BPListReader
 try:
@@ -46,15 +46,25 @@ class BackupExtractor:
         Returns:
             bool: True if encrypted, False otherwise.
         """
-        with sqlite3.connect(os.path.join(self.base_dir, "Manifest.db")) as db:
-            c = db.cursor()
-            try:
-                c.execute("SELECT count() FROM Files")
-                c.fetchone()  # Execute and fetch to trigger potential errors
-            except (sqlite3.OperationalError, sqlite3.DatabaseError):
-                return True
+        try:
+            with sqlite3.connect(os.path.join(self.base_dir, "Manifest.db")) as db:
+                c = db.cursor()
+                try:
+                    c.execute("SELECT count() FROM Files")
+                    c.fetchone()  # Execute and fetch to trigger potential errors
+                except (sqlite3.OperationalError, sqlite3.DatabaseError):
+                    return True
+                else:
+                    return False
+        except sqlite3.DatabaseError as e:
+            if e == "authorization denied" and osname == "darwin":
+                logger.error(
+                    "You don't have permission to access the backup database. Please"
+                    "check your permissions or try moving the backup to somewhere else."
+                )
+                exit(8)
             else:
-                return False
+                raise e
 
     def _extract_encrypted_backup(self):
         """
