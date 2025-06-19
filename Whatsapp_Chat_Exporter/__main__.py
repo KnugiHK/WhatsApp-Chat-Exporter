@@ -134,7 +134,7 @@ def setup_argument_parser() -> ArgumentParser:
         help="Do not output html files"
     )
     output_group.add_argument(
-        "--size", "--output-size", "--split", dest="size", nargs='?', const=0, default=None,
+        "--size", "--output-size", "--split", dest="size", nargs='?', const="0", default=None,
         help="Maximum (rough) size of a single output file in bytes, 0 for auto"
     )
 
