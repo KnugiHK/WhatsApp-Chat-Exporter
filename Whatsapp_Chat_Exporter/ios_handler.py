@@ -60,7 +60,7 @@ def get_contact_name(content):
         return content["ZPUSHNAME"]
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty, no_reply):
     """Process WhatsApp messages and contacts from the database."""
     c = db.cursor()
     cursor2 = db.cursor()
@@ -207,7 +207,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         )
 
         # Process message data
-        invalid = process_message_data(message, content, is_group_message, data, cursor2)
+        invalid = process_message_data(message, content, is_group_message, data, cursor2, no_reply)
 
         # Add valid messages to chat
         if not invalid:
@@ -221,7 +221,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
 
 
-def process_message_data(message, content, is_group_message, data, cursor2):
+def process_message_data(message, content, is_group_message, data, cursor2, no_reply):
     """Process and set message data from content row."""
     # Handle group sender info
     if is_group_message and content["ZISFROMME"] == 0:
@@ -244,7 +244,7 @@ def process_message_data(message, content, is_group_message, data, cursor2):
         return process_metadata_message(message, content, is_group_message)
 
     # Handle quoted replies
-    if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14"):
+    if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14") and not no_reply:
         quoted = content["ZMETADATA"][2:19]
         message.reply = quoted.decode()
         cursor2.execute(f"""SELECT ZTEXT

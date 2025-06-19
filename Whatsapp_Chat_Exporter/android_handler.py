@@ -57,7 +57,7 @@ def contacts(db, data, enrich_from_vcards):
     return True
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty, no_reply):
     """
     Process WhatsApp messages from the database.
 
@@ -669,7 +669,7 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
         # Copy media to separate folder if needed
         if separate_media:
             chat_display_name = safe_name(current_chat.name or message.sender
-                                        or content["key_remote_jid"].split('@')[0])
+                                          or content["key_remote_jid"].split('@')[0])
             current_filename = file_path.split("/")[-1]
             new_folder = os.path.join(media_folder, "separated", chat_display_name)
             Path(new_folder).mkdir(parents=True, exist_ok=True)
