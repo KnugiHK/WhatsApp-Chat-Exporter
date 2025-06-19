@@ -57,7 +57,7 @@ class BackupExtractor:
                 else:
                     return False
         except sqlite3.DatabaseError as e:
-            if e == "authorization denied" and osname == "darwin":
+            if str(e) == "authorization denied" and osname == "darwin":
                 logger.error(
                     "You don't have permission to access the backup database. Please"
                     "check your permissions or try moving the backup to somewhere else."
