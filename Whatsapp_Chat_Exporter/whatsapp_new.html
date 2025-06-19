@@ -127,6 +127,15 @@
             --tw-translate-x: -50%;
             transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
         }
+        .status-indicator {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 0.8em;
+            color: #8c8c8c;
+        }
+        .status-indicator.read {
+            color: #34B7F1;
+        }
         </style>
         <script>
             function search(event) {
@@ -286,7 +295,15 @@
                                         {% endif %}
                                     {% endif %}
                                 </p>
-                                <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }}</p>
+                                <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }} 
+                                    <span class="status-indicator{% if msg.read_timestamp %} read{% endif %}">
+                                        {% if msg.received_timestamp %}
+                                            ✓✓
+                                        {% else %}
+                                            ✓
+                                        {% endif %}
+                                    </span>
+                                </p>
                             </div>
                         </div>
                         {% else %}
