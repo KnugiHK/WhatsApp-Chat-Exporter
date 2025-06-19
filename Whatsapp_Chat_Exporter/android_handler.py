@@ -576,7 +576,7 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
 
 def _get_media_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
     """Get cursor for legacy media database schema."""
-    empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
+    empty_filter = get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")
     date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
     include_filter = get_chat_condition(
         filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
