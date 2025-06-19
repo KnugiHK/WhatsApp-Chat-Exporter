@@ -244,7 +244,7 @@ def process_message_data(message, content, is_group_message, data, cursor2):
         return process_metadata_message(message, content, is_group_message)
 
     # Handle quoted replies
-    if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14") and False:
+    if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14"):
         quoted = content["ZMETADATA"][2:19]
         message.reply = quoted.decode()
         cursor2.execute(f"""SELECT ZTEXT
