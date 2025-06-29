@@ -12,7 +12,7 @@ from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
-from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
 from typing import Dict, List, Optional, Tuple, Union
 try:
     from enum import StrEnum, IntEnum
@@ -636,6 +636,16 @@ def get_from_string(msg: Dict, chat_id: str) -> str:
     return str(chat_id)
 
 
+def get_chat_type(chat_id: str) -> str:
+    """Return the chat type based on the whatsapp id"""
+    if chat_id.endswith("@s.whatsapp.net"):
+        return "personal_chat"
+    if chat_id.endswith("@g.us"):
+        return "private_group"
+    logger.warning("Unknown chat type for %s, defaulting to private_group", chat_id)
+    return "private_group"
+
+
 def get_from_id(msg: Dict, chat_id: str) -> str:
     """Return the user id for the sender"""
     if msg["from_me"]:
@@ -645,18 +655,19 @@ def get_from_id(msg: Dict, chat_id: str) -> str:
     return f"user{chat_id}"
 
 
-def get_reply_id(data: Dict, reply_key: str) -> Optional[str]:
+def get_reply_id(data: Dict, reply_key: int) -> Optional[int]:
     """Get the id of the message corresponding to the reply"""
     if not reply_key:
         return None
     for msg_id, msg in data["messages"].items():
         if msg["key_id"] == reply_key:
-            return int(msg_id)
+            return msg_id
     return None
 
 
-def telegram_json_format(jik: str, data: Dict) -> Dict:
+def telegram_json_format(jik: str, data: Dict, timezone_offset) -> Dict:
     """Convert the data to the Telegram export format"""
+    timing = Timing(timezone_offset or CURRENT_TZ_OFFSET)
     try:
         chat_id = int(''.join([c for c in jik if c.isdigit()]))
     except ValueError:
@@ -664,13 +675,12 @@ def telegram_json_format(jik: str, data: Dict) -> Dict:
         chat_id = 0
     obj = {
             "name": data["name"] if data["name"] else jik,
-            # TODO can we do better than this?
-            "type": "private_group" if data["name"] else "personal_chat",
+            "type": get_chat_type(jik),
             "id": chat_id,
             "messages": [ {
                 "id": int(msgId),
                 "type": "message",
-                "date": datetime.fromtimestamp(msg["timestamp"]).isoformat().split(".")[0],
+                "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
                 "date_unixtime": int(msg["timestamp"]),
                 "from": get_from_string(msg, chat_id),
                 "from_id": get_from_id(msg, chat_id),

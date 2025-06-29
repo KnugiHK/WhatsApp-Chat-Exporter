@@ -690,12 +690,12 @@ def export_multiple_json(args, data: Dict) -> None:
             contact = jik.replace('+', '')
 
         if args.telegram:
-            obj = telegram_json_format(jik, data[jik])
+            messages = telegram_json_format(jik, data[jik], args.timezone_offset)
         else:
-            obj = {jik: data[jik]}
+            messages = {jik: data[jik]}
         with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
             file_content = json.dumps(
-                obj,
+                messages,
                 ensure_ascii=not args.avoid_encoding_json,
                 indent=args.pretty_print_json
             )
