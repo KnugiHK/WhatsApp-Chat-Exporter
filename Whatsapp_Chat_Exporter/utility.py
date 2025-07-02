@@ -12,7 +12,7 @@ from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
-from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
 from typing import Dict, List, Optional, Tuple, Union
 try:
     from enum import StrEnum, IntEnum
@@ -625,6 +625,82 @@ def safe_name(text: Union[str, bytes]) -> str:
     normalized_text = unicodedata.normalize("NFKC", text)
     safe_chars = [char for char in normalized_text if char.isalnum() or char in "-_ ."]
     return "-".join(''.join(safe_chars).split())
+
+
+def get_from_string(msg: Dict, chat_id: str) -> str:
+    """Return the number or name for the sender"""
+    if msg["from_me"]:
+        return "Me"
+    if msg["sender"]:
+        return str(msg["sender"])
+    return str(chat_id)
+
+
+def get_chat_type(chat_id: str) -> str:
+    """Return the chat type based on the whatsapp id"""
+    if chat_id.endswith("@s.whatsapp.net"):
+        return "personal_chat"
+    if chat_id.endswith("@g.us"):
+        return "private_group"
+    logger.warning("Unknown chat type for %s, defaulting to private_group", chat_id)
+    return "private_group"
+
+
+def get_from_id(msg: Dict, chat_id: str) -> str:
+    """Return the user id for the sender"""
+    if msg["from_me"]:
+        return "user00000"
+    if msg["sender"]:
+        return "user" + msg["sender"]
+    return f"user{chat_id}"
+
+
+def get_reply_id(data: Dict, reply_key: int) -> Optional[int]:
+    """Get the id of the message corresponding to the reply"""
+    if not reply_key:
+        return None
+    for msg_id, msg in data["messages"].items():
+        if msg["key_id"] == reply_key:
+            return msg_id
+    return None
+
+
+def telegram_json_format(jik: str, data: Dict, timezone_offset) -> Dict:
+    """Convert the data to the Telegram export format"""
+    timing = Timing(timezone_offset or CURRENT_TZ_OFFSET)
+    try:
+        chat_id = int(''.join([c for c in jik if c.isdigit()]))
+    except ValueError:
+        # not a real chat: e.g. statusbroadcast
+        chat_id = 0
+    obj = {
+            "name": data["name"] if data["name"] else jik,
+            "type": get_chat_type(jik),
+            "id": chat_id,
+            "messages": [ {
+                "id": int(msgId),
+                "type": "message",
+                "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
+                "date_unixtime": int(msg["timestamp"]),
+                "from": get_from_string(msg, chat_id),
+                "from_id": get_from_id(msg, chat_id),
+                "reply_to_message_id": get_reply_id(data, msg["reply"]),
+                "text": msg["data"],
+                "text_entities": [
+                    {
+                        # TODO this will lose formatting and different types
+                        "type": "plain",
+                        "text": msg["data"],
+                        }
+                    ],
+                } for msgId, msg in data["messages"].items()]
+            }
+    # remove empty messages and replies
+    for msg_id, msg in enumerate(obj["messages"]):
+        if not msg["reply_to_message_id"]:
+            del obj["messages"][msg_id]["reply_to_message_id"]
+    obj["messages"] = [m for m in obj["messages"] if m["text"]]
+    return obj
 
 
 class WhatsAppIdentifier(StrEnum):
