@@ -587,11 +587,13 @@
                 {% endfor %}
             </div>
             <footer>
-                <h2 class="text-center">
-                    {% if not next %}
-                    End of History
-                    {% endif %}
-                </h2>
+                {% if not next %}
+                <div class="flex justify-center mb-6">
+                    <div class="bg-[#e1f2fb] rounded-lg px-3 py-2 text-sm text-[#54656f]">
+                        End of History
+                    </div>
+                </div>
+                {% endif %}
                 <br>
                 Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a>
                 created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used
