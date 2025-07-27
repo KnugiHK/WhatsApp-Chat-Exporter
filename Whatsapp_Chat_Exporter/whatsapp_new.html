@@ -281,7 +281,7 @@
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
                                     <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
                                         <div class="flex items-center gap-2">
-                                            <div class="flex-1">
+                                            <div class="flex-1 overflow-hidden">
                                                 <p class="text-whatsapp font-medium text-xs">Replying to</p>
                                                 <p class="text-[#111b21] text-xs truncate">
                                                     {% if msg.quoted_data is not none %}
@@ -373,7 +373,7 @@
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
                                     <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
                                         <div class="flex items-center gap-2">
-                                            <div class="flex-1">
+                                            <div class="flex-1 overflow-hidden">
                                                 <p class="text-whatsapp font-medium text-xs">Replying to</p>
                                                 <p class="text-[#808080] text-xs truncate">
                                                     {% if msg.quoted_data is not none %}
