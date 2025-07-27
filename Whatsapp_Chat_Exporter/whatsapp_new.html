@@ -136,6 +136,43 @@
         .status-indicator.read {
             color: #34B7F1;
         }
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 8px solid white;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+        .speaker-icon {
+            position: relative;
+            width: 8px;
+            height: 6px;
+            background: #666;
+            border-radius: 1px 0 0 1px;
+        }
+        .speaker-icon::before {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: -1px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid #666;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+        .speaker-icon::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -3px;
+            width: 8px;
+            height: 12px;
+            border: 2px solid #666;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
         </style>
         <script>
             function search(event) {
@@ -243,14 +280,37 @@
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
                                     <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
-                                        <p class="text-whatsapp font-medium text-xs">Replying to</p>
-                                        <p class="text-[#111b21] text-xs truncate">
-                                            {% if msg.quoted_data is not none %}
-                                                "{{msg.quoted_data}}"
-                                            {% else %}
-                                                this message
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1">
+                                                <p class="text-whatsapp font-medium text-xs">Replying to</p>
+                                                <p class="text-[#111b21] text-xs truncate">
+                                                    {% if msg.quoted_data is not none %}
+                                                        "{{msg.quoted_data}}"
+                                                    {% else %}
+                                                        this message
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            {% set replied_msg = msgs | selectattr('key_id', 'equalto', msg.reply) | first %}
+                                            {% if replied_msg and replied_msg.media == true %}
+                                            <div class="flex-shrink-0">
+                                                {% if "image/" in replied_msg.mime %}
+                                                <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}" class="w-8 h-8 rounded object-cover" loading="lazy"/>
+                                                {% elif "video/" in replied_msg.mime %}
+                                                <div class="relative w-8 h-8 rounded overflow-hidden bg-gray-200">
+                                                    <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}" class="w-full h-full object-cover" loading="lazy"/>
+                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                        <div class="play-icon"></div>
+                                                    </div>
+                                                </div>
+                                                {% elif "audio/" in replied_msg.mime %}
+                                                <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
+                                                    <div class="speaker-icon"></div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                             {% endif %}
-                                        </p>
+                                        </div>
                                     </div>
                                 </a>
                                 {% endif %}
@@ -312,14 +372,37 @@
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
                                     <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
-                                        <p class="text-whatsapp font-medium text-xs">Replying to</p>
-                                        <p class="text-[#808080] text-xs truncate">
-                                            {% if msg.quoted_data is not none %}
-                                                {{msg.quoted_data}}
-                                            {% else %}
-                                                this message
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1">
+                                                <p class="text-whatsapp font-medium text-xs">Replying to</p>
+                                                <p class="text-[#808080] text-xs truncate">
+                                                    {% if msg.quoted_data is not none %}
+                                                        {{msg.quoted_data}}
+                                                    {% else %}
+                                                        this message
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            {% set replied_msg = msgs | selectattr('key_id', 'equalto', msg.reply) | first %}
+                                            {% if replied_msg and replied_msg.media == true %}
+                                            <div class="flex-shrink-0">
+                                                {% if "image/" in replied_msg.mime %}
+                                                <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}" class="w-8 h-8 rounded object-cover" loading="lazy"/>
+                                                {% elif "video/" in replied_msg.mime %}
+                                                <div class="relative w-8 h-8 rounded overflow-hidden bg-gray-200">
+                                                    <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}" class="w-full h-full object-cover" loading="lazy"/>
+                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                        <div class="play-icon"></div>
+                                                    </div>
+                                                </div>
+                                                {% elif "audio/" in replied_msg.mime %}
+                                                <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
+                                                    <div class="speaker-icon"></div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                             {% endif %}
-                                        </p>
+                                        </div>
                                     </div>
                                 </a>
                                 {% endif %}
