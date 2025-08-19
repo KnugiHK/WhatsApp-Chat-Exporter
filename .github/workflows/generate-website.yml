@@ -30,7 +30,9 @@ jobs:
         run: npm install marked fs-extra marked-alert
       
       - name: Generate website from README
-        run: node .github/generate-website.js
+        run: |
+          node .github/generate-website.js
+          echo 'wts.knugi.dev' > ./docs/CNAME
       
       - name: Deploy to gh-pages
         if: github.ref == 'refs/heads/main'  # Ensure deployment only happens from main

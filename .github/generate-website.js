@@ -32,6 +32,13 @@ const generateHTML = (content) =>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="title" content="WhatsApp Chat Exporter">
+    <meta name="description" content="Export your WhatsApp conversations from Android and iOS/iPadOS devices to HTML, JSON, or text formats. Supports encrypted backups (Crypt12, Crypt14, Crypt15) and customizable templates.">
+    <meta name="keywords" content="WhatsApp, WhatsApp Chat Exporter, WhatsApp export tool, WhatsApp backup decryption, Crypt12, Crypt14, Crypt15, WhatsApp database parser, WhatsApp chat history, HTML export, JSON export, text export, customizable templates, media handling, vCard import, Python tool, open source, MIT license">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="KnugiHK">
+    <meta name="license" content="MIT">
+    <meta name="generator" content="Python">
     <title>WhatsApp Chat Exporter</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
