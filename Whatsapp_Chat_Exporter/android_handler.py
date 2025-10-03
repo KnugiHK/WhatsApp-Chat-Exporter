@@ -38,10 +38,10 @@ def contacts(db, data, enrich_from_vcards):
     if total_row_number == 0:
         if enrich_from_vcards is not None:
             logger.info(
-                "No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
+                "No contacts profiles found in the default database, contacts will be imported from the specified vCard file.\n")
         else:
             logger.warning(
-                "No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
+                "No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google\n")
         return False
     else:
         logger.info(f"Processed {total_row_number} contacts\n")
