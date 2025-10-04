@@ -75,15 +75,9 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     logger.info(f"Processing messages...(0/{total_row_number})\r")
 
     try:
-        content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
-        table_message = False
-    except sqlite3.OperationalError as e:
-        logger.debug(f'Got sql error "{e}" in _get_message_cursor_legacy trying fallback.\n')
-        try:
-            content_cursor = _get_messages_cursor_new(c, filter_empty, filter_date, filter_chat)
-            table_message = True
-        except Exception as e:
-            raise e
+        content_cursor, table_message = _get_messages_cursor(c, filter_empty, filter_date, filter_chat)
+    except Exception as e:
+        raise e
 
     i = 0
     # Fetch the first row safely
@@ -150,6 +144,18 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
                         {exclude_filter}""")
     return cursor.fetchone()[0]
 
+def _get_messages_cursor(c, filter_empty, filter_date, filter_chat):
+    try:
+        return _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat), False
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _get_messages_cursor_legacy trying fallback.\n')
+
+    try:
+        return _get_messages_cursor_v3(c, filter_empty, filter_date, filter_chat), True
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _get_messages_cursor_v3 trying fallback.\n')
+
+    return _get_messages_cursor_new(c, filter_empty, filter_date, filter_chat), True
 
 def _get_messages_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
     """Get cursor for legacy database schema."""
@@ -215,8 +221,18 @@ def _get_messages_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
                     ORDER BY messages.timestamp ASC;""")
     return cursor
 
+def _get_messages_cursor_v3(cursor, filter_empty, filter_date, filter_chat):
+    """Get cursor for new database schema with a join to jd_map to get the phone number of randomized JIDs."""
+    append_fields = "COALESCE(jid_unrand.raw_string, jid_group.raw_string) as group_sender_jid"
 
-def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
+    append_joins = f""" LEFT JOIN jid_map jid_map_unrand
+                            ON jid_map_unrand.lid_row_id = message.sender_jid_row_id
+                        LEFT JOIN jid jid_unrand
+                            ON jid_unrand._id = jid_map_unrand.jid_row_id"""
+
+    return _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat, append_fields, append_joins)
+
+def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat, append_fields = None, append_joins = None):
     """Get cursor for new database schema."""
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
@@ -224,6 +240,12 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
         filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
     exclude_filter = get_chat_condition(
         filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
+
+    if not append_fields:
+        append_fields = "jid_group.raw_string as group_sender_jid"
+
+    if not append_joins:
+        append_joins = ""
 
     cursor.execute(f"""SELECT jid_global.raw_string as key_remote_jid,
                             message._id,
@@ -240,7 +262,6 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             message.key_id,
                             message_quoted.text_data as quoted_data,
                             message.message_type as media_wa_type,
-                            jid_group.raw_string as group_sender_jid,
                             chat.subject as chat_subject,
                             missed_call_logs.video_call,
                             message.sender_jid_row_id,
@@ -250,7 +271,8 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
                             COALESCE(receipt_user.receipt_timestamp, message.received_timestamp) as received_timestamp,
-                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp
+                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp,
+                            {append_fields}
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -282,6 +304,7 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
+                        {append_joins}
                     WHERE key_remote_jid <> '-1'
                         {empty_filter}
                         {date_filter}
