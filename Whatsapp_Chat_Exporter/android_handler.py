@@ -77,7 +77,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     try:
         content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
         table_message = False
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _get_message_cursor_legacy trying fallback.\n')
         try:
             content_cursor = _get_messages_cursor_new(c, filter_empty, filter_date, filter_chat)
             table_message = True
@@ -124,7 +125,9 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
                         {date_filter}
                         {include_filter}
                         {exclude_filter}""")
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _get_message_count trying fallback.\n')
+
         empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
         date_filter = f'AND timestamp {filter_date}' if filter_date is not None else ''
         include_filter = get_chat_condition(
@@ -294,7 +297,11 @@ def _fetch_row_safely(cursor):
         try:
             content = cursor.fetchone()
             return content
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError as e:
+            # Not sure how often this might happen, but this check should reduce the overhead
+            # if DEBUG flag is not set.
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f'Got sql error "{e}" in _fetch_row_safely ignoring row.\n')
             continue
 
 
@@ -501,7 +508,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
 
     try:
         content_cursor = _get_media_cursor_legacy(c, filter_empty, filter_date, filter_chat)
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _get_media_cursor_legacy trying fallback.\n')
         content_cursor = _get_media_cursor_new(c, filter_empty, filter_date, filter_chat)
 
     content = content_cursor.fetchone()
@@ -548,7 +556,8 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
                         {date_filter}
                         {include_filter}
                         {exclude_filter}""")
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _get_media_count trying fallback.\n')
         empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
         date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
         include_filter = get_chat_condition(
@@ -695,7 +704,8 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     c = db.cursor()
     try:
         rows = _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty)
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as e:
+        logger.debug(f'Got sql error "{e}" in _execute_vcard_query_modern trying fallback.\n')
         rows = _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty)
 
     total_row_number = len(rows)
