@@ -1,5 +1,7 @@
 import vobject
 from typing import List, TypedDict
+from Whatsapp_Chat_Exporter.data_model import ChatStore
+from Whatsapp_Chat_Exporter.utility import Device
 
 
 class ExportedContactNumbers(TypedDict):
@@ -21,11 +23,14 @@ class ContactsFromVCards:
         for number, name in self.contact_mapping:
             # short number must be a bad contact, lets skip it
             if len(number) <= 5:
-                continue
-
-            for chat in filter_chats_by_prefix(chats, number).values():
-                if not hasattr(chat, 'name') or (hasattr(chat, 'name') and (chat.name is None or chat.name == '')):
-                    setattr(chat, 'name', name)
+                continue               
+            chats_search = filter_chats_by_prefix(chats, number).values()
+            if chats_search:
+                for chat in chats_search:
+                    if not hasattr(chat, 'name') or (hasattr(chat, 'name') and chat.name is None):
+                        setattr(chat, 'name', name)
+            else:
+                chats.add_chat(number + "@s.whatsapp.net", ChatStore(Device.ANDROID, name))
 
 
 def read_vcards_file(vcf_file_path, default_country_code: str):

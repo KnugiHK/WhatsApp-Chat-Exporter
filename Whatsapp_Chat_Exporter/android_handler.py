@@ -304,12 +304,10 @@ def _process_single_message(data, content, table_message, timezone_offset):
         return
 
     # Get or create the chat
-    if not data.get_chat(content["key_remote_jid"]):
+    current_chat = data.get_chat(content["key_remote_jid"])
+    if current_chat is None:
         current_chat = data.add_chat(content["key_remote_jid"], ChatStore(
             Device.ANDROID, content["chat_subject"]))
-    else:
-        current_chat = data.get_chat(content["key_remote_jid"])
-
     # Determine sender_jid_row_id
     if "sender_jid_row_id" in content:
         sender_jid_row_id = content["sender_jid_row_id"]

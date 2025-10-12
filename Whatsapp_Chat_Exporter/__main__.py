@@ -527,7 +527,7 @@ def handle_decrypt_error(error: int) -> None:
         exit(5)
 
 
-def process_contacts(args, data: ChatCollection, contact_store=None) -> None:
+def process_contacts(args, data: ChatCollection) -> None:
     """Process contacts from the database."""
     contact_db = args.wa if args.wa else "wa.db" if args.android else "ContactsV2.sqlite"
 
@@ -616,14 +616,10 @@ def handle_media_directory(args) -> None:
                 logger.info(f"Media directory has been copied to the output directory{CLEAR_LINE}")
 
 
-def create_output_files(args, data: ChatCollection, contact_store=None) -> None:
+def create_output_files(args, data: ChatCollection) -> None:
     """Create output files in the specified formats."""
     # Create HTML files if requested
     if not args.no_html:
-        # Enrich from vcards if available
-        if contact_store and not contact_store.is_empty():
-            contact_store.enrich_from_vcards(data)
-
         android_handler.create_html(
             data,
             args.output,
@@ -643,15 +639,12 @@ def create_output_files(args, data: ChatCollection, contact_store=None) -> None:
 
     # Create JSON files if requested
     if args.json and not args.import_json:
-        export_json(args, data, contact_store)
+        export_json(args, data)
 
 
-def export_json(args, data: ChatCollection, contact_store=None) -> None:
+def export_json(args, data: ChatCollection) -> None:
     """Export data to JSON format."""
-    # Enrich from vcards if available
-    if contact_store and not contact_store.is_empty():
-        contact_store.enrich_from_vcards(data)
-
+    # TODO: remove all non-target chats from data if filtering is applied?
     # Convert ChatStore objects to JSON
     if isinstance(data.get(next(iter(data), None)), ChatStore):
         data = {jik: chat.to_json() for jik, chat in data.items()}
@@ -848,13 +841,17 @@ def main():
             logger.info(f"Incremental merge completed successfully.{CLEAR_LINE}")
         else:
             # Process contacts
-            process_contacts(args, data, contact_store)
+            process_contacts(args, data)
+
+            # Enrich contacts from vCards if needed
+            if args.android and contact_store and not contact_store.is_empty():
+                contact_store.enrich_from_vcards(data)
 
             # Process messages, media, and calls
             process_messages(args, data)
 
             # Create output files
-            create_output_files(args, data, contact_store)
+            create_output_files(args, data)
 
             # Handle media directory
             handle_media_directory(args)
