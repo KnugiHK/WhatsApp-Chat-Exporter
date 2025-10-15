@@ -27,14 +27,6 @@ class ContactsFromVCards:
                 if not hasattr(chat, 'name') or (hasattr(chat, 'name') and (chat.name is None or chat.name == '')):
                     setattr(chat, 'name', name)
 
-        # skip short numbers like above
-        contact_map = {number: name for number, name in self.contact_mapping if len(number) > 5}
-
-        # replace all sender number in chats with vcf name if available
-        for chat in chats.values():
-            for message in chat.values(): # or {}:
-                if message.sender and message.sender in contact_map:
-                    message.sender = contact_map[message.sender]
 
 def read_vcards_file(vcf_file_path, default_country_code: str):
     contacts = []
