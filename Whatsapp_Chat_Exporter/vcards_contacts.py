@@ -23,17 +23,9 @@ class ContactsFromVCards:
             if len(number) <= 5:
                 continue
 
-            for k, chat in chats.items():
-                # enrich filename with name
-                if k.startswith(number) and (
-                    not hasattr(chat, 'name') or (hasattr(chat, 'name') and (chat.name is None or chat.name == ''))):
+            for chat in filter_chats_by_prefix(chats, number).values():
+                if not hasattr(chat, 'name') or (hasattr(chat, 'name') and (chat.name is None or chat.name == '')):
                     setattr(chat, 'name', name)
-
-                for message in chat.values(): # or {}:
-                    # replace numbers in meta messages (call, user added, security code..) with a name
-                    if not message.media and message.meta and message.data and number in message.data:
-                        # number has a leading or trailing space in data, might be safer to enforce this
-                        message.data = message.data.replace(number + " ", name + " ").replace(" " + number, " " + name)
 
         # skip short numbers like above
         contact_map = {number: name for number, name in self.contact_mapping if len(number) > 5}
