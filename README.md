@@ -17,6 +17,8 @@ To contribute, see the [Contributing Guidelines](https://github.com/KnugiHK/What
 
 > [!NOTE]
 > Usage in README may be removed in the future. Check the usage in [Wiki](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/wiki)
+> 
+> Click [here](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/wiki/Android-Usage#crypt15-end-to-end-encrypted-backup) for the most trivia way for exporting from Android
 
 First, install the exporter by:
 ```shell
