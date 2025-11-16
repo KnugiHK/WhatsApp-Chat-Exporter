@@ -528,13 +528,13 @@ def handle_media_directory(args) -> None:
 
 
 def create_output_files(args, data: ChatCollection, contact_store=None) -> None:
+    # Enrich from vcards if available
+    if contact_store and not contact_store.is_empty():
+        contact_store.enrich_from_vcards(data)
+
     """Create output files in the specified formats."""
     # Create HTML files if requested
     if not args.no_html:
-        # Enrich from vcards if available
-        if contact_store and not contact_store.is_empty():
-            contact_store.enrich_from_vcards(data)
-            
         android_handler.create_html(
             data,
             args.output,
@@ -549,7 +549,7 @@ def create_output_files(args, data: ChatCollection, contact_store=None) -> None:
     
     # Create text files if requested
     if args.text_format:
-        print("Writing text file...")
+        print("Writing text files...")
         android_handler.create_txt(data, args.text_format)
     
     # Create JSON files if requested
