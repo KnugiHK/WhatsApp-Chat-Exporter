@@ -1047,14 +1047,14 @@ def create_txt(data, output):
             continue
             
         # Determine file name
-        if chat.name is not None:
+        if chat.name is not None and len(chat.name) > 2:
             contact = chat.name.replace('/', '')
         else:
             contact = jik.replace('+', '')
             
         output_file = os.path.join(output, f"{contact}.txt")
         
-        with open(output_file, "w", encoding="utf8") as f:
+        with open(output_file, "a", encoding="utf8") as f:
             for message in chat.values():
                 # Skip metadata in text format
                 if message.meta and message.mime != "media":

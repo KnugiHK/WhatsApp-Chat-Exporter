@@ -24,7 +24,7 @@ class ContactsFromVCards:
                 continue
 
             for chat in filter_chats_by_prefix(chats, number).values():
-                if not hasattr(chat, 'name') or (hasattr(chat, 'name') and chat.name is None):
+                if not hasattr(chat, 'name') or (hasattr(chat, 'name') and (chat.name is None or len(chat.name) < 3)):
                     setattr(chat, 'name', name)
 
 
