@@ -36,7 +36,7 @@ class ContactsFromVCards:
 def read_vcards_file(vcf_file_path, default_country_code: str):
     contacts = []
     with open(vcf_file_path, mode="r", encoding="utf-8") as f:
-        reader = vobject.readComponents(f)
+        reader = vobject.readComponents(f, ignoreUnreadable=True)
         for row in reader:
             if hasattr(row, 'fn'):
                 name = str(row.fn.value)
