@@ -1,4 +1,6 @@
 import vobject
+import re
+import quopri
 from typing import List, TypedDict
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Device
@@ -33,24 +35,47 @@ class ContactsFromVCards:
                 chats.add_chat(number + "@s.whatsapp.net", ChatStore(Device.ANDROID, name))
 
 
+def decode_vcard_value(value: str) -> str:
+    """Decode a vCard value that may be quoted-printable UTF-8."""
+    try:
+        value = value.replace("=\n", "")  # remove soft line breaks
+        bytes_val = quopri.decodestring(value)
+        return bytes_val.decode("utf-8", errors="replace")
+    except Exception:
+        return value
+
 def read_vcards_file(vcf_file_path, default_country_code: str):
     contacts = []
-    with open(vcf_file_path, mode="r", encoding="utf-8") as f:
-        reader = vobject.readComponents(f, ignoreUnreadable=True)
-        for row in reader:
-            if hasattr(row, 'fn'):
-                name = str(row.fn.value)
-            elif hasattr(row, 'n'):
-                name = str(row.n.value)
-            else:
-                name = None
-            if not hasattr(row, 'tel') or name is None:
-                continue
-            contact: ExportedContactNumbers = {
-                "full_name": name,
-                "numbers": list(map(lambda tel: tel.value, row.tel_list)),
-            }
-            contacts.append(contact)
+    with open(vcf_file_path, "r", encoding="utf-8", errors="ignore") as f:
+        content = f.read()
+
+    # Split into individual vCards
+    vcards = content.split("BEGIN:VCARD")
+    for vcard in vcards:
+        if "END:VCARD" not in vcard:
+            continue
+
+        # Extract name in priority: FN -> N -> ORG
+        name = None
+        for field in ("FN", "N", "ORG"):
+            match = re.search(rf'^{field}(?:;[^:]*)?:(.*)', vcard, re.IGNORECASE | re.MULTILINE)
+            if match:
+                name = decode_vcard_value(match.group(1).strip())
+                break
+
+        if not name:
+            continue
+
+        # Extract phone numbers
+        numbers = re.findall(r'^\s*TEL(?:;[^:]*)?:(\+?\d+)', vcard, re.IGNORECASE | re.MULTILINE)
+        if not numbers:
+            continue
+
+        contact = {
+            "full_name": name,
+            "numbers": numbers,
+        }
+        contacts.append(contact)
 
     return map_number_to_name(contacts, default_country_code)
 
