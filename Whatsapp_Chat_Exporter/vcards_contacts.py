@@ -77,6 +77,7 @@ def read_vcards_file(vcf_file_path, default_country_code: str):
         }
         contacts.append(contact)
 
+    print(f"Imported {len(contacts)} contacts/vcards")
     return map_number_to_name(contacts, default_country_code)
 
 
