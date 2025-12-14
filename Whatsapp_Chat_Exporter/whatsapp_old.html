@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Whatsapp - {{ name }}</title> 
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="{{w3css}}"> 
+		<style>
+		html, body {
+			font-size: 12px;
+			scroll-behavior: smooth;
+		}
+		header {
+			position: fixed;
+			z-index: 20;
+			border-bottom: 2px solid #e3e6e7;
+			font-size: 2em;
+			font-weight: bolder;
+			background-color: white;
+			padding: 20px 0 20px 0;
+		}
+		footer {
+			border-top: 2px solid #e3e6e7;
+			padding: 20px 0 20px 0;
+		}
+		article {
+			width:500px;
+			margin:100px auto;
+			z-index:10;
+			font-size: 15px;
+			word-wrap: break-word;
+		}
+		img, video {
+			max-width:100%;
+		}
+		div.reply{
+			font-size: 13px;
+			text-decoration: none;
+		}
+		div:target::before {
+			content: '';
+			display: block;
+			height: 115px;
+			margin-top: -115px;
+			visibility: hidden;
+		}
+		div:target {
+			border-style: solid;
+			border-width: 2px;
+			animation: border-blink 0.5s steps(1) 5;
+			border-color: rgba(0,0,0,0)
+		}
+		table {
+			width: 100%;
+		}
+		@keyframes border-blink {
+			0% {
+				border-color: #2196F3;	
+			}
+			50% {
+				border-color: rgba(0,0,0,0);
+			}
+		}
+		.avatar {
+			border-radius:50%;
+			overflow:hidden;
+			max-width: 64px;
+			max-height: 64px;
+		}
+		.name {
+			color: #3892da;
+		}
+		.pad-left-10 {
+			padding-left: 10px;
+		}
+		.pad-right-10 {
+			padding-right: 10px;
+		}
+		.reply_link {
+			color: #168acc;
+		}
+		.blue {
+			color: #70777a;
+		}
+		.sticker {
+			max-width: 100px !important;
+			max-height: 100px !important;
+		}
+		</style>
+	<base href="{{ media_base }}" target="_blank">
+	</head>
+	<body>
+		<header class="w3-center w3-top">
+			{{ headline }}
+			{% if status is not none %}
+			<br>
+			<span class="w3-small">{{ status }}</span>
+			{% endif %}
+		</header>
+		<article class="w3-container">
+			<div class="table">
+			{% set last = {'last': 946688461.001} %}
+			{% for msg in msgs -%}
+				<div class="w3-row w3-padding-small w3-margin-bottom" id="{{ msg.key_id }}">
+					{% if determine_day(last.last, msg.timestamp) is not none  %}
+					<div class="w3-center w3-padding-16 blue">{{ determine_day(last.last, msg.timestamp) }}</div>
+					{% if last.update({'last': msg.timestamp}) %}{% endif %}
+					{% endif %}
+					{% if msg.from_me == true %}
+					<div class="w3-row">
+						<div class="w3-left blue">{{ msg.time }}</div>
+						<div class="name w3-right-align pad-left-10">You</div>
+					</div>
+					<div class="w3-row">
+						{% if not no_avatar and my_avatar is not none %}
+						<div class="w3-col m10 l10">
+						{% else %}
+						<div class="w3-col m12 l12">
+						{% endif %}
+							<div class="w3-right-align">
+							{% if msg.reply is not none %}
+								<div class="reply">
+									<span class="blue">Replying to </span>
+									<a href="#{{msg.reply}}" target="_self" class="reply_link no-base">
+										{% if msg.quoted_data is not none %}
+											"{{msg.quoted_data}}"
+										{% else %}
+											this message
+										{% endif %}
+									</a>
+								</div>
+							{% endif %}
+							{% if msg.meta == true or msg.media == false and msg.data is none %}
+								<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+									{% if msg.safe %}
+									<p>{{ msg.data | safe or 'Not supported WhatsApp internal message' }}</p>
+									{% else %}
+									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
+									{% endif %}
+								</div>
+								{% if msg.caption is not none %}
+								<div class="w3-container">
+									{{ msg.caption | urlize(none, true, '_blank') }}
+								</div>
+								{% endif %}
+							{% else %}
+								{% if msg.media == false %}
+								{{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
+								{% else %}
+									{% if "image/" in msg.mime %}
+									<a href="{{ msg.data }}">
+										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} loading="lazy"/>
+									</a>
+									{% elif "audio/" in msg.mime %}
+									<audio controls="controls" autobuffer="autobuffer">
+										<source src="{{ msg.data }}" />
+									</audio>
+									{% elif "video/" in msg.mime %}
+									<video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
+									</video>
+									{% elif "/" in msg.mime %}
+										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
+										</div>
+									{% else %}
+										{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% endif %}
+									{% if msg.caption is not none %}
+									<div class="w3-container">
+										{{ msg.caption | urlize(none, true, '_blank') }}
+									</div>
+									{% endif %}
+								{% endif %}
+							{% endif %}
+							</div>
+						</div>
+						{% if not no_avatar and my_avatar is not none %}
+						<div class="w3-col m2 l2 pad-left-10">
+							<a href="{{ my_avatar }}">
+								<img src="{{ my_avatar }}" onerror="this.style.display='none'" class="avatar" loading="lazy">
+							</a>
+						</div>
+						{% endif %}
+					</div>
+					{% else %}
+					<div class="w3-row">
+						<div class="w3-left pad-right-10 name">
+							{% if msg.sender is not none %}
+							{{ msg.sender }}
+							{% else %}
+							{{ name }}
+							{% endif %}
+						</div>
+						<div class="w3-right-align blue">{{ msg.time }}</div>
+					</div>
+					<div class="w3-row">
+						{% if not no_avatar %}
+						<div class="w3-col m2 l2">
+								{% if their_avatar is not none %}
+								<a href="{{ their_avatar }}"><img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar" loading="lazy"></a>
+								{% else %}
+								<img src="{{ their_avatar_thumb or '' }}" onerror="this.style.display='none'" class="avatar" loading="lazy">
+								{% endif %}
+						</div>
+						<div class="w3-col m10 l10">
+						{% else %}
+						<div class="w3-col m12 l12">
+						{% endif %}
+							<div class="w3-left-align">
+							{% if msg.reply is not none %}
+								<div class="reply">
+									<span class="blue">Replying to </span>
+									<a href="#{{msg.reply}}" target="_self" class="reply_link no-base">
+										{% if msg.quoted_data is not none %}
+											"{{msg.quoted_data}}"
+										{% else %}
+											this message
+										{% endif %}
+									</a>
+								</div>
+							{% endif %}
+							{% if msg.meta == true or msg.media == false and msg.data is none %}
+								<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+									{% if msg.safe %}
+									<p>{{ msg.data | safe or 'Not supported WhatsApp internal message' }}</p>
+									{% else %}
+									<p>{{ msg.data or 'Not supported WhatsApp internal message' }}</p>
+									{% endif %}
+								</div>
+								{% if msg.caption is not none %}
+								<div class="w3-container">
+								{{ msg.caption | urlize(none, true, '_blank') }}
+								</div>
+								{% endif %}
+							{% else %}
+								{% if msg.media == false %}
+								{{ msg.data | sanitize_except() | urlize(none, true, '_blank') }}
+								{% else %}
+									{% if "image/" in msg.mime %}
+									<a href="{{ msg.data }}">
+										<img src="{{ msg.thumb if msg.thumb is not none else msg.data }}" {{ 'class="sticker"' | safe if msg.sticker }} loading="lazy"/>
+									</a>
+									{% elif "audio/" in msg.mime %}
+									<audio controls="controls" autobuffer="autobuffer">
+										<source src="{{ msg.data }}" />
+									</audio>
+									{% elif "video/" in msg.mime %}
+									<video class="lazy" autobuffer {% if msg.message_type|int == 13 or msg.message_type|int == 11 %}autoplay muted loop playsinline{%else%}controls{% endif %}>
+										<source type="{{ msg.mime }}" data-src="{{ msg.data }}" />
+									</video>
+									{% elif "/" in msg.mime %}
+										<div class="w3-panel w3-border-blue w3-pale-blue w3-rightbar w3-leftbar w3-threequarter w3-center">
+											<p>The file cannot be displayed here, however it should be located at <a href="./{{ msg.data }}">here</a></p>
+										</div>
+									{% else %}
+										{% filter escape %}{{ msg.data }}{% endfilter %}
+									{% endif %}
+									{% if msg.caption is not none %}
+									<div class="w3-container">
+										{{ msg.caption | urlize(none, true, '_blank') }}
+									</div>
+									{% endif %}
+								{% endif %}
+							{% endif %}
+							</div>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			{% endfor %}
+			</div>
+		</article>
+		<footer class="w3-center">
+			<h2>
+			{% if previous %}
+			<a href="./{{ previous }}" target="_self">Previous</a>
+			{% endif %}
+			<h2>
+			{% if next %}
+			<a href="./{{ next }}" target="_self">Next</a>
+			{% else %}
+			End of History
+			{% endif %}
+			</h2>
+			<br>
+			Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
+		</footer>
+		<script>
+		document.addEventListener("DOMContentLoaded", function() {
+		var lazyVideos = [].slice.call(document.querySelectorAll("video.lazy"));
+
+		if ("IntersectionObserver" in window) {
+			var lazyVideoObserver = new IntersectionObserver(function(entries, observer) {
+			entries.forEach(function(video) {
+				if (video.isIntersecting) {
+				for (var source in video.target.children) {
+					var videoSource = video.target.children[source];
+					if (typeof videoSource.tagName === "string" && videoSource.tagName === "SOURCE") {
+					videoSource.src = videoSource.dataset.src;
+					}
+				}
+
+				video.target.load();
+				video.target.classList.remove("lazy");
+				lazyVideoObserver.unobserve(video.target);
+				}
+			});
+			});
+
+			lazyVideos.forEach(function(lazyVideo) {
+			lazyVideoObserver.observe(lazyVideo);
+			});
+		}
+		});
+		</script>
+		<script>   
+		// Prevent the <base> tag from affecting links with the class "no-base"
+		document.querySelectorAll('.no-base').forEach(link => {
+			link.addEventListener('click', function(event) {
+			const href = this.getAttribute('href');
+			if (href.startsWith('#')) {
+				window.location.hash = href;
+				event.preventDefault();
+			}
+			});
+		});
+		</script>
+	</body>
+</html>

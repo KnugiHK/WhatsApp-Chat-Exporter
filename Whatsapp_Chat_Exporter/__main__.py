@@ -185,8 +185,8 @@ def setup_argument_parser() -> ArgumentParser:
         help="Do not render avatar in HTML output"
     )
     html_group.add_argument(
-        "--experimental-new-theme", dest="whatsapp_theme", default=False, action='store_true',
-        help="Use the newly designed WhatsApp-alike theme"
+        "--old-theme", dest="telegram_theme", default=False, action='store_true',
+        help="Use the old Telegram-alike theme"
     )
     html_group.add_argument(
         "--headline", dest="headline", default="Chat history with ??",
@@ -359,8 +359,8 @@ def validate_args(parser: ArgumentParser, args) -> None:
         args.key = getpass("Enter your encryption key: ")
 
     # Theme validation
-    if args.whatsapp_theme:
-        args.template = "whatsapp_new.html"
+    if args.telegram_theme:
+        args.template = "whatsapp_old.html"
 
     # Chat filter validation
     if args.filter_chat_include is not None and args.filter_chat_exclude is not None:
@@ -628,7 +628,7 @@ def create_output_files(args, data: ChatCollection) -> None:
             args.offline,
             args.size,
             args.no_avatar,
-            args.whatsapp_theme,
+            args.telegram_theme,
             args.headline
         )
 
@@ -713,7 +713,7 @@ def process_exported_chat(args, data: ChatCollection) -> None:
             args.offline,
             args.size,
             args.no_avatar,
-            args.whatsapp_theme,
+            args.telegram_theme,
             args.headline
         )
 
@@ -779,7 +779,7 @@ def main():
             args.offline,
             args.size,
             args.no_avatar,
-            args.whatsapp_theme,
+            args.telegram_theme,
             args.headline
         )
     elif args.exported:
