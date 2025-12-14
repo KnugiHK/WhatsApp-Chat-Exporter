@@ -1,9 +1,12 @@
-import vobject
+import logging
 import re
 import quopri
 from typing import List, TypedDict
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import Device
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, Device
+
+
+logger = logging.getLogger(__name__)
 
 
 class ExportedContactNumbers(TypedDict):
@@ -77,7 +80,7 @@ def read_vcards_file(vcf_file_path, default_country_code: str):
         }
         contacts.append(contact)
 
-    print(f"Imported {len(contacts)} contacts/vcards")
+    logger.info(f"Imported {len(contacts)} contacts/vcards{CLEAR_LINE}")
     return map_number_to_name(contacts, default_country_code)
 
 
