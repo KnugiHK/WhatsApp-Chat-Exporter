@@ -23,7 +23,7 @@ def test_readVCardsFile():
     # Test complex name
     assert data[1][1] == "Yard Lawn Guy, Jose Lopez"
     # Test name with emoji
-    assert data[2][1] == "John Butler 🌟"
+    assert data[2][1] == "John Butler 🌟💫🌟"
     # Test note with multi-line encoding
     assert data[3][1] == "Airline Contact #'s"
     # Test address with multi-line encoding
