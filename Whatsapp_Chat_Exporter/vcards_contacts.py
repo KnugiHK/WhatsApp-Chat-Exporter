@@ -40,8 +40,16 @@ class ContactsFromVCards:
 
 def decode_quoted_printable(value: str, charset: str) -> str:
     """Decode a vCard value that may be quoted-printable UTF-8."""
-    bytes_val = quopri.decodestring(value)
-    return bytes_val.decode(charset, errors="replace")
+    try:
+        bytes_val = quopri.decodestring(value)
+        return bytes_val.decode(charset, errors="replace")
+    except Exception:
+        # Fallback: return the original value if decoding fails
+        logger.warning(
+            f"Failed to decode quoted-printable value: {value}, "
+            f"charset: {charset}. Please report this issue.{CLEAR_LINE}"
+        )
+        return value
 
 def _parse_vcard_line(line: str) -> tuple[str, dict[str, str], str] | None:
     """
@@ -143,10 +151,7 @@ def process_vcard_entry(entry: str) -> dict | bool:
     if not name:
         return False
 
-    # 2. Extract phone numbers
     numbers = get_vcard_value(entry, "TEL")
-    
-    # Ensure at least one number was found
     if not numbers:
         return False
 
