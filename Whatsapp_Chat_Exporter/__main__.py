@@ -20,16 +20,8 @@ from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
 from sys import exit
-from typing import Tuple, Optional, List, Dict, Any, Union
-
-# Try to import vobject for contacts processing
-try:
-    import vobject
-except ModuleNotFoundError:
-    vcards_deps_installed = False
-else:
-    from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
-    vcards_deps_installed = True
+from typing import Optional, List, Dict
+from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 
 
 logger = logging.getLogger(__name__)
@@ -432,13 +424,6 @@ def process_single_date_filter(parser: ArgumentParser, args) -> None:
 def setup_contact_store(args) -> Optional['ContactsFromVCards']:
     """Set up and return a contact store if needed."""
     if args.enrich_from_vcards is not None:
-        if not vcards_deps_installed:
-            logger.error(
-                "You don't have the dependency to enrich contacts with vCard.\n"
-                "Read more on how to deal with enriching contacts:\n"
-                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage\n"
-            )
-            exit(1)
         contact_store = ContactsFromVCards()
         contact_store.load_vcf_file(
             args.enrich_from_vcards, args.default_country_code)
