@@ -17,6 +17,8 @@ To contribute, see the [Contributing Guidelines](https://github.com/KnugiHK/What
 
 > [!NOTE]
 > Usage in README may be removed in the future. Check the usage in [Wiki](https://github.com/KnugiHK/Whatsapp-Chat-Exporter/wiki)
+> 
+> Click [here](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/wiki/Android-Usage#crypt15-end-to-end-encrypted-backup) for the most trivia way for exporting from Android
 
 First, install the exporter by:
 ```shell
@@ -254,7 +256,7 @@ Miscellaneous:
   --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
                         Specify the maximum number of worker for bruteforce decryption.
 
-WhatsApp Chat Exporter: 0.12.0 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+WhatsApp Chat Exporter: 0.12.1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 ```
 
