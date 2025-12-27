@@ -1,4 +1,5 @@
 import os
+import sys
 import pytest
 import subprocess
 
@@ -35,6 +36,11 @@ def test_nuitka_binary():
     """
     Tests the creation and execution of a Nuitka-compiled binary.
     """
+
+    if sys.version_info >= (3, 14):
+        print("Skipping Nuitka test: Python 3.14 is not yet fully supported by Nuitka.")
+        return
+    
     nuitka_command = [
         "python", "-m", "nuitka", "--onefile", "--assume-yes-for-downloads",
         "--include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html",
