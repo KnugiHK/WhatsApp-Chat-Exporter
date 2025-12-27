@@ -45,7 +45,7 @@ def test_nuitka_binary():
         "python", "-m", "nuitka", "--onefile", "--assume-yes-for-downloads",
         "--include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html",
         "Whatsapp_Chat_Exporter",
-        "--output-filename=wtsexporter_linux_x64.exe"  # use .exe on all platforms for compatibility
+        "--output-filename=wtsexporter.exe"  # use .exe on all platforms for compatibility
     ]
 
     compile_result = subprocess.run(
