@@ -57,7 +57,7 @@ jobs:
     - name: Build binary with Nuitka
       run: |
         python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter 
-        copy wtsexporter.exe wtsexporter_x64.exe
+        Rename-Item -Path "wtsexporter.exe" -NewName "wtsexporter_x64.exe"
         Get-FileHash wtsexporter_x64.exe
     - name: Generate artifact attestation
       uses: actions/attest-build-provenance@v3
