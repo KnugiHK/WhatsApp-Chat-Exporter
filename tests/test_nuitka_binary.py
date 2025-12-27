@@ -36,14 +36,10 @@ def test_nuitka_binary():
     Tests the creation and execution of a Nuitka-compiled binary.
     """
     nuitka_command = [
-        "python", "-m", "nuitka",
-        "--no-deployment-flag=self-execution",
-        "--onefile",
+        "python", "-m", "nuitka", "--onefile", "--assume-yes-for-downloads",
         "--include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html",
-        "--assume-yes-for-downloads",
-        "--follow-imports",
-        "Whatsapp_Chat_Exporter/__main__.py",
-        "--output-filename=wtsexporter.exe"  # use .exe on all platforms for compatibility
+        "Whatsapp_Chat_Exporter",
+        "--output-filename=wtsexporter_linux_x64.exe"  # use .exe on all platforms for compatibility
     ]
 
     compile_result = subprocess.run(
