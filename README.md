@@ -136,12 +136,9 @@ wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
 ```
 
 ## Results
-After extracting, you will get these:
-#### Private Message
+After extracting, you will get this:
 ![Private Message](imgs/pm.png)
 
-#### Group Message
-![Group Message](imgs/group.png)
 
 ## More options
 Invoke the wtsexporter with --help option will show you all options available.
