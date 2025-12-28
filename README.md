@@ -137,6 +137,7 @@ wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
 
 ## Results
 After extracting, you will get this:
+
 ![Private Message](imgs/pm.png)
 
 
