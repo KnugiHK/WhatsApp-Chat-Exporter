@@ -260,6 +260,10 @@ WhatsApp Chat Exporter: 0.12.1 Licensed with MIT. See https://wts.knugi.dev/docs
 licenses.
 ```
 
+# Python Support Policy
+
+This project officially supports all non-EOL (End-of-Life) versions of Python. Once a Python version reaches EOL, it is dropped in the next release. See [Python's EOL Schedule](https://devguide.python.org/versions/).
+
 # Legal Stuff & Disclaimer
 
 This is a MIT licensed project.
