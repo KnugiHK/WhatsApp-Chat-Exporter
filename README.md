@@ -52,7 +52,7 @@ wtsexporter -a
 The default WhatsApp contact database typically contained contact names extracted from your phone, which the exporter used to map your chats. However, in some reported cases, the database may have never been populated. In such case, you can export your contacts to a vCard file from your phone or a cloud provider like Google Contacts. Then, install the necessary dependency and run the following command from the shell:
 ```sh
 pip install whatsapp-chat-exporter["vcards"]
-wtsexporter -a --enrich-from-vcard contacts.vcf --default-country-code 852
+wtsexporter -a --enrich-from-vcards contacts.vcf --default-country-code 852
 ```
 
 ### Encrypted Android WhatsApp Backup
