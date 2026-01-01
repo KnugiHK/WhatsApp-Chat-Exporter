@@ -146,7 +146,7 @@ def setup_argument_parser() -> ArgumentParser:
         help="Pretty print the output JSON."
     )
     json_group.add_argument(
-        "--telegram", dest="telegram", default=False, action='store_true',
+        "--tg", "--telegram", dest="telegram", default=False, action='store_true',
         help="Output the JSON in a format compatible with Telegram export (implies json-per-chat)"
     )
     json_group.add_argument(
