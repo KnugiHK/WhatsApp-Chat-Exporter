@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatsapp-chat-exporter"
-version = "0.12.1"
+version = "0.13.0rc1"
 description = "A Whatsapp database parser that provides history of your Whatsapp conversations in HTML and JSON. Android, iOS, iPadOS, Crypt12, Crypt14, Crypt15 supported."
 readme = "README.md"
 authors = [
@@ -19,11 +19,11 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Development Status :: 4 - Beta",
@@ -33,7 +33,7 @@ classifiers = [
     "Topic :: Utilities",
     "Topic :: Database"
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "jinja2",
     "bleach"
@@ -44,10 +44,9 @@ android_backup = ["pycryptodome", "javaobj-py3"]
 crypt12 = ["pycryptodome"]
 crypt14 = ["pycryptodome"]
 crypt15 = ["pycryptodome", "javaobj-py3"]
-all = ["pycryptodome", "javaobj-py3", "vobject"]
-everything = ["pycryptodome", "javaobj-py3", "vobject"]
+all = ["pycryptodome", "javaobj-py3"]
+everything = ["pycryptodome", "javaobj-py3"]
 backup = ["pycryptodome", "javaobj-py3"]
-vcards = ["vobject", "pycryptodome", "javaobj-py3"]
 
 [project.scripts]
 wtsexporter = "Whatsapp_Chat_Exporter.__main__:main"
@@ -60,3 +59,8 @@ include = ["Whatsapp_Chat_Exporter"]
 
 [tool.setuptools.package-data]
 Whatsapp_Chat_Exporter = ["*.html"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]

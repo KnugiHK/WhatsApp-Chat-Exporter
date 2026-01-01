@@ -136,12 +136,10 @@ wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
 ```
 
 ## Results
-After extracting, you will get these:
-#### Private Message
+After extracting, you will get this:
+
 ![Private Message](imgs/pm.png)
 
-#### Group Message
-![Group Message](imgs/group.png)
 
 ## More options
 Invoke the wtsexporter with --help option will show you all options available.
@@ -233,6 +231,19 @@ Contact Enrichment:
                         Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this
                         will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country
 
+Incremental Merging:
+  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-
+                        dir and --target-dir. The chats (JSON files only) and media from the source
+                        directory will be merged into the target directory. No chat messages or media
+                        will be deleted from the target directory; only new chat messages and media
+                        will be added to it. This enables chat messages and media to be deleted from
+                        the device to free up space, while ensuring they are preserved in the exported
+                        backups.
+  --source-dir SOURCE_DIR
+                        Sets the source directory. Used for performing incremental merges.
+  --target-dir TARGET_DIR
+                        Sets the target directory. Used for performing incremental merges.
+
 Miscellaneous:
   -s, --showkey         Show the HEX key used to decrypt the database
   --check-update        Check for updates (require Internet access)
@@ -243,9 +254,13 @@ Miscellaneous:
   --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
                         Specify the maximum number of worker for bruteforce decryption.
 
-WhatsApp Chat Exporter: 0.12.1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+WhatsApp Chat Exporter: 0.13.0rc1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 ```
+
+# Python Support Policy
+
+This project officially supports all non-EOL (End-of-Life) versions of Python. Once a Python version reaches EOL, it is dropped in the next release. See [Python's EOL Schedule](https://devguide.python.org/versions/).
 
 # Legal Stuff & Disclaimer
 

@@ -27,23 +27,24 @@ def _extract_encrypted_key(keyfile):
     return _generate_hmac_of_hmac(key_stream)
 
 
-key = open("encrypted_backup.key", "rb").read()
-database = open("wa.db.crypt15", "rb").read()
-main_key, hex_key = _extract_encrypted_key(key)
-for i in range(100):
-    iv = database[i:i+16]
-    for j in range(100):
-        cipher = AES.new(main_key, AES.MODE_GCM, iv)
-        db_ciphertext = database[j:]
-        db_compressed = cipher.decrypt(db_ciphertext)
-        try:
-            db = zlib.decompress(db_compressed)
-        except zlib.error:
-            ...
-        else:
-            if db[0:6] == b"SQLite":
-                print(f"Found!\nIV: {i}\nOffset: {j}")
-                print(db_compressed[:10])
-                exit()
+if __name__ == "__main__":
+    key = open("encrypted_backup.key", "rb").read()
+    database = open("wa.db.crypt15", "rb").read()
+    main_key, hex_key = _extract_encrypted_key(key)
+    for i in range(100):
+        iv = database[i:i+16]
+        for j in range(100):
+            cipher = AES.new(main_key, AES.MODE_GCM, iv)
+            db_ciphertext = database[j:]
+            db_compressed = cipher.decrypt(db_ciphertext)
+            try:
+                db = zlib.decompress(db_compressed)
+            except zlib.error:
+                ...
+            else:
+                if db[0:6] == b"SQLite":
+                    print(f"Found!\nIV: {i}\nOffset: {j}")
+                    print(db_compressed[:10])
+                    exit()
 
-print("Not found! Try to increase maximum search.")
+    print("Not found! Try to increase maximum search.")

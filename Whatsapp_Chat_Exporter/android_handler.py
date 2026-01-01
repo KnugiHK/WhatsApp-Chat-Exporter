@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import logging
 import sqlite3
 import os
 import shutil
@@ -9,36 +10,41 @@ from markupsafe import escape as htmle
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, JidType, Device
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, JidType, Device
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
 from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, determine_metadata
-from Whatsapp_Chat_Exporter.utility import get_chat_condition, slugify, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable
+
+
+logger = logging.getLogger(__name__)
 
 
 def contacts(db, data, enrich_from_vcards):
     """
     Process WhatsApp contacts from the database.
-    
+
     Args:
         db: Database connection
         data: Data store object
         enrich_from_vcards: Path to vCard file for contact enrichment
-        
+
     Returns:
         bool: False if no contacts found, True otherwise
     """
     c = db.cursor()
     c.execute("SELECT count() FROM wa_contacts")
     total_row_number = c.fetchone()[0]
-    
+
     if total_row_number == 0:
         if enrich_from_vcards is not None:
-            print("No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
+            logger.info(
+                "No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
         else:
-            print("No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
+            logger.warning(
+                "No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
         return False
     else:
-        print(f"Processing contacts...({total_row_number})")
+        logger.info(f"Processed {total_row_number} contacts\n")
 
     c.execute("SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts;")
     row = c.fetchone()
@@ -47,14 +53,14 @@ def contacts(db, data, enrich_from_vcards):
         if row["status"] is not None:
             current_chat.status = row["status"]
         row = c.fetchone()
-    
+
     return True
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty, no_reply):
     """
     Process WhatsApp messages from the database.
-    
+
     Args:
         db: Database connection
         data: Data store object
@@ -66,7 +72,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c = db.cursor()
     total_row_number = _get_message_count(c, filter_empty, filter_date, filter_chat)
-    print(f"Processing messages...(0/{total_row_number})", end="\r")
+    logger.info(f"Processing messages...(0/{total_row_number})\r")
 
     try:
         content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
@@ -81,18 +87,18 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     i = 0
     # Fetch the first row safely
     content = _fetch_row_safely(content_cursor)
-    
+
     while content is not None:
         _process_single_message(data, content, table_message, timezone_offset)
-        
+
         i += 1
         if i % 1000 == 0:
-            print(f"Processing messages...({i}/{total_row_number})", end="\r")
-        
+            logger.info(f"Processing messages...({i}/{total_row_number})\r")
+
         # Fetch the next row safely
         content = _fetch_row_safely(content_cursor)
-    
-    print(f"Processing messages...({total_row_number}/{total_row_number})", end="\r")
+
+    logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
 
 
 # Helper functions for message processing
@@ -102,8 +108,10 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
     try:
         empty_filter = get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")
         date_filter = f'AND timestamp {filter_date}' if filter_date is not None else ''
-        include_filter = get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "messages.remote_resource"], "jid", "android")
-        exclude_filter = get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "messages.remote_resource"], "jid", "android")
+        include_filter = get_chat_condition(
+            filter_chat[0], True, ["messages.key_remote_jid", "messages.remote_resource"], "jid", "android")
+        exclude_filter = get_chat_condition(
+            filter_chat[1], False, ["messages.key_remote_jid", "messages.remote_resource"], "jid", "android")
 
         cursor.execute(f"""SELECT count()
                       FROM messages
@@ -119,8 +127,10 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
     except sqlite3.OperationalError:
         empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
         date_filter = f'AND timestamp {filter_date}' if filter_date is not None else ''
-        include_filter = get_chat_condition(filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
-        exclude_filter = get_chat_condition(filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+        include_filter = get_chat_condition(
+            filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+        exclude_filter = get_chat_condition(
+            filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
 
         cursor.execute(f"""SELECT count()
                       FROM message
@@ -142,8 +152,10 @@ def _get_messages_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
     """Get cursor for legacy database schema."""
     empty_filter = get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")
     date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
-    include_filter = get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "messages.remote_resource"], "jid_global", "android")
-    exclude_filter = get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "messages.remote_resource"], "jid_global", "android")
+    include_filter = get_chat_condition(
+        filter_chat[0], True, ["messages.key_remote_jid", "messages.remote_resource"], "jid_global", "android")
+    exclude_filter = get_chat_condition(
+        filter_chat[1], False, ["messages.key_remote_jid", "messages.remote_resource"], "jid_global", "android")
 
     cursor.execute(f"""SELECT messages.key_remote_jid,
                             messages._id,
@@ -205,8 +217,10 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     """Get cursor for new database schema."""
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
-    include_filter = get_chat_condition(filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
-    exclude_filter = get_chat_condition(filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
+    include_filter = get_chat_condition(
+        filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
+    exclude_filter = get_chat_condition(
+        filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
 
     cursor.execute(f"""SELECT jid_global.raw_string as key_remote_jid,
                             message._id,
@@ -288,19 +302,18 @@ def _process_single_message(data, content, table_message, timezone_offset):
     """Process a single message row."""
     if content["key_remote_jid"] is None:
         return
-        
+
     # Get or create the chat
-    if not data.get_chat(content["key_remote_jid"]):
-        current_chat = data.add_chat(content["key_remote_jid"], ChatStore(Device.ANDROID, content["chat_subject"]))
-    else:
-        current_chat = data.get_chat(content["key_remote_jid"])
-    
+    current_chat = data.get_chat(content["key_remote_jid"])
+    if current_chat is None:
+        current_chat = data.add_chat(content["key_remote_jid"], ChatStore(
+            Device.ANDROID, content["chat_subject"]))
     # Determine sender_jid_row_id
     if "sender_jid_row_id" in content:
         sender_jid_row_id = content["sender_jid_row_id"]
     else:
         sender_jid_row_id = None
-    
+
     # Create message object
     message = Message(
         from_me=not sender_jid_row_id and content["key_from_me"],
@@ -312,19 +325,19 @@ def _process_single_message(data, content, table_message, timezone_offset):
         received_timestamp=content["received_timestamp"],
         read_timestamp=content["read_timestamp"]
     )
-    
+
     # Handle binary data
     if isinstance(content["data"], bytes):
         _process_binary_message(message, content)
         current_chat.add_message(content["_id"], message)
         return
-    
+
     # Set sender for group chats
     if content["jid_type"] == JidType.GROUP and content["key_from_me"] == 0:
         _set_group_sender(message, content, data, table_message)
     else:
         message.sender = None
-    
+
     # Handle quoted messages
     if content["quoted"] is not None:
         message.reply = content["quoted"]
@@ -334,7 +347,7 @@ def _process_single_message(data, content, table_message, timezone_offset):
             message.quoted_data = content["quoted_data"]
     else:
         message.reply = None
-    
+
     # Handle message caption
     if not table_message and content["media_caption"] is not None:
         # Old schema
@@ -344,14 +357,14 @@ def _process_single_message(data, content, table_message, timezone_offset):
         message.caption = content["data"]
     else:
         message.caption = None
-    
+
     # Handle message content based on status
     if content["status"] == 6:  # 6 = Metadata
         _process_metadata_message(message, content, data, table_message)
     else:
         # Real message
         _process_regular_message(message, content, table_message)
-    
+
     current_chat.add_message(content["_id"], message)
 
 
@@ -381,7 +394,7 @@ def _set_group_sender(message, content, data, table_message):
                 name = data.get_chat(content["remote_resource"]).name
             if "@" in content["remote_resource"]:
                 fallback = content["remote_resource"].split('@')[0]
-    
+
     message.sender = name or fallback
 
 
@@ -389,7 +402,7 @@ def _process_metadata_message(message, content, data, table_message):
     """Process metadata message."""
     message.meta = True
     name = fallback = None
-    
+
     if table_message:
         if content["sender_jid_row_id"] > 0:
             _jid = content["group_sender_jid"]
@@ -408,12 +421,12 @@ def _process_metadata_message(message, content, data, table_message):
                 fallback = _jid.split('@')[0]
         else:
             name = "You"
-    
+
     message.data = determine_metadata(content, name or fallback)
-    
+
     if isinstance(message.data, str) and "<br>" in message.data:
         message.safe = True
-    
+
     if message.data is None:
         if content["video_call"] is not None:  # Missed call
             message.meta = True
@@ -429,7 +442,7 @@ def _process_metadata_message(message, content, data, table_message):
 def _process_regular_message(message, content, table_message):
     """Process regular (non-metadata) message."""
     message.sticker = content["media_wa_type"] == 20  # Sticker is a message
-    
+
     if content["key_from_me"] == 1:
         if content["status"] == 5 and content["edit_version"] == 7 or table_message and content["media_wa_type"] == 15:
             msg = "Message deleted"
@@ -454,7 +467,7 @@ def _process_regular_message(message, content, table_message):
                 msg = content["data"]
                 if msg is not None:
                     msg = _format_message_text(msg)
-    
+
     message.data = msg
 
 
@@ -470,7 +483,7 @@ def _format_message_text(text):
 def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True):
     """
     Process WhatsApp media files from the database.
-    
+
     Args:
         db: Database connection
         data: Data store object
@@ -482,30 +495,30 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     """
     c = db.cursor()
     total_row_number = _get_media_count(c, filter_empty, filter_date, filter_chat)
-    print(f"\nProcessing media...(0/{total_row_number})", end="\r")
-    
+    logger.info(f"Processing media...(0/{total_row_number})\r")
+
     try:
         content_cursor = _get_media_cursor_legacy(c, filter_empty, filter_date, filter_chat)
     except sqlite3.OperationalError:
         content_cursor = _get_media_cursor_new(c, filter_empty, filter_date, filter_chat)
-    
+
     content = content_cursor.fetchone()
     mime = MimeTypes()
-    
+
     # Ensure thumbnails directory exists
     Path(f"{media_folder}/thumbnails").mkdir(parents=True, exist_ok=True)
-    
+
     i = 0
     while content is not None:
         _process_single_media(data, content, media_folder, mime, separate_media)
-        
+
         i += 1
         if i % 100 == 0:
-            print(f"Processing media...({i}/{total_row_number})", end="\r")
-        
+            logger.info(f"Processing media...({i}/{total_row_number})\r")
+
         content = content_cursor.fetchone()
-    
-    print(f"Processing media...({total_row_number}/{total_row_number})", end="\r")
+
+    logger.info(f"Processed {total_row_number} media{CLEAR_LINE}")
 
 
 # Helper functions for media processing
@@ -515,8 +528,10 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
     try:
         empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "messages.needs_push")
         date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
-        include_filter = get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
-        exclude_filter = get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
+        include_filter = get_chat_condition(
+            filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
+        exclude_filter = get_chat_condition(
+            filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
 
         cursor.execute(f"""SELECT count()
                     FROM message_media
@@ -534,8 +549,10 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
     except sqlite3.OperationalError:
         empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
         date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
-        include_filter = get_chat_condition(filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
-        exclude_filter = get_chat_condition(filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+        include_filter = get_chat_condition(
+            filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+        exclude_filter = get_chat_condition(
+            filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
 
         cursor.execute(f"""SELECT count()
                     FROM message_media
@@ -557,10 +574,12 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
 
 def _get_media_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
     """Get cursor for legacy media database schema."""
-    empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
+    empty_filter = get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")
     date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
-    include_filter = get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
-    exclude_filter = get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
+    include_filter = get_chat_condition(
+        filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
+    exclude_filter = get_chat_condition(
+        filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
 
     cursor.execute(f"""SELECT messages.key_remote_jid,
                         message_row_id,
@@ -592,8 +611,10 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     """Get cursor for new media database schema."""
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
-    include_filter = get_chat_condition(filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
-    exclude_filter = get_chat_condition(filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
+    include_filter = get_chat_condition(
+        filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
+    exclude_filter = get_chat_condition(
+        filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
 
     cursor.execute(f"""SELECT jid.raw_string as key_remote_jid,
                     message_row_id,
@@ -629,10 +650,10 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
     current_chat = data.get_chat(content["key_remote_jid"])
     message = current_chat.get_message(content["message_row_id"])
     message.media = True
-    
+
     if os.path.isfile(file_path):
         message.data = file_path
-        
+
         # Set mime type
         if content["mime_type"] is None:
             guess = mime.guess_type(file_path)[0]
@@ -642,11 +663,11 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
                 message.mime = "application/octet-stream"
         else:
             message.mime = content["mime_type"]
-        
+
         # Copy media to separate folder if needed
         if separate_media:
-            chat_display_name = slugify(current_chat.name or message.sender 
-                                     or content["key_remote_jid"].split('@')[0], True)
+            chat_display_name = safe_name(current_chat.name or message.sender
+                                          or content["key_remote_jid"].split('@')[0])
             current_filename = file_path.split("/")[-1]
             new_folder = os.path.join(media_folder, "separated", chat_display_name)
             Path(new_folder).mkdir(parents=True, exist_ok=True)
@@ -657,7 +678,7 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
         message.data = "The media is missing"
         message.mime = "media"
         message.meta = True
-    
+
     # Handle thumbnail
     if content["thumbnail"] is not None:
         thumb_path = f"{media_folder}/thumbnails/{b64decode(content['file_hash']).hex()}.png"
@@ -676,23 +697,26 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
         rows = _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty)
 
     total_row_number = len(rows)
-    print(f"\nProcessing vCards...(0/{total_row_number})", end="\r")
-    
+    logger.info(f"Processing vCards...(0/{total_row_number})\r")
+
     # Create vCards directory if it doesn't exist
     path = os.path.join(media_folder, "vCards")
     Path(path).mkdir(parents=True, exist_ok=True)
-    
+
     for index, row in enumerate(rows):
         _process_vcard_row(row, path, data)
-        print(f"Processing vCards...({index + 1}/{total_row_number})", end="\r")
+        logger.info(f"Processing vCards...({index + 1}/{total_row_number})\r")
+    logger.info(f"Processed {total_row_number} vCards{CLEAR_LINE}")
 
 
 def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
     """Execute vCard query for modern WhatsApp database schema."""
 
     # Build the filter conditions
-    chat_filter_include = get_chat_condition(filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
-    chat_filter_exclude = get_chat_condition(filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
+    chat_filter_include = get_chat_condition(
+        filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
+    chat_filter_exclude = get_chat_condition(
+        filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
     date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "messages.needs_push")
 
@@ -721,8 +745,10 @@ def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
     """Execute vCard query for legacy WhatsApp database schema."""
 
     # Build the filter conditions
-    chat_filter_include = get_chat_condition(filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
-    chat_filter_exclude = get_chat_condition(filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
+    chat_filter_include = get_chat_condition(
+        filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
+    chat_filter_exclude = get_chat_condition(
+        filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
 
@@ -755,11 +781,11 @@ def _process_vcard_row(row, path, data):
     file_name = "".join(x for x in media_name if x.isalnum())
     file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
     file_path = os.path.join(path, f"{file_name}.vcf")
-    
+
     if not os.path.isfile(file_path):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(row["vcard"])
-            
+
     message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
     message.data = "This media include the following vCard file(s):<br>" \
         f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
@@ -771,28 +797,29 @@ def _process_vcard_row(row, path, data):
 def calls(db, data, timezone_offset, filter_chat):
     """Process call logs from WhatsApp database."""
     c = db.cursor()
-    
+
     # Check if there are any calls that match the filter
     total_row_number = _get_calls_count(c, filter_chat)
     if total_row_number == 0:
         return
-        
-    print(f"\nProcessing calls...({total_row_number})", end="\r")
-    
+
+    logger.info(f"Processing calls...({total_row_number})\r")
+
     # Fetch call data
     calls_data = _fetch_calls_data(c, filter_chat)
-    
+
     # Create a chat store for all calls
     chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
-    
+
     # Process each call
     content = calls_data.fetchone()
     while content is not None:
         _process_call_record(content, chat, data, timezone_offset)
         content = calls_data.fetchone()
-        
+
     # Add the calls chat to the data
     data.add_chat("000000000000000", chat)
+    logger.info(f"Processed {total_row_number} calls{CLEAR_LINE}")
 
 
 def _get_calls_count(c, filter_chat):
@@ -855,7 +882,7 @@ def _process_call_record(content, chat, data, timezone_offset):
         received_timestamp=None,  # TODO: Add timestamp
         read_timestamp=None  # TODO: Add timestamp
     )
-    
+
     # Get caller/callee name
     _jid = content["raw_string"]
     name = data.get_chat(_jid).name if _jid in data else content["chat_subject"] or None
@@ -864,13 +891,13 @@ def _process_call_record(content, chat, data, timezone_offset):
     else:
         fallback = None
     call.sender = name or fallback
-    
+
     # Set metadata
     call.meta = True
-    
+
     # Construct call description based on call type and result
     call.data = _construct_call_description(content, call)
-    
+
     # Add call to chat
     chat.add_message(content["_id"], call)
 
@@ -882,7 +909,7 @@ def _construct_call_description(content, call):
         f"call {'to' if call.from_me else 'from'} "
         f"{call.sender} was "
     )
-    
+
     if content['call_result'] in (0, 4, 7):
         description += "cancelled." if call.from_me else "missed."
     elif content['call_result'] == 2:
@@ -898,26 +925,26 @@ def _construct_call_description(content, call):
         )
     else:
         description += "in an unknown state."
-        
+
     return description
 
 
 def create_html(
-        data,
-        output_folder,
-        template=None,
-        embedded=False,
-        offline_static=False,
-        maximum_size=None,
-        no_avatar=False,
-        experimental=False,
-        headline=None
-    ):
+    data,
+    output_folder,
+    template=None,
+    embedded=False,
+    offline_static=False,
+    maximum_size=None,
+    no_avatar=False,
+    experimental=False,
+    headline=None
+):
     """Generate HTML chat files from data."""
     template = setup_template(template, no_avatar, experimental)
 
     total_row_number = len(data)
-    print(f"\nGenerating chats...(0/{total_row_number})", end="\r")
+    logger.info(f"Generating chats...(0/{total_row_number})\r")
 
     # Create output directory if it doesn't exist
     if not os.path.isdir(output_folder):
@@ -930,37 +957,37 @@ def create_html(
         if len(current_chat) == 0:
             # Skip empty chats
             continue
-            
+
         safe_file_name, name = get_file_name(contact, current_chat)
 
         if maximum_size is not None:
             _generate_paginated_chat(
-                current_chat, 
-                safe_file_name, 
-                name, 
-                contact, 
-                output_folder, 
-                template, 
-                w3css, 
-                maximum_size, 
+                current_chat,
+                safe_file_name,
+                name,
+                contact,
+                output_folder,
+                template,
+                w3css,
+                maximum_size,
                 headline
             )
         else:
             _generate_single_chat(
-                current_chat, 
-                safe_file_name, 
-                name, 
-                contact, 
-                output_folder, 
-                template, 
-                w3css, 
+                current_chat,
+                safe_file_name,
+                name,
+                contact,
+                output_folder,
+                template,
+                w3css,
                 headline
             )
-            
-        if current % 10 == 0:
-            print(f"Generating chats...({current}/{total_row_number})", end="\r")
 
-    print(f"Generating chats...({total_row_number}/{total_row_number})", end="\r")
+        if current % 10 == 0:
+            logger.info(f"Generating chats...({current}/{total_row_number})\r")
+
+    logger.info(f"Generated {total_row_number} chats{CLEAR_LINE}")
 
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):
@@ -984,20 +1011,20 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
     current_size = 0
     current_page = 1
     render_box = []
-    
+
     # Use default maximum size if set to 0
     if maximum_size == 0:
         maximum_size = MAX_SIZE
-        
+
     last_msg = current_chat.get_last_message().key_id
-    
+
     for message in current_chat.values():
         # Calculate message size
         if message.data is not None and not message.meta and not message.media:
             current_size += len(message.data) + ROW_SIZE
         else:
             current_size += ROW_SIZE + 100  # Assume media and meta HTML are 100 bytes
-            
+
         if current_size > maximum_size:
             # Create a new page
             output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
@@ -1041,25 +1068,25 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
 def create_txt(data, output):
     """Generate text files from chat data."""
     os.makedirs(output, exist_ok=True)
-    
+
     for jik, chat in data.items():
         if len(chat) == 0:
             continue
-            
+
         # Determine file name
         if chat.name is not None:
             contact = chat.name.replace('/', '')
         else:
             contact = jik.replace('+', '')
-            
+
         output_file = os.path.join(output, f"{contact}.txt")
-        
+
         with open(output_file, "w", encoding="utf8") as f:
             for message in chat.values():
                 # Skip metadata in text format
                 if message.meta and message.mime != "media":
                     continue
-                
+
                 # Format the message
                 formatted_message = _format_message_for_txt(message, contact)
                 f.write(f"{formatted_message}\n")
@@ -1068,16 +1095,16 @@ def create_txt(data, output):
 def _format_message_for_txt(message, contact):
     """Format a message for text output."""
     date = datetime.fromtimestamp(message.timestamp).date()
-    
+
     # Determine the sender name
     if message.from_me:
         name = "You"
     else:
         name = message.sender if message.sender else contact
-        
+
     prefix = f"[{date} {message.time}] {name}: "
     prefix_length = len(prefix)
-    
+
     # Handle different message types
     if message.media and ("/" in message.mime or message.mime == "media"):
         if message.data == "The media is missing":
@@ -1089,9 +1116,9 @@ def _format_message_for_txt(message, contact):
             message_text = ""
         else:
             message_text = message.data.replace('<br>', f'\n{" " * prefix_length}')
-            
+
     # Add caption if present
     if message.caption is not None:
         message_text += "\n" + ' ' * len(prefix) + message.caption.replace('<br>', f'\n{" " * prefix_length}')
-        
+
     return f"{prefix}{message_text}"

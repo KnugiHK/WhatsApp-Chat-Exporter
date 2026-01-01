@@ -7,6 +7,7 @@ class Timing:
     """
     Handles timestamp formatting with timezone support.
     """
+
     def __init__(self, timezone_offset: Optional[int]) -> None:
         """
         Initialize Timing object.
@@ -27,7 +28,7 @@ class Timing:
         Returns:
             Optional[str]: Formatted timestamp string, or None if timestamp is None
         """
-        if timestamp:
+        if timestamp is not None:
             timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
             return datetime.fromtimestamp(timestamp, TimeZone(self.timezone_offset)).strftime(format)
         return None
@@ -37,6 +38,7 @@ class TimeZone(tzinfo):
     """
     Custom timezone class with fixed offset.
     """
+
     def __init__(self, offset: int) -> None:
         """
         Initialize TimeZone object.
@@ -151,6 +153,7 @@ class ChatStore:
     """
     Stores chat information and messages.
     """
+
     def __init__(self, type: str, name: Optional[str] = None, media: Optional[str] = None) -> None:
         """
         Initialize ChatStore object.
@@ -159,7 +162,7 @@ class ChatStore:
             type (str): Device type (IOS or ANDROID)
             name (Optional[str]): Chat name
             media (Optional[str]): Path to media folder
-        
+
         Raises:
             TypeError: If name is not a string or None
         """
@@ -182,7 +185,7 @@ class ChatStore:
         self.their_avatar_thumb = None
         self.status = None
         self.media_base = ""
-    
+
     def __len__(self) -> int:
         """Get number of chats. Required for dict-like access."""
         return len(self._messages)
@@ -192,7 +195,7 @@ class ChatStore:
         if not isinstance(message, Message):
             raise TypeError("message must be a Message object")
         self._messages[id] = message
-    
+
     def get_message(self, id: str) -> 'Message':
         """Get a message from the chat store."""
         return self._messages.get(id)
@@ -204,20 +207,30 @@ class ChatStore:
 
     def to_json(self) -> Dict[str, Any]:
         """Convert chat store to JSON-serializable dict."""
-        return {
-            'name': self.name,
-            'type': self.type,
-            'my_avatar': self.my_avatar,
-            'their_avatar': self.their_avatar,
-            'their_avatar_thumb': self.their_avatar_thumb,
-            'status': self.status,
-            'messages': {id: msg.to_json() for id, msg in self._messages.items()}
+        json_dict = {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != '_messages'
         }
+        json_dict['messages'] = {id: msg.to_json() for id, msg in self._messages.items()}
+        return json_dict
+
+    @classmethod
+    def from_json(cls, data: Dict) -> 'ChatStore':
+        """Create a chat store from JSON data."""
+        chat = cls(data.get("type"), data.get("name"))
+        for key, value in data.items():
+            if hasattr(chat, key) and key not in ("messages", "type", "name"):
+                setattr(chat, key, value)
+        for id, msg_data in data.get("messages", {}).items():
+            message = Message.from_json(msg_data)
+            chat.add_message(id, message)
+        return chat
 
     def get_last_message(self) -> 'Message':
         """Get the most recent message in the chat."""
         return tuple(self._messages.values())[-1]
-    
+
     def items(self):
         """Get message items pairs."""
         return self._messages.items()
@@ -230,20 +243,42 @@ class ChatStore:
         """Get all message keys in the chat."""
         return self._messages.keys()
 
+    def merge_with(self, other: 'ChatStore'):
+        """Merge another ChatStore into this one.
+
+        Args:
+            other (ChatStore): The ChatStore to merge with
+
+        """
+        if not isinstance(other, ChatStore):
+            raise TypeError("Can only merge with another ChatStore object")
+
+        # Update fields if they are not None in the other ChatStore
+        self.name = other.name or self.name
+        self.type = other.type or self.type
+        self.my_avatar = other.my_avatar or self.my_avatar
+        self.their_avatar = other.their_avatar or self.their_avatar
+        self.their_avatar_thumb = other.their_avatar_thumb or self.their_avatar_thumb
+        self.status = other.status or self.status
+
+        # Merge messages
+        self._messages.update(other._messages)
+
 
 class Message:
     """
     Represents a single message in a chat.
     """
+
     def __init__(
             self,
             *,
             from_me: Union[bool, int],
             timestamp: int,
             time: Union[int, float, str],
-            key_id: int,
-            received_timestamp: int,
-            read_timestamp: int,
+            key_id: Union[int, str],
+            received_timestamp: int = None,
+            read_timestamp: int = None,
             timezone_offset: int = 0,
             message_type: Optional[int] = None
     ) -> None:
@@ -255,8 +290,8 @@ class Message:
             timestamp (int): Message timestamp
             time (Union[int, float, str]): Message time
             key_id (int): Message unique identifier
-            received_timestamp (int): When message was received
-            read_timestamp (int): When message was read
+            received_timestamp (int, optional): When message was received. Defaults to None
+            read_timestamp (int, optional): When message was read. Defaults to None
             timezone_offset (int, optional): Hours offset from UTC. Defaults to 0
             message_type (Optional[int], optional): Type of message. Defaults to None
 
@@ -266,7 +301,7 @@ class Message:
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
         timing = Timing(timezone_offset)
-        
+
         if isinstance(time, (int, float)):
             self.time = timing.format_timestamp(self.timestamp, "%H:%M")
         elif isinstance(time, str):
@@ -281,10 +316,22 @@ class Message:
         self.sender = None
         self.safe = False
         self.mime = None
-        self.message_type = message_type,
-        self.received_timestamp = timing.format_timestamp(received_timestamp, "%Y/%m/%d %H:%M")
-        self.read_timestamp = timing.format_timestamp(read_timestamp, "%Y/%m/%d %H:%M")
-        
+        self.message_type = message_type
+        if isinstance(received_timestamp, (int, float)):
+            self.received_timestamp = timing.format_timestamp(
+                received_timestamp, "%Y/%m/%d %H:%M")
+        elif isinstance(received_timestamp, str):
+            self.received_timestamp = received_timestamp
+        else:
+            self.received_timestamp = None
+        if isinstance(read_timestamp, (int, float)):
+            self.read_timestamp = timing.format_timestamp(
+                read_timestamp, "%Y/%m/%d %H:%M")
+        elif isinstance(read_timestamp, str):
+            self.read_timestamp = read_timestamp
+        else:
+            self.read_timestamp = None
+
         # Extra attributes
         self.reply = None
         self.quoted_data = None
@@ -295,19 +342,24 @@ class Message:
     def to_json(self) -> Dict[str, Any]:
         """Convert message to JSON-serializable dict."""
         return {
-            'from_me': self.from_me,
-            'timestamp': self.timestamp,
-            'time': self.time,
-            'media': self.media,
-            'key_id': self.key_id,
-            'meta': self.meta,
-            'data': self.data,
-            'sender': self.sender,
-            'safe': self.safe,
-            'mime': self.mime,
-            'reply': self.reply,
-            'quoted_data': self.quoted_data,
-            'caption': self.caption,
-            'thumb': self.thumb,
-            'sticker': self.sticker
+            key: value
+            for key, value in self.__dict__.items()
         }
+
+    @classmethod
+    def from_json(cls, data: Dict) -> 'Message':
+        message = cls(
+            from_me=data["from_me"],
+            timestamp=data["timestamp"],
+            time=data["time"],
+            key_id=data["key_id"],
+            message_type=data.get("message_type"),
+            received_timestamp=data.get("received_timestamp"),
+            read_timestamp=data.get("read_timestamp")
+        )
+        added = ("from_me", "timestamp", "time", "key_id", "message_type",
+                 "received_timestamp", "read_timestamp")
+        for key, value in data.items():
+            if hasattr(message, key) and key not in added:
+                setattr(message, key, value)
+        return message

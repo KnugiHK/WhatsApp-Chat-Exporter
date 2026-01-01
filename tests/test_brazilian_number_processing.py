@@ -4,13 +4,14 @@ import tempfile
 import os
 from unittest.mock import patch
 
-from brazilian_number_processing import process_phone_number, process_vcard
+from scripts.brazilian_number_processing import process_phone_number, process_vcard
+
 
 class TestVCardProcessor(unittest.TestCase):
-    
+
     def test_process_phone_number(self):
         """Test the process_phone_number function with various inputs."""
-        
+
         # Test cases for 9-digit subscriber numbers
         test_cases_9_digit = [
             # Standard 11-digit number (2 area + 9 subscriber)
@@ -30,7 +31,7 @@ class TestVCardProcessor(unittest.TestCase):
             # With extra non-digit characters
             ("+55-27-9.1234_5678", "+55 27 91234-5678", "+55 27 1234-5678"),
         ]
-        
+
         # Test cases for 8-digit subscriber numbers
         test_cases_8_digit = [
             # Standard 10-digit number (2 area + 8 subscriber)
@@ -46,7 +47,7 @@ class TestVCardProcessor(unittest.TestCase):
             # With country code and trunk zero
             ("+55 0 27 1234-5678", "+55 27 1234-5678", None),
         ]
-        
+
         # Edge cases
         edge_cases = [
             # Too few digits
@@ -60,19 +61,19 @@ class TestVCardProcessor(unittest.TestCase):
             # Unusual formatting but valid number
             ("(+55) [27] 9.1234_5678", "+55 27 91234-5678", "+55 27 1234-5678"),
         ]
-        
+
         # Run tests for all cases
         all_cases = test_cases_9_digit + test_cases_8_digit + edge_cases
-        
+
         for raw_phone, expected_orig, expected_mod in all_cases:
             with self.subTest(raw_phone=raw_phone):
                 orig, mod = process_phone_number(raw_phone)
                 self.assertEqual(orig, expected_orig)
                 self.assertEqual(mod, expected_mod)
-    
+
     def test_process_vcard(self):
         """Test the process_vcard function with various VCARD formats."""
-        
+
         # Test case 1: Standard TEL entries
         vcard1 = """BEGIN:VCARD
 VERSION:3.0
@@ -202,26 +203,26 @@ END:VCARD
             (vcard5, expected5),
             (vcard6, expected6)
         ]
-        
+
         for i, (input_vcard, expected_output) in enumerate(test_cases):
             with self.subTest(case=i+1):
                 # Create temporary files for input and output
                 with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as input_file:
                     input_file.write(input_vcard)
                     input_path = input_file.name
-                
+
                 output_path = input_path + '.out'
-                
+
                 try:
                     # Process the VCARD
                     process_vcard(input_path, output_path)
-                    
+
                     # Read and verify the output
                     with open(output_path, 'r', encoding='utf-8') as output_file:
                         actual_output = output_file.read()
 
                     self.assertEqual(actual_output, expected_output)
-                    
+
                 finally:
                     # Clean up temporary files
                     if os.path.exists(input_path):
@@ -231,7 +232,7 @@ END:VCARD
 
     def test_script_argument_handling(self):
         """Test the script's command-line argument handling."""
-        
+
         test_input = """BEGIN:VCARD
 VERSION:3.0
 N:Test;User;;;
@@ -239,16 +240,17 @@ FN:User Test
 TEL:+5527912345678
 END:VCARD
 """
-        
+
         # Create a temporary input file
         with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as input_file:
             input_file.write(test_input)
             input_path = input_file.name
-        
+
         output_path = input_path + '.out'
-        
+
         try:
-            test_args = ['python' if os.name == 'nt' else 'python3', 'brazilian_number_processing.py', input_path, output_path]
+            test_args = ['python' if os.name == 'nt' else 'python3',
+                         'scripts/brazilian_number_processing.py', input_path, output_path]
             # We're just testing that the argument parsing works
             subprocess.call(
                 test_args,
@@ -257,13 +259,14 @@ END:VCARD
             )
             # Check if the output file was created
             self.assertTrue(os.path.exists(output_path))
-                    
+
         finally:
             # Clean up temporary files
             if os.path.exists(input_path):
                 os.unlink(input_path)
             if os.path.exists(output_path):
                 os.unlink(output_path)
+
 
 if __name__ == '__main__':
     unittest.main()
