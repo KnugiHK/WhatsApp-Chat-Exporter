@@ -509,11 +509,8 @@ wtsexporter -i -b &quot;C:\Users\[Username]\Apple\MobileSync\Backup\[device id]&
 <pre><code class="language-sh">wtsexporter -i -b ~/Library/Application\ Support/MobileSync/Backup/[device id]
 </code></pre>
 <h2>Results</h2>
-<p>After extracting, you will get these:</p>
-<h4>Private Message</h4>
+<p>After extracting, you will get this:</p>
 <p><img src="imgs/pm.png" alt="Private Message"></p>
-<h4>Group Message</h4>
-<p><img src="imgs/group.png" alt="Group Message"></p>
 <h2>More options</h2>
 <p>Invoke the wtsexporter with --help option will show you all options available.</p>
 <pre><code class="language-sh">&gt; wtsexporter --help
@@ -603,6 +600,19 @@ Contact Enrichment:
                         Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this
                         will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country
 
+Incremental Merging:
+  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-
+                        dir and --target-dir. The chats (JSON files only) and media from the source
+                        directory will be merged into the target directory. No chat messages or media
+                        will be deleted from the target directory; only new chat messages and media
+                        will be added to it. This enables chat messages and media to be deleted from
+                        the device to free up space, while ensuring they are preserved in the exported
+                        backups.
+  --source-dir SOURCE_DIR
+                        Sets the source directory. Used for performing incremental merges.
+  --target-dir TARGET_DIR
+                        Sets the target directory. Used for performing incremental merges.
+
 Miscellaneous:
   -s, --showkey         Show the HEX key used to decrypt the database
   --check-update        Check for updates (require Internet access)
@@ -613,9 +623,11 @@ Miscellaneous:
   --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
                         Specify the maximum number of worker for bruteforce decryption.
 
-WhatsApp Chat Exporter: 0.12.1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+WhatsApp Chat Exporter: 0.13.0rc1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 </code></pre>
+<h1>Python Support Policy</h1>
+<p>This project officially supports all non-EOL (End-of-Life) versions of Python. Once a Python version reaches EOL, it is dropped in the next release. See <a href="https://devguide.python.org/versions/">Python&#39;s EOL Schedule</a>.</p>
 <h1>Legal Stuff &amp; Disclaimer</h1>
 <p>This is a MIT licensed project.</p>
 <p>The Telegram Desktop&#39;s export is the reference for whatsapp.html in this repo.</p>
@@ -635,13 +647,13 @@ licenses.
     
     <footer>
         <div class="container">
-            <p>© 2021-2025 WhatsApp Chat Exporter</p>
+            <p>© 2021-2026 WhatsApp Chat Exporter</p>
             <p>Licensed under MIT License</p>
             <p>
                 <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter" style="color: white; margin: 0 10px;"><i class="fab fa-github fa-lg"></i></a>
                 <a href="https://matrix.to/#/#wtsexporter:matrix.org" style="color: white; margin: 0 10px;"><i class="fas fa-comments fa-lg"></i></a>
             </p>
-            <p><small>Last updated: 12/28/2025</small></p>
+            <p><small>Last updated: 1/1/2026</small></p>
         </div>
     </footer>
     
