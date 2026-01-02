@@ -260,7 +260,10 @@ licenses.
 
 # Verifying Build Integrity
 
-To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries (starting from the release 0.13.0rc1) using the GitHub CLI.
+To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries using the GitHub CLI.
+
+> [!NOTE]
+> Requires version 0.13.0rc1 or newer. Legacy binaries are unsupported.
 
 ### Using Bash (Linux/WSL/macOS)
 
