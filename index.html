@@ -626,6 +626,20 @@ Miscellaneous:
 WhatsApp Chat Exporter: 0.13.0rc1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 </code></pre>
+<h2>Verifying Build Integrity</h2>
+<p>To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries (starting from the release 0.13.0rc1) using the GitHub CLI.</p>
+<h3>Using Bash (Linux/WSL/macOS)</h3>
+<pre><code class="language-bash">for file in wtsexporter*; do
+  gh attestation verify &quot;$file&quot; -R KnugiHK/WhatsApp-Chat-Exporter
+done
+</code></pre>
+<h3>Using PowerShell (Windows)</h3>
+<pre><code class="language-powershell">$files = Get-ChildItem -Path &quot;wtsexporter*&quot;
+
+foreach ($file in $files) {
+    gh attestation verify &quot;$($file.FullName)&quot; -R KnugiHK/WhatsApp-Chat-Exporter
+}
+</code></pre>
 <h1>Python Support Policy</h1>
 <p>This project officially supports all non-EOL (End-of-Life) versions of Python. Once a Python version reaches EOL, it is dropped in the next release. See <a href="https://devguide.python.org/versions/">Python&#39;s EOL Schedule</a>.</p>
 <h1>Legal Stuff &amp; Disclaimer</h1>
@@ -653,7 +667,7 @@ licenses.
                 <a href="https://github.com/KnugiHK/WhatsApp-Chat-Exporter" style="color: white; margin: 0 10px;"><i class="fab fa-github fa-lg"></i></a>
                 <a href="https://matrix.to/#/#wtsexporter:matrix.org" style="color: white; margin: 0 10px;"><i class="fas fa-comments fa-lg"></i></a>
             </p>
-            <p><small>Last updated: 1/1/2026</small></p>
+            <p><small>Last updated: 1/2/2026</small></p>
         </div>
     </footer>
     
