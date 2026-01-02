@@ -633,16 +633,10 @@ licenses.
 <p>Requires version 0.13.0rc1 or newer. Legacy binaries are unsupported.</p>
 </div>
 <h3>Using Bash (Linux/WSL/macOS)</h3>
-<pre><code class="language-bash">for file in wtsexporter*; do
-  gh attestation verify &quot;$file&quot; -R KnugiHK/WhatsApp-Chat-Exporter
-done
+<pre><code class="language-bash">for file in wtsexporter*; do ; gh attestation verify &quot;$file&quot; -R KnugiHK/WhatsApp-Chat-Exporter; done
 </code></pre>
 <h3>Using PowerShell (Windows)</h3>
-<pre><code class="language-powershell">$files = Get-ChildItem -Path &quot;wtsexporter*&quot;
-
-foreach ($file in $files) {
-    gh attestation verify &quot;$($file.FullName)&quot; -R KnugiHK/WhatsApp-Chat-Exporter
-}
+<pre><code class="language-powershell">gci &quot;wtsexporter*&quot; | % { gh attestation verify $_.FullName -R KnugiHK/WhatsApp-Chat-Exporter }
 </code></pre>
 <h1>Python Support Policy</h1>
 <p>This project officially supports all non-EOL (End-of-Life) versions of Python. Once a Python version reaches EOL, it is dropped in the next release. See <a href="https://devguide.python.org/versions/">Python&#39;s EOL Schedule</a>.</p>
