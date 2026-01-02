@@ -268,19 +268,13 @@ To ensure that the binaries provided in the releases were built directly from th
 ### Using Bash (Linux/WSL/macOS)
 
 ```bash
-for file in wtsexporter*; do
-  gh attestation verify "$file" -R KnugiHK/WhatsApp-Chat-Exporter
-done
+for file in wtsexporter*; do ; gh attestation verify "$file" -R KnugiHK/WhatsApp-Chat-Exporter; done
 ```
 
 ### Using PowerShell (Windows)
 
 ```powershell
-$files = Get-ChildItem -Path "wtsexporter*"
-
-foreach ($file in $files) {
-    gh attestation verify "$($file.FullName)" -R KnugiHK/WhatsApp-Chat-Exporter
-}
+gci "wtsexporter*" | % { gh attestation verify $_.FullName -R KnugiHK/WhatsApp-Chat-Exporter }
 ```
 
 
