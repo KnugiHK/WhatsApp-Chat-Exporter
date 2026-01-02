@@ -258,7 +258,7 @@ WhatsApp Chat Exporter: 0.13.0rc1 Licensed with MIT. See https://wts.knugi.dev/d
 licenses.
 ```
 
-## Verifying Build Integrity
+# Verifying Build Integrity
 
 To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries (starting from the release 0.13.0rc1) using the GitHub CLI.
 
