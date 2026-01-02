@@ -258,9 +258,33 @@ WhatsApp Chat Exporter: 0.13.0rc1 Licensed with MIT. See https://wts.knugi.dev/d
 licenses.
 ```
 
+## Verifying Build Integrity
+
+To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries (starting from the release 0.13.0rc1) using the GitHub CLI.
+
+### Using Bash (Linux/WSL/macOS)
+
+```bash
+for file in wtsexporter*; do
+  gh attestation verify "$file" -R KnugiHK/WhatsApp-Chat-Exporter
+done
+```
+
+### Using PowerShell (Windows)
+
+```powershell
+$files = Get-ChildItem -Path "wtsexporter*"
+
+foreach ($file in $files) {
+    gh attestation verify "$($file.FullName)" -R KnugiHK/WhatsApp-Chat-Exporter
+}
+```
+
+
 # Python Support Policy
 
 This project officially supports all non-EOL (End-of-Life) versions of Python. Once a Python version reaches EOL, it is dropped in the next release. See [Python's EOL Schedule](https://devguide.python.org/versions/).
+
 
 # Legal Stuff & Disclaimer
 
