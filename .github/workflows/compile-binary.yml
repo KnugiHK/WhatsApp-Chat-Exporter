@@ -10,7 +10,6 @@ permissions:
   id-token: write
   attestations: write
 
-
 jobs:
   linux:
     runs-on: ubuntu-latest
@@ -37,11 +36,10 @@ jobs:
         subject-path: ./wtsexporter_linux_x64
     - uses: actions/upload-artifact@v6
       with:
-        name: binary-linux
-        path: |
-          ./wtsexporter_linux_x64
+        name: binary-linux-x64
+        path: ./wtsexporter_linux_x64
 
-  windows:
+  windows-x64:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v6
@@ -57,19 +55,45 @@ jobs:
     - name: Build binary with Nuitka
       run: |
         python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter 
-        Rename-Item -Path "wtsexporter.exe" -NewName "wtsexporter_x64.exe"
-        Get-FileHash wtsexporter_x64.exe
+        Rename-Item -Path "wtsexporter.exe" -NewName "wtsexporter_win_x64.exe"
+        Get-FileHash wtsexporter_win_x64.exe
     - name: Generate artifact attestation
       uses: actions/attest-build-provenance@v3
       with:
-        subject-path: .\wtsexporter_x64.exe
+        subject-path: .\wtsexporter_win_x64.exe
     - uses: actions/upload-artifact@v6
       with:
-        name: binary-windows
-        path: |
-          .\wtsexporter_x64.exe
+        name: binary-windows-x64
+        path: .\wtsexporter_win_x64.exe
 
-  macos:
+  windows-arm:
+    runs-on: windows-11-arm
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.8.9
+        pip install .
+    - name: Build binary with Nuitka
+      run: |
+        python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter
+        Rename-Item -Path "wtsexporter.exe" -NewName "wtsexporter_win_arm64.exe"
+        Get-FileHash wtsexporter_win_arm64.exe
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v3
+      with:
+        subject-path: .\wtsexporter_win_arm64.exe
+    - uses: actions/upload-artifact@v6
+      with:
+        name: binary-windows-arm64
+        path: .\wtsexporter_win_arm64.exe
+
+  macos-arm:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v6
@@ -86,7 +110,8 @@ jobs:
       run: |
         python -m nuitka --onefile \
           --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
-          --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter_macos_arm64 
+          --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter 
+        mv wtsexporter  wtsexporter_macos_arm64
         shasum -a 256 wtsexporter_macos_arm64
     - name: Generate artifact attestation
       uses: actions/attest-build-provenance@v3
@@ -94,7 +119,34 @@ jobs:
         subject-path: ./wtsexporter_macos_arm64
     - uses: actions/upload-artifact@v6
       with:
-        name: binary-macos
-        path: |
-          ./wtsexporter_macos_arm64
+        name: binary-macos-arm64
+        path: ./wtsexporter_macos_arm64
 
+  macos-intel:
+    runs-on: macos-15-intel
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==2.8.9
+        pip install .
+    - name: Build binary with Nuitka
+      run: |
+        python -m nuitka --onefile \
+          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
+          --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter
+        mv wtsexporter wtsexporter_macos_x64
+        shasum -a 256 wtsexporter_macos_x64
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v3
+      with:
+        subject-path: ./wtsexporter_macos_x64
+    - uses: actions/upload-artifact@v6
+      with:
+        name: binary-macos-x64
+        path: ./wtsexporter_macos_x64
