@@ -19,12 +19,12 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
       
       - name: Install dependencies
         run: npm install marked fs-extra marked-alert
@@ -36,7 +36,7 @@ jobs:
       
       - name: Deploy to gh-pages
         if: github.ref == 'refs/heads/main'  # Ensure deployment only happens from main
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
