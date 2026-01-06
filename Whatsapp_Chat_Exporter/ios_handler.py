@@ -178,6 +178,10 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(messages_query)
 
+    reply_query = """SELECT ZSTANZAID, ZTEXT FROM ZWAMESSAGE WHERE ZTEXT IS NOT NULL"""
+    cursor2.execute(reply_query)
+    message_map = {row[0][:17]: row[1] for row in cursor2.fetchall() if row[0]}
+
     # Process each message
     i = 0
     content = c.fetchone()
@@ -207,7 +211,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         )
 
         # Process message data
-        invalid = process_message_data(message, content, is_group_message, data, cursor2, no_reply)
+        invalid = process_message_data(message, content, is_group_message, data, message_map, no_reply)
 
         # Add valid messages to chat
         if not invalid:
@@ -221,7 +225,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
 
 
-def process_message_data(message, content, is_group_message, data, cursor2, no_reply):
+def process_message_data(message, content, is_group_message, data, message_map, no_reply):
     """Process and set message data from content row."""
     # Handle group sender info
     if is_group_message and content["ZISFROMME"] == 0:
@@ -247,14 +251,7 @@ def process_message_data(message, content, is_group_message, data, cursor2, no_r
     if content["ZMETADATA"] is not None and content["ZMETADATA"].startswith(b"\x2a\x14") and not no_reply:
         quoted = content["ZMETADATA"][2:19]
         message.reply = quoted.decode()
-        cursor2.execute(f"""SELECT ZTEXT
-                            FROM ZWAMESSAGE
-                            WHERE ZSTANZAID LIKE '{message.reply}%'""")
-        quoted_content = cursor2.fetchone()
-        if quoted_content and "ZTEXT" in quoted_content:
-            message.quoted_data = quoted_content["ZTEXT"]
-        else:
-            message.quoted_data = None
+        message.quoted_data = message_map.get(message.reply)
 
     # Handle stickers
     if content["ZMESSAGETYPE"] == 15:
