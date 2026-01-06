@@ -42,7 +42,7 @@ WTSEXPORTER_BANNER = f"""=======================================================
  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
 
          WhatsApp Chat Exporter: A customizable Android and iOS/iPadOS WhatsApp database parser
-                                            Version: {__version__}
+{f"Version: {__version__}".center(104)}
 ========================================================================================================"""
 
 

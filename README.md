@@ -145,22 +145,24 @@ After extracting, you will get this:
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-usage: wtsexporter [-h] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-d DB] [-k [KEY]]
+usage: wtsexporter [-h] [--debug] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-d DB] [-k [KEY]]
                    [--call-db [CALL_DB_IOS]] [--wab WAB] [-o OUTPUT] [-j [JSON]] [--txt [TEXT_FORMAT]] [--no-html]
-                   [--size [SIZE]] [--avoid-encoding-json] [--pretty-print-json [PRETTY_PRINT_JSON]] [--per-chat]
-                   [--import] [-t TEMPLATE] [--offline OFFLINE] [--no-avatar] [--experimental-new-theme]
+                   [--size [SIZE]] [--no-reply] [--avoid-encoding-json] [--pretty-print-json [PRETTY_PRINT_JSON]]
+                   [--tg] [--per-chat] [--import] [-t TEMPLATE] [--offline OFFLINE] [--no-avatar] [--old-theme]
                    [--headline HEADLINE] [-c] [--create-separated-media] [--time-offset {-12 to 14}] [--date DATE]
                    [--date-format FORMAT] [--include [phone number ...]] [--exclude [phone number ...]]
                    [--dont-filter-empty] [--enrich-from-vcards ENRICH_FROM_VCARDS]
-                   [--default-country-code DEFAULT_COUNTRY_CODE] [-s] [--check-update] [--assume-first-as-me]
-                   [--business] [--decrypt-chunk-size DECRYPT_CHUNK_SIZE]
-                   [--max-bruteforce-worker MAX_BRUTEFORCE_WORKER]
+                   [--default-country-code DEFAULT_COUNTRY_CODE] [--incremental-merge] [--source-dir SOURCE_DIR]
+                   [--target-dir TARGET_DIR] [-s] [--check-update] [--assume-first-as-me] [--business]
+                   [--decrypt-chunk-size DECRYPT_CHUNK_SIZE] [--max-bruteforce-worker MAX_BRUTEFORCE_WORKER]
+                   [--no-banner]
 
 A customizable Android and iOS/iPadOS WhatsApp database parser that will give you the history of your WhatsApp
 conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
 
 options:
   -h, --help            show this help message and exit
+  --debug               Enable debug mode
 
 Device Type:
   -a, --android         Define the target as Android
@@ -188,12 +190,14 @@ Output Options:
   --no-html             Do not output html files
   --size, --output-size, --split [SIZE]
                         Maximum (rough) size of a single output file in bytes, 0 for auto
+  --no-reply            Do not process replies (iOS only) (default: handle replies)
 
 JSON Options:
   --avoid-encoding-json
                         Don't encode non-ascii characters in the output JSON files
   --pretty-print-json [PRETTY_PRINT_JSON]
                         Pretty print the output JSON.
+  --tg, --telegram      Output the JSON in a format compatible with Telegram export (implies json-per-chat)
   --per-chat            Output the JSON file per chat
   --import              Import JSON file and convert to HTML output
 
@@ -202,8 +206,7 @@ HTML Options:
                         Path to custom HTML template
   --offline OFFLINE     Relative path to offline static files
   --no-avatar           Do not render avatar in HTML output
-  --experimental-new-theme
-                        Use the newly designed WhatsApp-alike theme
+  --old-theme           Use the old Telegram-alike theme
   --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat name
 
 Media Handling:
@@ -232,12 +235,11 @@ Contact Enrichment:
                         will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country
 
 Incremental Merging:
-  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-
-                        dir and --target-dir. The chats (JSON files only) and media from the source
-                        directory will be merged into the target directory. No chat messages or media
-                        will be deleted from the target directory; only new chat messages and media
-                        will be added to it. This enables chat messages and media to be deleted from
-                        the device to free up space, while ensuring they are preserved in the exported
+  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-dir and --target-
+                        dir. The chats (JSON files only) and media from the source directory will be merged into the
+                        target directory. No chat messages or media will be deleted from the target directory; only
+                        new chat messages and media will be added to it. This enables chat messages and media to be
+                        deleted from the device to free up space, while ensuring they are preserved in the exported
                         backups.
   --source-dir SOURCE_DIR
                         Sets the source directory. Used for performing incremental merges.
@@ -253,8 +255,9 @@ Miscellaneous:
                         Specify the chunk size for decrypting iOS backup, which may affect the decryption speed.
   --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
                         Specify the maximum number of worker for bruteforce decryption.
+  --no-banner           Do not show the banner
 
-WhatsApp Chat Exporter: 0.13.0rc1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
+WhatsApp Chat Exporter: 0.13.0rc2 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
 licenses.
 ```
 
