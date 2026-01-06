@@ -178,9 +178,16 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(messages_query)
 
-    reply_query = """SELECT ZSTANZAID, ZTEXT FROM ZWAMESSAGE WHERE ZTEXT IS NOT NULL"""
+    reply_query = """SELECT ZSTANZAID,
+                        ZTEXT,
+                        ZTITLE
+                     FROM ZWAMESSAGE
+                        LEFT JOIN ZWAMEDIAITEM
+                            ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE
+                     WHERE ZTEXT IS NOT NULL
+                        OR ZTITLE IS NOT NULL;"""
     cursor2.execute(reply_query)
-    message_map = {row[0][:17]: row[1] for row in cursor2.fetchall() if row[0]}
+    message_map = {row[0][:17]: row[1] or row[2] for row in cursor2.fetchall() if row[0]}
 
     # Process each message
     i = 0
