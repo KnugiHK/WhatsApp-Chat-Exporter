@@ -126,11 +126,22 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
         # This could be key, IV, or tag is wrong, but likely the key is wrong.
         raise ValueError("Decryption/Authentication failed. Ensure you are using the correct key.")
 
-    db = zlib.decompress(db_compressed)
-    if db[0:6].upper() != b"SQLITE":
+    if len(db_compressed) < 2 or db_compressed[0] != 0x78:
+        logger.debug(f"Data passes GCM but is not Zlib. Header: {db_compressed[:2].hex()}")
         raise ValueError(
-            "The plaintext is not a SQLite database. Ensure you are using the correct key."
+            "Key is correct, but decrypted data is not a valid compressed stream. "
+            "Is this even a valid WhatsApp database backup?"
         )
+
+    try:
+        db = zlib.decompress(db_compressed)
+    except zlib.error as e:
+        raise zlib.error(f"Decompression failed (The backup file likely corrupted at source): {e}")
+
+    if not db.startswith(b"SQLite"):
+        raise ValueError(
+            "Data is valid and decompressed, but it is not a SQLite database. "
+            "Is this even a valid WhatsApp database backup?")
     return db
 
 
