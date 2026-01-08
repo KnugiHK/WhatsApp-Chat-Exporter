@@ -112,8 +112,20 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
             zlib.error: If decompression fails.
             ValueError: if the plaintext is not a SQLite database.
     """
+    FOOTER_SIZE = 32
+    if len(db_ciphertext) <= FOOTER_SIZE:
+        raise ValueError("Input data too short to contain a valid GCM tag.")
+    
+    actual_ciphertext = db_ciphertext[:-FOOTER_SIZE]
+    tag = db_ciphertext[-FOOTER_SIZE: -FOOTER_SIZE + 16]
+
     cipher = AES.new(main_key, AES.MODE_GCM, iv)
-    db_compressed = cipher.decrypt(db_ciphertext)
+    try:
+        db_compressed = cipher.decrypt_and_verify(actual_ciphertext, tag)
+    except ValueError:
+        # This could be key, IV, or tag is wrong, but likely the key is wrong.
+        raise ValueError("Decryption/Authentication failed. Ensure you are using the correct key.")
+
     db = zlib.decompress(db_compressed)
     if db[0:6].upper() != b"SQLITE":
         raise ValueError(
