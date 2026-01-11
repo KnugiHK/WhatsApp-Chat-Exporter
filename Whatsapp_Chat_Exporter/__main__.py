@@ -25,7 +25,10 @@ from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 
 
 logger = logging.getLogger(__name__)
-__version__ = importlib.metadata.version("whatsapp_chat_exporter")
+try:
+    __version__ = importlib.metadata.version("whatsapp_chat_exporter")
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "0.13.0rc2"
 WTSEXPORTER_BANNER = f"""========================================================================================================
                   ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗ █████╗ ██████╗ ██████╗
                   ██║    ██║██║  ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗
