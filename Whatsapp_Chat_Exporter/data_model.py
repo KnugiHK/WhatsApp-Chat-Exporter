@@ -338,6 +338,7 @@ class Message:
         self.caption = None
         self.thumb = None  # Android specific
         self.sticker = False
+        self.reactions = {}
 
     def to_json(self) -> Dict[str, Any]:
         """Convert message to JSON-serializable dict."""
