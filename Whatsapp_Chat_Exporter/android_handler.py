@@ -222,7 +222,7 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     exclude_filter = get_chat_condition(
         filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
 
-    cursor.execute(f"""SELECT jid_global.raw_string as key_remote_jid,
+    cursor.execute(f"""SELECT COALESCE(lid_global.raw_string, jid_global.raw_string) as key_remote_jid,
                             message._id,
                             message.from_me as key_from_me,
                             message.timestamp,
@@ -279,6 +279,10 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
+                        LEFT JOIN jid_map
+                            ON chat.jid_row_id = jid_map.lid_row_id
+                        LEFT JOIN jid lid_global
+                            ON jid_map.jid_row_id = lid_global._id
                     WHERE key_remote_jid <> '-1'
                         {empty_filter}
                         {date_filter}
