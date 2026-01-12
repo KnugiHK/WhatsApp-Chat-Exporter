@@ -485,7 +485,6 @@ def _get_reactions(db, data):
     """
     Process message reactions.
     """
-    logger.info("Processing reactions...")
     c = db.cursor()
     
     try:
@@ -493,6 +492,8 @@ def _get_reactions(db, data):
         c.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='message_add_on'")
         if c.fetchone()[0] == 0:
             return
+        
+        logger.info("Processing reactions...\r")
 
         c.execute("""
             SELECT
