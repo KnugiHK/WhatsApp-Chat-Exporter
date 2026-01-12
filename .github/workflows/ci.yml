@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - dev
-
+  pull_request:
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
