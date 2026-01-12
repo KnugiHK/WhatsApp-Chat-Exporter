@@ -488,7 +488,7 @@ def _get_reactions(db, data):
     c = db.cursor()
     
     try:
-        # Check if tables exist
+        # Check if tables exist, old schema might not have reactions or in somewhere else
         c.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='message_add_on'")
         if c.fetchone()[0] == 0:
             return
