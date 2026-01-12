@@ -502,17 +502,17 @@ def _get_reactions(db, data):
                 jid.raw_string as sender_jid_raw,
                 chat_jid.raw_string as chat_jid_raw
             FROM message_add_on
-            INNER JOIN message_add_on_reaction 
-                ON message_add_on._id = message_add_on_reaction.message_add_on_row_id
-            LEFT JOIN jid 
-                ON message_add_on.sender_jid_row_id = jid._id
-            LEFT JOIN chat 
-                ON message_add_on.chat_row_id = chat._id
-            LEFT JOIN jid chat_jid 
-                ON chat.jid_row_id = chat_jid._id
+                INNER JOIN message_add_on_reaction 
+                    ON message_add_on._id = message_add_on_reaction.message_add_on_row_id
+                LEFT JOIN jid 
+                    ON message_add_on.sender_jid_row_id = jid._id
+                LEFT JOIN chat 
+                    ON message_add_on.chat_row_id = chat._id
+                LEFT JOIN jid chat_jid 
+                    ON chat.jid_row_id = chat_jid._id
         """)
     except sqlite3.OperationalError:
-        logger.warning("Could not fetch reactions (schema might be too old or incompatible).")
+        logger.warning(f"Could not fetch reactions (schema might be too old or incompatible){CLEAR_LINE}")
         return
 
     row = c.fetchone()
@@ -543,7 +543,7 @@ def _get_reactions(db, data):
                 message.reactions[sender_name] = reaction
 
         row = c.fetchone()
-    logger.info(f"Reactions processed.{CLEAR_LINE}")
+    logger.info(f"Processed reactions{CLEAR_LINE}")
 
 
 def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True):
