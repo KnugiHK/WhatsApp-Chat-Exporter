@@ -41,12 +41,13 @@ dependencies = [
 
 [project.optional-dependencies]
 android_backup = ["pycryptodome", "javaobj-py3"]
+ios_backup = ["iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
 crypt12 = ["pycryptodome"]
 crypt14 = ["pycryptodome"]
 crypt15 = ["pycryptodome", "javaobj-py3"]
-all = ["pycryptodome", "javaobj-py3"]
-everything = ["pycryptodome", "javaobj-py3"]
-backup = ["pycryptodome", "javaobj-py3"]
+all = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
+everything = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
+backup = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
 
 [project.scripts]
 wtsexporter = "Whatsapp_Chat_Exporter.__main__:main"
