@@ -196,6 +196,17 @@ def setup_argument_parser() -> ArgumentParser:
         help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
 
+    # Media Timestamp Options
+    timestamp_group = parser.add_argument_group('Media Timestamp Options')
+    timestamp_group.add_argument(
+        "--embed-exif", dest="embed_exif", default=False, action='store_true',
+        help="Embed message timestamp in EXIF data of media files (requires piexif/Pillow)"
+    )
+    timestamp_group.add_argument(
+        "--rename-media", dest="rename_media", default=False, action='store_true',
+        help="Rename media files with timestamp prefix (YYYY-MM-DD_HH-MM-SS_filename)"
+    )
+
     # Filtering options
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument(
@@ -361,6 +372,17 @@ def validate_args(parser: ArgumentParser, args) -> None:
 
     validate_chat_filters(parser, args.filter_chat_include)
     validate_chat_filters(parser, args.filter_chat_exclude)
+
+    # EXIF dependency validation
+    if args.embed_exif:
+        try:
+            import piexif
+            from PIL import Image
+        except ImportError:
+            parser.error(
+                "--embed-exif requires piexif and Pillow. "
+                "Install with: pip install whatsapp-chat-exporter[media_timestamp]"
+            )
 
 
 def validate_chat_filters(parser: ArgumentParser, chat_filter: Optional[List[str]]) -> None:
@@ -555,7 +577,8 @@ def process_messages(args, data: ChatCollection) -> None:
         # Process media
         message_handler.media(
             db, data, args.media, args.filter_date,
-            filter_chat, args.filter_empty, args.separate_media
+            filter_chat, args.filter_empty, args.separate_media,
+            args.embed_exif, args.rename_media, args.timezone_offset
         )
 
         # Process vcards

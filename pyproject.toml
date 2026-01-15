@@ -45,8 +45,9 @@ ios_backup = ["iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_bac
 crypt12 = ["pycryptodome"]
 crypt14 = ["pycryptodome"]
 crypt15 = ["pycryptodome", "javaobj-py3"]
-all = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
-everything = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
+media_timestamp = ["piexif", "Pillow"]
+all = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt", "piexif", "Pillow"]
+everything = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt", "piexif", "Pillow"]
 backup = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
 
 [project.scripts]

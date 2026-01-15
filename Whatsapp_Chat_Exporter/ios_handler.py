@@ -315,7 +315,8 @@ def process_message_text(message, content):
     message.data = msg
 
 
-def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=False):
+def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=False,
+          embed_exif=False, rename_media=False, timezone_offset=0):
     """Process media files from WhatsApp messages."""
     c = db.cursor()
 
@@ -374,7 +375,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     i = 0
     content = c.fetchone()
     while content is not None:
-        process_media_item(content, data, media_folder, mime, separate_media)
+        process_media_item(content, data, media_folder, mime, separate_media,
+                           embed_exif, rename_media, timezone_offset)
 
         # Update progress
         i += 1
@@ -384,7 +386,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     logger.info(f"Processed {total_row_number} media{CLEAR_LINE}")
 
 
-def process_media_item(content, data, media_folder, mime, separate_media):
+def process_media_item(content, data, media_folder, mime, separate_media,
+                       embed_exif=False, rename_media=False, timezone_offset=0):
     """Process a single media item."""
     file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
     current_chat = data.get_chat(content["ZCONTACTJID"])
@@ -412,8 +415,26 @@ def process_media_item(content, data, media_folder, mime, separate_media):
             new_folder = os.path.join(media_folder, "separated", chat_display_name)
             Path(new_folder).mkdir(parents=True, exist_ok=True)
             new_path = os.path.join(new_folder, current_filename)
-            shutil.copy2(file_path, new_path)
-            message.data = '/'.join(new_path.split("\\")[1:])
+
+            # Use timestamp processing if enabled
+            if embed_exif or rename_media:
+                from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
+                final_path = process_media_with_timestamp(
+                    file_path, new_path, message.timestamp,
+                    timezone_offset, embed_exif, rename_media
+                )
+                message.data = '/'.join(final_path.split("\\")[1:])
+            else:
+                shutil.copy2(file_path, new_path)
+                message.data = '/'.join(new_path.split("\\")[1:])
+        elif embed_exif or rename_media:
+            # Handle in-place processing when not separating
+            from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
+            final_path = process_media_with_timestamp(
+                file_path, file_path, message.timestamp,
+                timezone_offset, embed_exif, rename_media
+            )
+            message.data = '/'.join(final_path.split("/")[1:])
     else:
         # Handle missing media
         message.data = "The media is missing"
