@@ -10,8 +10,8 @@ from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from base64 import b64decode, b64encode
 from datetime import datetime
-from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CURRENT_TZ_OFFSET, MAX_SIZE, ROW_SIZE, JidType, Device
+from Whatsapp_Chat_Exporter.data_model import ChatStore, Message, Timing
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, MAX_SIZE, ROW_SIZE, JidType, Device
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
 from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, determine_metadata
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable
@@ -317,7 +317,7 @@ def _process_single_message(data, content, table_message, timezone_offset):
         timestamp=content["timestamp"],
         time=content["timestamp"],
         key_id=content["key_id"],
-        timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
+        timezone_offset=timezone_offset,
         message_type=content["media_wa_type"],
         received_timestamp=content["received_timestamp"],
         read_timestamp=content["read_timestamp"]
@@ -867,7 +867,7 @@ def _process_call_record(content, chat, data, timezone_offset):
         timestamp=content["timestamp"],
         time=content["timestamp"],
         key_id=content["call_id"],
-        timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
+        timezone_offset=timezone_offset,
         received_timestamp=None,  # TODO: Add timestamp
         read_timestamp=None  # TODO: Add timestamp
     )

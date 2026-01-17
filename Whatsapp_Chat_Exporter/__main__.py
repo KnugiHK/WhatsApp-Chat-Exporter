@@ -11,11 +11,11 @@ import logging
 import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update, convert_time_unit
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OFFSET, Crypt
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
-from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, DbType
-from Whatsapp_Chat_Exporter.utility import telegram_json_format
+from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
+from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -538,6 +538,7 @@ def process_messages(args, data: ChatCollection) -> None:
         exit(6)
 
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
+    timing = Timing(args.timezone_offset if args.timezone_offset else CURRENT_TZ_OFFSET)
 
     with sqlite3.connect(msg_db) as db:
         db.row_factory = sqlite3.Row
@@ -549,7 +550,7 @@ def process_messages(args, data: ChatCollection) -> None:
             message_handler = ios_handler
 
         message_handler.messages(
-            db, data, args.media, args.timezone_offset, args.filter_date,
+            db, data, args.media, timing, args.filter_date,
             filter_chat, args.filter_empty, args.no_reply_ios
         )
 
@@ -566,17 +567,17 @@ def process_messages(args, data: ChatCollection) -> None:
         )
 
         # Process calls
-        process_calls(args, db, data, filter_chat)
+        process_calls(args, db, data, filter_chat, timing)
 
 
-def process_calls(args, db, data: ChatCollection, filter_chat) -> None:
+def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
     """Process call history if available."""
     if args.android:
-        android_handler.calls(db, data, args.timezone_offset, filter_chat)
+        android_handler.calls(db, data, timing, filter_chat)
     elif args.ios and args.call_db_ios is not None:
         with sqlite3.connect(args.call_db_ios) as cdb:
             cdb.row_factory = sqlite3.Row
-            ios_handler.calls(cdb, data, args.timezone_offset, filter_chat)
+            ios_handler.calls(cdb, data, timing, filter_chat)
 
 
 def handle_media_directory(args) -> None:

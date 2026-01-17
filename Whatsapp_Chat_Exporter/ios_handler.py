@@ -9,8 +9,8 @@ from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OFFSET, get_chat_condition
-from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name, Device
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, get_chat_condition, Device
+from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name
 
 
 logger = logging.getLogger(__name__)
@@ -211,7 +211,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 timestamp=ts,
                 time=ts,
                 key_id=content["ZSTANZAID"][:17],
-                timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
+                timezone_offset=timezone_offset,
                 message_type=content["ZMESSAGETYPE"],
                 received_timestamp=APPLE_TIME + content["ZSENTDATE"] if content["ZSENTDATE"] else None,
                 read_timestamp=None  # TODO: Add timestamp
@@ -567,7 +567,7 @@ def process_call_record(content, chat, data, timezone_offset):
         timestamp=ts,
         time=ts,
         key_id=content["ZCALLIDSTRING"],
-        timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET
+        timezone_offset=timezone_offset
     )
 
     # Set sender info
