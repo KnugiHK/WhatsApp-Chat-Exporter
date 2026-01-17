@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import os
 import shutil
+from tqdm import tqdm
 from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import escape as htmle
@@ -47,12 +48,15 @@ def contacts(db, data, enrich_from_vcards):
         logger.info(f"Processed {total_row_number} contacts\n")
 
     c.execute("SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts;")
-    row = c.fetchone()
-    while row is not None:
-        current_chat = data.add_chat(row["jid"], ChatStore(Device.ANDROID, row["display_name"]))
-        if row["status"] is not None:
-            current_chat.status = row["status"]
-        row = c.fetchone()
+    
+    with tqdm(total=total_row_number, desc="Processing contacts", unit="contact", leave=False) as pbar:
+        while (row := _fetch_row_safely(c)) is not None:
+            current_chat = data.add_chat(row["jid"], ChatStore(Device.ANDROID, row["display_name"]))
+            if row["status"] is not None:
+                current_chat.status = row["status"]
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} contacts in {total_time:.2f} seconds{CLEAR_LINE}")
 
     return True
 
@@ -72,7 +76,6 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c = db.cursor()
     total_row_number = _get_message_count(c, filter_empty, filter_date, filter_chat)
-    logger.info(f"Processing messages...(0/{total_row_number})\r")
 
     try:
         content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
@@ -84,22 +87,12 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         except Exception as e:
             raise e
 
-    i = 0
-    # Fetch the first row safely
-    content = _fetch_row_safely(content_cursor)
-
-    while content is not None:
-        _process_single_message(data, content, table_message, timezone_offset)
-
-        i += 1
-        if i % 1000 == 0:
-            logger.info(f"Processing messages...({i}/{total_row_number})\r")
-
-        # Fetch the next row safely
-        content = _fetch_row_safely(content_cursor)
-
-    logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
-
+    with tqdm(total=total_row_number, desc="Processing messages", unit="msg", leave=False) as pbar:
+        while (content := _fetch_row_safely(content_cursor)) is not None:
+            _process_single_message(data, content, table_message, timezone_offset)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} messages in {total_time:.2f} seconds{CLEAR_LINE}")
 
 # Helper functions for message processing
 
@@ -499,8 +492,6 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     """
     c = db.cursor()
     total_row_number = _get_media_count(c, filter_empty, filter_date, filter_chat)
-    logger.info(f"Processing media...(0/{total_row_number})\r")
-
     try:
         content_cursor = _get_media_cursor_legacy(c, filter_empty, filter_date, filter_chat)
     except sqlite3.OperationalError:
@@ -512,18 +503,12 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     # Ensure thumbnails directory exists
     Path(f"{media_folder}/thumbnails").mkdir(parents=True, exist_ok=True)
 
-    i = 0
-    while content is not None:
-        _process_single_media(data, content, media_folder, mime, separate_media)
-
-        i += 1
-        if i % 100 == 0:
-            logger.info(f"Processing media...({i}/{total_row_number})\r")
-
-        content = content_cursor.fetchone()
-
-    logger.info(f"Processed {total_row_number} media{CLEAR_LINE}")
-
+    with tqdm(total=total_row_number, desc="Processing media", unit="media", leave=False) as pbar:
+        while (content := _fetch_row_safely(content_cursor)) is not None:
+            _process_single_media(data, content, media_folder, mime, separate_media)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} media in {total_time:.2f} seconds{CLEAR_LINE}")
 
 # Helper functions for media processing
 
@@ -701,17 +686,17 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
         rows = _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty)
 
     total_row_number = len(rows)
-    logger.info(f"Processing vCards...(0/{total_row_number})\r")
 
     # Create vCards directory if it doesn't exist
     path = os.path.join(media_folder, "vCards")
     Path(path).mkdir(parents=True, exist_ok=True)
 
-    for index, row in enumerate(rows):
-        _process_vcard_row(row, path, data)
-        logger.info(f"Processing vCards...({index + 1}/{total_row_number})\r")
-    logger.info(f"Processed {total_row_number} vCards{CLEAR_LINE}")
-
+    with tqdm(total=total_row_number, desc="Processing vCards", unit="vcard", leave=False) as pbar:
+        for row in rows:
+            _process_vcard_row(row, path, data)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} vCards in {total_time:.2f} seconds{CLEAR_LINE}")
 
 def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
     """Execute vCard query for modern WhatsApp database schema."""
@@ -816,15 +801,15 @@ def calls(db, data, timezone_offset, filter_chat):
     chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
 
     # Process each call
-    content = calls_data.fetchone()
-    while content is not None:
-        _process_call_record(content, chat, data, timezone_offset)
-        content = calls_data.fetchone()
+    with tqdm(total=total_row_number, desc="Processing calls", unit="call", leave=False) as pbar:
+        while (content := _fetch_row_safely(calls_data)) is not None:
+            _process_call_record(content, chat, data, timezone_offset)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
 
     # Add the calls chat to the data
     data.add_chat("000000000000000", chat)
-    logger.info(f"Processed {total_row_number} calls{CLEAR_LINE}")
-
+    logger.info(f"Processed {total_row_number} calls in {total_time:.2f} seconds{CLEAR_LINE}")
 
 def _get_calls_count(c, filter_chat):
     """Get the count of call records that match the filter."""
@@ -948,7 +933,6 @@ def create_html(
     template = setup_template(template, no_avatar, experimental)
 
     total_row_number = len(data)
-    logger.info(f"Generating chats...(0/{total_row_number})\r")
 
     # Create output directory if it doesn't exist
     if not os.path.isdir(output_folder):
@@ -956,43 +940,42 @@ def create_html(
 
     w3css = get_status_location(output_folder, offline_static)
 
-    for current, contact in enumerate(data):
-        current_chat = data.get_chat(contact)
-        if len(current_chat) == 0:
-            # Skip empty chats
-            continue
+    with tqdm(total=total_row_number, desc="Generating HTML", unit="file", leave=False) as pbar:
+        for contact in data:
+            current_chat = data.get_chat(contact)
+            if len(current_chat) == 0:
+                # Skip empty chats
+                continue
 
-        safe_file_name, name = get_file_name(contact, current_chat)
+            safe_file_name, name = get_file_name(contact, current_chat)
 
-        if maximum_size is not None:
-            _generate_paginated_chat(
-                current_chat,
-                safe_file_name,
-                name,
-                contact,
-                output_folder,
-                template,
-                w3css,
-                maximum_size,
-                headline
-            )
-        else:
-            _generate_single_chat(
-                current_chat,
-                safe_file_name,
-                name,
-                contact,
-                output_folder,
-                template,
-                w3css,
-                headline
-            )
+            if maximum_size is not None:
+                _generate_paginated_chat(
+                    current_chat,
+                    safe_file_name,
+                    name,
+                    contact,
+                    output_folder,
+                    template,
+                    w3css,
+                    maximum_size,
+                    headline
+                )
+            else:
+                _generate_single_chat(
+                    current_chat,
+                    safe_file_name,
+                    name,
+                    contact,
+                    output_folder,
+                    template,
+                    w3css,
+                    headline
+                )
 
-        if current % 10 == 0:
-            logger.info(f"Generating chats...({current}/{total_row_number})\r")
-
-    logger.info(f"Generated {total_row_number} chats{CLEAR_LINE}")
-
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Generated {total_row_number} chats in {total_time:.2f} seconds{CLEAR_LINE}")
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):
     """Generate a single HTML file for a chat."""

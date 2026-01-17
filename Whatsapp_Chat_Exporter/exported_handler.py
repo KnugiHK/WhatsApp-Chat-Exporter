@@ -4,6 +4,7 @@ import os
 import logging
 from datetime import datetime
 from mimetypes import MimeTypes
+from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, Device
 
@@ -34,17 +35,16 @@ def messages(path, data, assume_first_as_me=False):
 
     # Second pass: process the messages
     with open(path, "r", encoding="utf8") as file:
-        for index, line in enumerate(file):
-            you, user_identification_done = process_line(
-                line, index, chat, path, you,
-                assume_first_as_me, user_identification_done
-            )
+         with tqdm(total=total_row_number, desc="Processing messages & media", unit="msg&media", leave=False) as pbar:
+            for index, line in enumerate(file):
+                you, user_identification_done = process_line(
+                    line, index, chat, path, you,
+                    assume_first_as_me, user_identification_done
+                )
+                pbar.update(1)
+            total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} messages & media in {total_time:.2f} seconds{CLEAR_LINE}")
 
-            # Show progress
-            if index % 1000 == 0:
-                logger.info(f"Processing messages & media...({index}/{total_row_number})\r")
-
-    logger.info(f"Processed {total_row_number} messages & media{CLEAR_LINE}")
     return data
 
 

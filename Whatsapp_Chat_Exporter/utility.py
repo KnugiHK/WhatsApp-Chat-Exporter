@@ -5,13 +5,13 @@ import json
 import os
 import unicodedata
 import re
-import string
 import math
 import shutil
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
+from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
 from typing import Dict, List, Optional, Tuple, Union
 try:
@@ -248,13 +248,13 @@ def import_from_json(json_file: str, data: ChatCollection):
     with open(json_file, "r") as f:
         temp_data = json.loads(f.read())
     total_row_number = len(tuple(temp_data.keys()))
-    logger.info(f"Importing chats from JSON...(0/{total_row_number})\r")
-    for index, (jid, chat_data) in enumerate(temp_data.items()):
-        chat = ChatStore.from_json(chat_data)
-        data.add_chat(jid, chat)
-        logger.info(
-            f"Importing chats from JSON...({index + 1}/{total_row_number})\r")
-    logger.info(f"Imported {total_row_number} chats from JSON{CLEAR_LINE}")
+    with tqdm(total=total_row_number, desc="Importing chats from JSON", unit="chat", leave=False) as pbar:
+        for jid, chat_data in temp_data.items():
+            chat = ChatStore.from_json(chat_data)
+            data.add_chat(jid, chat)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Imported {total_row_number} chats from JSON in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
@@ -439,7 +439,7 @@ CRYPT14_OFFSETS = (
     {"iv": 67, "db": 193},
     {"iv": 67, "db": 194},
     {"iv": 67, "db": 158},
-    {"iv": 67, "db": 196}
+    {"iv": 67, "db": 196},
 )
 
 

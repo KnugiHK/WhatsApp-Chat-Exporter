@@ -4,6 +4,7 @@ import os
 import logging
 import shutil
 from glob import glob
+from tqdm import tqdm
 from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import escape as htmle
@@ -23,17 +24,18 @@ def contacts(db, data):
     logger.info(f"Pre-processing contacts...({total_row_number})\r")
 
     c.execute("""SELECT ZWHATSAPPID, ZABOUTTEXT FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
-    content = c.fetchone()
-    while content is not None:
-        zwhatsapp_id = content["ZWHATSAPPID"]
-        if not zwhatsapp_id.endswith("@s.whatsapp.net"):
-            zwhatsapp_id += "@s.whatsapp.net"
+    with tqdm(total=total_row_number, desc="Processing contacts", unit="contact", leave=False) as pbar:
+        while (content := c.fetchone()) is not None:
+            zwhatsapp_id = content["ZWHATSAPPID"]
+            if not zwhatsapp_id.endswith("@s.whatsapp.net"):
+                zwhatsapp_id += "@s.whatsapp.net"
 
-        current_chat = ChatStore(Device.IOS)
-        current_chat.status = content["ZABOUTTEXT"]
-        data.add_chat(zwhatsapp_id, current_chat)
-        content = c.fetchone()
-    logger.info(f"Pre-processed {total_row_number} contacts{CLEAR_LINE}")
+            current_chat = ChatStore(Device.IOS)
+            current_chat.status = content["ZABOUTTEXT"]
+            data.add_chat(zwhatsapp_id, current_chat)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Pre-processed {total_row_number} contacts in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def process_contact_avatars(current_chat, media_folder, contact_id):
@@ -92,7 +94,6 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(contact_query)
     total_row_number = c.fetchone()[0]
-    logger.info(f"Processing contacts...({total_row_number})\r")
 
     # Get distinct contacts
     contacts_query = f"""
@@ -114,24 +115,24 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     c.execute(contacts_query)
 
     # Process each contact
-    content = c.fetchone()
-    while content is not None:
-        contact_name = get_contact_name(content)
-        contact_id = content["ZCONTACTJID"]
+    with tqdm(total=total_row_number, desc="Processing contacts", unit="contact", leave=False) as pbar:
+        while (content := c.fetchone()) is not None:
+            contact_name = get_contact_name(content)
+            contact_id = content["ZCONTACTJID"]
 
-        # Add or update chat
-        if contact_id not in data:
-            current_chat = data.add_chat(contact_id, ChatStore(Device.IOS, contact_name, media_folder))
-        else:
-            current_chat = data.get_chat(contact_id)
-            current_chat.name = contact_name
-            current_chat.my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
+            # Add or update chat
+            if contact_id not in data:
+                current_chat = data.add_chat(contact_id, ChatStore(Device.IOS, contact_name, media_folder))
+            else:
+                current_chat = data.get_chat(contact_id)
+                current_chat.name = contact_name
+                current_chat.my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
 
-        # Process avatar images
-        process_contact_avatars(current_chat, media_folder, contact_id)
-        content = c.fetchone()
-
-    logger.info(f"Processed {total_row_number} contacts{CLEAR_LINE}")
+            # Process avatar images
+            process_contact_avatars(current_chat, media_folder, contact_id)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} contacts in {total_time:.2f} seconds{CLEAR_LINE}")
 
     # Get message count
     message_count_query = f"""
@@ -190,46 +191,42 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     message_map = {row[0][:17]: row[1] or row[2] for row in cursor2.fetchall() if row[0]}
 
     # Process each message
-    i = 0
-    content = c.fetchone()
-    while content is not None:
-        contact_id = content["ZCONTACTJID"]
-        message_pk = content["Z_PK"]
-        is_group_message = content["ZGROUPINFO"] is not None
+    with tqdm(total=total_row_number, desc="Processing messages", unit="msg", leave=False) as pbar:
+        while (content := c.fetchone()) is not None:
+            contact_id = content["ZCONTACTJID"]
+            message_pk = content["Z_PK"]
+            is_group_message = content["ZGROUPINFO"] is not None
 
-        # Ensure chat exists
-        if contact_id not in data:
-            current_chat = data.add_chat(contact_id, ChatStore(Device.IOS))
-            process_contact_avatars(current_chat, media_folder, contact_id)
-        else:
-            current_chat = data.get_chat(contact_id)
+            # Ensure chat exists
+            if contact_id not in data:
+                current_chat = data.add_chat(contact_id, ChatStore(Device.IOS))
+                process_contact_avatars(current_chat, media_folder, contact_id)
+            else:
+                current_chat = data.get_chat(contact_id)
 
-        # Create message object
-        ts = APPLE_TIME + content["ZMESSAGEDATE"]
-        message = Message(
-            from_me=content["ZISFROMME"],
-            timestamp=ts,
-            time=ts,
-            key_id=content["ZSTANZAID"][:17],
-            timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
-            message_type=content["ZMESSAGETYPE"],
-            received_timestamp=APPLE_TIME + content["ZSENTDATE"] if content["ZSENTDATE"] else None,
-            read_timestamp=None  # TODO: Add timestamp
-        )
+            # Create message object
+            ts = APPLE_TIME + content["ZMESSAGEDATE"]
+            message = Message(
+                from_me=content["ZISFROMME"],
+                timestamp=ts,
+                time=ts,
+                key_id=content["ZSTANZAID"][:17],
+                timezone_offset=timezone_offset if timezone_offset else CURRENT_TZ_OFFSET,
+                message_type=content["ZMESSAGETYPE"],
+                received_timestamp=APPLE_TIME + content["ZSENTDATE"] if content["ZSENTDATE"] else None,
+                read_timestamp=None  # TODO: Add timestamp
+            )
 
-        # Process message data
-        invalid = process_message_data(message, content, is_group_message, data, message_map, no_reply)
+            # Process message data
+            invalid = process_message_data(message, content, is_group_message, data, message_map, no_reply)
 
-        # Add valid messages to chat
-        if not invalid:
-            current_chat.add_message(message_pk, message)
+            # Add valid messages to chat
+            if not invalid:
+                current_chat.add_message(message_pk, message)
 
-        # Update progress
-        i += 1
-        if i % 1000 == 0:
-            logger.info(f"Processing messages...({i}/{total_row_number})\r")
-        content = c.fetchone()
-    logger.info(f"Processed {total_row_number} messages{CLEAR_LINE}")
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} messages in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def process_message_data(message, content, is_group_message, data, message_map, no_reply):
@@ -371,17 +368,12 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
 
     # Process each media item
     mime = MimeTypes()
-    i = 0
-    content = c.fetchone()
-    while content is not None:
-        process_media_item(content, data, media_folder, mime, separate_media)
-
-        # Update progress
-        i += 1
-        if i % 100 == 0:
-            logger.info(f"Processing media...({i}/{total_row_number})\r")
-        content = c.fetchone()
-    logger.info(f"Processed {total_row_number} media{CLEAR_LINE}")
+    with tqdm(total=total_row_number, desc="Processing media", unit="media", leave=False) as pbar:
+        while (content := c.fetchone()) is not None:
+            process_media_item(content, data, media_folder, mime, separate_media)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} media in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def process_media_item(content, data, media_folder, mime, separate_media):
@@ -467,10 +459,12 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     Path(path).mkdir(parents=True, exist_ok=True)
 
     # Process each vCard
-    for index, content in enumerate(contents):
-        process_vcard_item(content, path, data)
-        logger.info(f"Processing vCards...({index + 1}/{total_row_number})\r")
-    logger.info(f"Processed {total_row_number} vCards{CLEAR_LINE}")
+    with tqdm(total=total_row_number, desc="Processing vCards", unit="vcard", leave=False) as pbar:
+        for content in contents:
+            process_vcard_item(content, path, data)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} vCards in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def process_vcard_item(content, path, data):
@@ -530,8 +524,6 @@ def calls(db, data, timezone_offset, filter_chat):
     if total_row_number == 0:
         return
 
-    logger.info(f"Processed {total_row_number} calls{CLEAR_LINE}\n")
-
     # Fetch call records
     calls_query = f"""
         SELECT ZCALLIDSTRING,
@@ -556,14 +548,15 @@ def calls(db, data, timezone_offset, filter_chat):
     # Create calls chat
     chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
 
-    # Process each call
-    content = c.fetchone()
-    while content is not None:
-        process_call_record(content, chat, data, timezone_offset)
-        content = c.fetchone()
+    with tqdm(total=total_row_number, desc="Processing calls", unit="call", leave=False) as pbar:
+        while (content := c.fetchone()) is not None:
+            process_call_record(content, chat, data, timezone_offset)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
 
     # Add calls chat to data
     data.add_chat("000000000000000", chat)
+    logger.info(f"Processed {total_row_number} calls in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def process_call_record(content, chat, data, timezone_offset):

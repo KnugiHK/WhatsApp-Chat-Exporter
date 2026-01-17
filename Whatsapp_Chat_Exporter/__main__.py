@@ -19,6 +19,7 @@ from Whatsapp_Chat_Exporter.utility import telegram_json_format
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
+from tqdm import tqdm
 from sys import exit
 from typing import Optional, List, Dict
 from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
@@ -665,24 +666,27 @@ def export_multiple_json(args, data: Dict) -> None:
 
     # Export each chat
     total = len(data.keys())
-    for index, jik in enumerate(data.keys()):
-        if data[jik]["name"] is not None:
-            contact = data[jik]["name"].replace('/', '')
-        else:
-            contact = jik.replace('+', '')
+    with tqdm(total=total, desc="Generating JSON files", unit="file", leave=False) as pbar:
+        for jik in data.keys():
+            if data[jik]["name"] is not None:
+                contact = data[jik]["name"].replace('/', '')
+            else:
+                contact = jik.replace('+', '')
 
-        if args.telegram:
-            messages = telegram_json_format(jik, data[jik], args.timezone_offset)
-        else:
-            messages = {jik: data[jik]}
-        with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
-            file_content = json.dumps(
-                messages,
-                ensure_ascii=not args.avoid_encoding_json,
-                indent=args.pretty_print_json
-            )
-            f.write(file_content)
-            logger.info(f"Writing JSON file...({index + 1}/{total})\r")
+            if args.telegram:
+                messages = telegram_json_format(jik, data[jik], args.timezone_offset)
+            else:
+                messages = {jik: data[jik]}
+            with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
+                file_content = json.dumps(
+                    messages,
+                    ensure_ascii=not args.avoid_encoding_json,
+                    indent=args.pretty_print_json
+                )
+                f.write(file_content)
+                pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Generated {total} JSON files in {total_time:.2f} seconds{CLEAR_LINE}")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:
