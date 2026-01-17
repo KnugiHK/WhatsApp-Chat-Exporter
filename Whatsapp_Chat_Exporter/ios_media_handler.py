@@ -6,6 +6,7 @@ import sqlite3
 import os
 import getpass
 from sys import exit, platform as osname
+import sys
 from tqdm import tqdm
 from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier
 from Whatsapp_Chat_Exporter.bplist import BPListReader
@@ -80,6 +81,8 @@ class BackupExtractor:
 
         logger.info(f"Encryption detected on the backup!{CLEAR_LINE}")
         password = getpass.getpass("Enter the password for the backup:")
+        sys.stdout.write("\033[F\033[K")
+        sys.stdout.flush()
         self._decrypt_backup(password)
         self._extract_decrypted_files()
 
