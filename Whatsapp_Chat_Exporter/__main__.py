@@ -12,7 +12,7 @@ import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update, convert_time_unit
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, DbType
 from Whatsapp_Chat_Exporter.utility import telegram_json_format
@@ -686,7 +686,7 @@ def export_multiple_json(args, data: Dict) -> None:
                 f.write(file_content)
                 pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Generated {total} JSON files in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:

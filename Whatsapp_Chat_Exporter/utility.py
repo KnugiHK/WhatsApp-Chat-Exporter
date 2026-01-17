@@ -254,7 +254,7 @@ def import_from_json(json_file: str, data: ChatCollection):
             data.add_chat(jid, chat)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Imported {total_row_number} chats from JSON in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):

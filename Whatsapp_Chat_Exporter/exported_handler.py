@@ -6,7 +6,7 @@ from datetime import datetime
 from mimetypes import MimeTypes
 from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, Device
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, Device, convert_time_unit
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def messages(path, data, assume_first_as_me=False):
                 )
                 pbar.update(1)
             total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} messages & media in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Processed {total_row_number} messages & media in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
     return data
 

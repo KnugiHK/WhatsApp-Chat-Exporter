@@ -8,7 +8,7 @@ import getpass
 from sys import exit, platform as osname
 import sys
 from tqdm import tqdm
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier, convert_time_unit
 from Whatsapp_Chat_Exporter.bplist import BPListReader
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
@@ -150,7 +150,7 @@ class BackupExtractor:
         )
         total_time = pbar.format_dict['elapsed']
         pbar.close()
-        logger.info(f"All required files are decrypted and extracted in {total_time:.2f} seconds{CLEAR_LINE}")
+        logger.info(f"All required files are decrypted and extracted in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
     def _extract_unencrypted_backup(self):
         """
@@ -236,7 +236,7 @@ class BackupExtractor:
                         os.utime(destination, (modification, modification))
                     pbar.update(1)
             total_time = pbar.format_dict['elapsed']
-            logger.info(f"Extracted {total_row_number} WhatsApp files in {total_time:.2f} seconds{CLEAR_LINE}")
+            logger.info(f"Extracted {total_row_number} WhatsApp files in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def extract_media(base_dir, identifiers, decrypt_chunk_size):

@@ -56,7 +56,7 @@ def contacts(db, data, enrich_from_vcards):
                 current_chat.status = row["status"]
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} contacts in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
     return True
 
@@ -92,7 +92,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             _process_single_message(data, content, table_message, timezone_offset)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} messages in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 # Helper functions for message processing
 
@@ -508,7 +508,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
             _process_single_media(data, content, media_folder, mime, separate_media)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} media in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 # Helper functions for media processing
 
@@ -696,7 +696,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
             _process_vcard_row(row, path, data)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} vCards in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
     """Execute vCard query for modern WhatsApp database schema."""
@@ -809,7 +809,7 @@ def calls(db, data, timezone_offset, filter_chat):
 
     # Add the calls chat to the data
     data.add_chat("000000000000000", chat)
-    logger.info(f"Processed {total_row_number} calls in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Processed {total_row_number} calls in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 def _get_calls_count(c, filter_chat):
     """Get the count of call records that match the filter."""
@@ -975,7 +975,7 @@ def create_html(
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Generated {total_row_number} chats in {total_time:.2f} seconds{CLEAR_LINE}")
+    logger.info(f"Generated {total_row_number} chats in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):
     """Generate a single HTML file for a chat."""
