@@ -6,6 +6,7 @@ import concurrent.futures
 from tqdm import tqdm
 from typing import Tuple, Union
 from hashlib import sha256
+from functools import partial
 from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CRYPT14_OFFSETS, Crypt, DbType
 
 try:
@@ -175,38 +176,43 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
             )
             return decrypted_db  # Successful decryption
 
+    logger.info(f"Common offsets failed. Will attempt to brute-force{CLEAR_LINE}")
     offset_max = 200
-    logger.info(f"Common offsets failed. Attempt to brute-force...{CLEAR_LINE}")
-    with tqdm(total=offset_max ** 2, desc="Brute-forcing offsets", unit="trial", leave=False) as pbar:
-        with concurrent.futures.ThreadPoolExecutor(max_worker) as executor:
-            # Map futures to their offsets
-            future_to_offset = {
-                executor.submit(_attempt_decrypt_task, offset, database, main_key): offset 
-                for offset in brute_force_offset(offset_max, offset_max)
-            }
+    workers = max_worker
+    check_offset = partial(_attempt_decrypt_task, database=database, main_key=main_key)
+    all_offsets = list(brute_force_offset(offset_max, offset_max))
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
+    try:
+        with tqdm(total=len(all_offsets), desc="Brute-forcing offsets", unit="trial", leave=False) as pbar:
+            results = executor.map(check_offset, all_offsets, chunksize=8)
+            found = False
+            for offset_info, result in zip(all_offsets, results):
+                pbar.update(1)
+                if result:
+                    start_iv, _, start_db = offset_info
+                    # Clean shutdown on success
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    found = True
+                    break
+        if found:
+            logger.info(
+                f"The offsets of your IV and database are {start_iv} and {start_db}, respectively.{CLEAR_LINE}"
+            )
+            logger.info(
+                f"To include your offsets in the expoter, please report it in the discussion thread on GitHub:{CLEAR_LINE}"
+            )
+            logger.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47{CLEAR_LINE}")
+            return result
 
-            try:
-                for future in concurrent.futures.as_completed(future_to_offset):
-                    pbar.update(1)
-                    result = future.result()
-                    
-                    if result is not None:
-                        # Success! Shutdown other tasks immediately
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        
-                        start_iv, _, start_db = future_to_offset[future]
-                        logger.info(
-                            f"The offsets of your IV and database are {start_iv} and "
-                            f"{start_db}, respectively. To include your offsets in the "
-                            "program, please report it by creating an issue on GitHub: "
-                            "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47"
-                            f"\nShutting down other threads...{CLEAR_LINE}"
-                        )
-                        return result
-
-            except KeyboardInterrupt:
-                executor.shutdown(wait=False, cancel_futures=True)
-                raise KeyboardInterrupt("Brute force interrupted by user (Ctrl+C). Shutting down gracefully...{CLEAR_LINE}")
+    except KeyboardInterrupt:
+        executor.shutdown(wait=False, cancel_futures=True)
+        print("\n")
+        raise KeyboardInterrupt(
+            f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully...{CLEAR_LINE}"
+        )
+    
+    finally:
+        executor.shutdown(wait=False)
 
     raise OffsetNotFoundError("Could not find the correct offsets for decryption.")
 
