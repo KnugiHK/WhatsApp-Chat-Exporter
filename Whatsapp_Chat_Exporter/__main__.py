@@ -287,7 +287,7 @@ def setup_argument_parser() -> ArgumentParser:
         help="Specify the chunk size for decrypting iOS backup, which may affect the decryption speed."
     )
     misc_group.add_argument(
-        "--max-bruteforce-worker", dest="max_bruteforce_worker", default=10, type=int,
+        "--max-bruteforce-worker", dest="max_bruteforce_worker", default=4, type=int,
         help="Specify the maximum number of worker for bruteforce decryption."
     )
     misc_group.add_argument(
