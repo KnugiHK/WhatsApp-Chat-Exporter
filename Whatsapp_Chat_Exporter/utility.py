@@ -674,34 +674,35 @@ def telegram_json_format(jik: str, data: Dict, timezone_offset) -> Dict:
     except ValueError:
         # not a real chat: e.g. statusbroadcast
         chat_id = 0
-    obj = {
-            "name": data["name"] if data["name"] else jik,
-            "type": get_chat_type(jik),
-            "id": chat_id,
-            "messages": [ {
-                "id": int(msgId),
-                "type": "message",
-                "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
-                "date_unixtime": int(msg["timestamp"]),
-                "from": get_from_string(msg, chat_id),
-                "from_id": get_from_id(msg, chat_id),
-                "reply_to_message_id": get_reply_id(data, msg["reply"]),
-                "text": msg["data"],
-                "text_entities": [
-                    {
-                        # TODO this will lose formatting and different types
-                        "type": "plain",
-                        "text": msg["data"],
-                        }
-                    ],
-                } for msgId, msg in data["messages"].items()]
+    json_obj = {
+        "name": data["name"] if data["name"] else jik,
+        "type": get_chat_type(jik),
+        "id": chat_id,
+        "messages": [ {
+            "id": int(msgId),
+            "type": "message",
+            "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
+            "date_unixtime": int(msg["timestamp"]),
+            "from": get_from_string(msg, chat_id),
+            "from_id": get_from_id(msg, chat_id),
+            "reply_to_message_id": get_reply_id(data, msg["reply"]),
+            "text": msg["data"],
+            "text_entities": [
+                {
+                    # TODO this will lose formatting and different types
+                    "type": "plain",
+                    "text": msg["data"],
+                    }
+                ],
             }
+        for msgId, msg in data["messages"].items()]
+    }
     # remove empty messages and replies
-    for msg_id, msg in enumerate(obj["messages"]):
+    for msg_id, msg in enumerate(json_obj["messages"]):
         if not msg["reply_to_message_id"]:
-            del obj["messages"][msg_id]["reply_to_message_id"]
-    obj["messages"] = [m for m in obj["messages"] if m["text"]]
-    return obj
+            del json_obj["messages"][msg_id]["reply_to_message_id"]
+    json_obj["messages"] = [m for m in json_obj["messages"] if m["text"]]
+    return json_obj
 
 
 class WhatsAppIdentifier(StrEnum):
