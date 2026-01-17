@@ -639,11 +639,17 @@ def get_from_string(msg: Dict, chat_id: str) -> str:
 
 def get_chat_type(chat_id: str) -> str:
     """Return the chat type based on the whatsapp id"""
-    if chat_id.endswith("@s.whatsapp.net"):
+    if chat_id == "000000000000000":
+        return "calls"
+    elif chat_id.endswith("@s.whatsapp.net"):
         return "personal_chat"
-    if chat_id.endswith("@g.us"):
+    elif chat_id.endswith("@g.us"):
         return "private_group"
-    logger.warning("Unknown chat type for %s, defaulting to private_group", chat_id)
+    elif chat_id == "status@broadcast":
+        return "status_broadcast"
+    elif chat_id.endswith("@broadcast"):
+        return "broadcast_channel"
+    logger.warning(f"Unknown chat type for {chat_id}, defaulting to private_group{CLEAR_LINE}")
     return "private_group"
 
 
