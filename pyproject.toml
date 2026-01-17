@@ -36,7 +36,8 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "jinja2",
-    "bleach"
+    "bleach",
+    "tqdm"
 ]
 
 [project.optional-dependencies]
