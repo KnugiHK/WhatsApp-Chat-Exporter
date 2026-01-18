@@ -240,7 +240,8 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
                             COALESCE(receipt_user.receipt_timestamp, message.received_timestamp) as received_timestamp,
-                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp
+                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp,
+                            message_media.raw_transcription_text as transcription_text
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
@@ -353,9 +354,12 @@ def _process_single_message(data, content, table_message, timezone_offset):
     if not table_message and content["media_caption"] is not None:
         # Old schema
         message.caption = content["media_caption"]
-    elif table_message and content["media_wa_type"] == 1 and content["data"] is not None:
+    elif table_message:
         # New schema
-        message.caption = content["data"]
+        if content["media_wa_type"] == 1 and content["data"] is not None:
+            message.caption = content["data"]
+        elif content["media_wa_type"] == 2 and content["transcription_text"] is not None:
+            message.caption = f'"{content["transcription_text"]}"'
     else:
         message.caption = None
 

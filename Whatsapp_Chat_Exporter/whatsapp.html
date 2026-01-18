@@ -281,7 +281,9 @@
                                                 {% filter escape %}{{ msg.data }}{% endfilter %}
                                             {% endif %}
                                             {% if msg.caption is not none %}
-                                                {{ msg.caption | urlize(none, true, '_blank') }}
+                                                <p class='mt-1 {% if "audio/" in msg.mime %}text-[#808080]{% endif %}'>
+                                                    {{ msg.caption | urlize(none, true, '_blank') }}
+                                                </p>
                                             {% endif %}
                                         {% endif %}
                                     {% endif %}
@@ -342,7 +344,9 @@
                                                 {% filter escape %}{{ msg.data }}{% endfilter %}
                                             {% endif %}
                                             {% if msg.caption is not none %}
-                                                {{ msg.caption | urlize(none, true, '_blank') }}
+                                                <p class='mt-1 {% if "audio/" in msg.mime %}text-[#808080]{% endif %}'>
+                                                    {{ msg.caption | urlize(none, true, '_blank') }}
+                                                </p>
                                             {% endif %}
                                         {% endif %}
                                     {% endif %}
