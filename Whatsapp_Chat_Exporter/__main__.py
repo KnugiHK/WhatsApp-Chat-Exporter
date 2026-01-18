@@ -294,6 +294,10 @@ def setup_argument_parser() -> ArgumentParser:
         "--no-banner", dest="no_banner", default=False, action='store_true',
         help="Do not show the banner"
     )
+    misc_group.add_argument(
+        "--fix-dot-files", dest="fix_dot_files", default=False, action='store_true',
+        help="Fix files with a dot at the end of their name (allowing the outputs be stored in FAT filesystems)"
+    )
 
     return parser
 
@@ -557,7 +561,7 @@ def process_messages(args, data: ChatCollection) -> None:
         # Process media
         message_handler.media(
             db, data, args.media, args.filter_date,
-            filter_chat, args.filter_empty, args.separate_media
+            filter_chat, args.filter_empty, args.separate_media, args.fix_dot_files
         )
 
         # Process vcards

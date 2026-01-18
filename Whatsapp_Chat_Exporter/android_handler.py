@@ -485,7 +485,7 @@ def _format_message_text(text):
     return text
 
 
-def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True):
+def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True, fix_dot_files=False):
     """
     Process WhatsApp media files from the database.
 
@@ -513,7 +513,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
 
     with tqdm(total=total_row_number, desc="Processing media", unit="media", leave=False) as pbar:
         while (content := _fetch_row_safely(content_cursor)) is not None:
-            _process_single_media(data, content, media_folder, mime, separate_media)
+            _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     logger.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}{CLEAR_LINE}")
@@ -641,7 +641,7 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     return cursor
 
 
-def _process_single_media(data, content, media_folder, mime, separate_media):
+def _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files=False):
     """Process a single media file."""
     file_path = f"{media_folder}/{content['file_path']}"
     current_chat = data.get_chat(content["key_remote_jid"])
@@ -649,8 +649,6 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
     message.media = True
 
     if os.path.isfile(file_path):
-        message.data = file_path
-
         # Set mime type
         if content["mime_type"] is None:
             guess = mime.guess_type(file_path)[0]
@@ -660,6 +658,16 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
                 message.mime = "application/octet-stream"
         else:
             message.mime = content["mime_type"]
+        
+        if fix_dot_files and file_path.endswith("."):
+            extension = mime.guess_extension(message.mime)
+            if message.mime == "application/octet-stream" or not extension:
+                new_file_path = file_path[:-1]
+            else:
+                extension = mime.guess_extension(message.mime)
+                new_file_path = file_path[:-1] + extension
+            os.rename(file_path, new_file_path)
+            file_path = new_file_path
 
         # Copy media to separate folder if needed
         if separate_media:
@@ -671,6 +679,8 @@ def _process_single_media(data, content, media_folder, mime, separate_media):
             new_path = os.path.join(new_folder, current_filename)
             shutil.copy2(file_path, new_path)
             message.data = new_path
+        else:
+            message.data = file_path
     else:
         message.data = "The media is missing"
         message.mime = "media"

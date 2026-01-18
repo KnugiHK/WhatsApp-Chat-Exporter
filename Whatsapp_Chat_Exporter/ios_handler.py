@@ -312,7 +312,7 @@ def process_message_text(message, content):
     message.data = msg
 
 
-def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=False):
+def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=False, fix_dot_files=False):
     """Process media files from WhatsApp messages."""
     c = db.cursor()
 
@@ -370,13 +370,13 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     mime = MimeTypes()
     with tqdm(total=total_row_number, desc="Processing media", unit="media", leave=False) as pbar:
         while (content := c.fetchone()) is not None:
-            process_media_item(content, data, media_folder, mime, separate_media)
+            process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     logger.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
-def process_media_item(content, data, media_folder, mime, separate_media):
+def process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files=False):
     """Process a single media item."""
     file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
     current_chat = data.get_chat(content["ZCONTACTJID"])
@@ -387,14 +387,22 @@ def process_media_item(content, data, media_folder, mime, separate_media):
         current_chat.media_base = media_folder + "/"
 
     if os.path.isfile(file_path):
-        message.data = '/'.join(file_path.split("/")[1:])
-
         # Set MIME type
         if content["ZVCARDSTRING"] is None:
             guess = mime.guess_type(file_path)[0]
             message.mime = guess if guess is not None else "application/octet-stream"
         else:
             message.mime = content["ZVCARDSTRING"]
+        
+        if fix_dot_files and file_path.endswith("."):
+            extension = mime.guess_extension(message.mime)
+            if message.mime == "application/octet-stream" or not extension:
+                new_file_path = file_path[:-1]
+            else:
+                extension = mime.guess_extension(message.mime)
+                new_file_path = file_path[:-1] + extension
+            os.rename(file_path, new_file_path)
+            file_path = new_file_path
 
         # Handle separate media option
         if separate_media:
@@ -405,7 +413,9 @@ def process_media_item(content, data, media_folder, mime, separate_media):
             Path(new_folder).mkdir(parents=True, exist_ok=True)
             new_path = os.path.join(new_folder, current_filename)
             shutil.copy2(file_path, new_path)
-            message.data = '/'.join(new_path.split("\\")[1:])
+            message.data = '/'.join(new_path.split("/")[1:])
+        else:
+            message.data = '/'.join(file_path.split("/")[1:])
     else:
         # Handle missing media
         message.data = "The media is missing"
