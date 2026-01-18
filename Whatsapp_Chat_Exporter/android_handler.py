@@ -211,9 +211,9 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
     include_filter = get_chat_condition(
-        filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
+        filter_chat[0], True, ["key_remote_jid", "lid_group.raw_string"], "jid_global", "android")
     exclude_filter = get_chat_condition(
-        filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid_global", "android")
+        filter_chat[1], False, ["key_remote_jid", "lid_group.raw_string"], "jid_global", "android")
 
     cursor.execute(f"""SELECT COALESCE(lid_global.raw_string, jid_global.raw_string) as key_remote_jid,
                             message._id,
@@ -230,7 +230,7 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             message.key_id,
                             message_quoted.text_data as quoted_data,
                             message.message_type as media_wa_type,
-                            jid_group.raw_string as group_sender_jid,
+                            COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid,
                             chat.subject as chat_subject,
                             missed_call_logs.video_call,
                             message.sender_jid_row_id,
@@ -272,10 +272,14 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
-                        LEFT JOIN jid_map
-                            ON chat.jid_row_id = jid_map.lid_row_id
+                        LEFT JOIN jid_map as jid_map_global
+                            ON chat.jid_row_id = jid_map_global.lid_row_id
                         LEFT JOIN jid lid_global
-                            ON jid_map.jid_row_id = lid_global._id
+                            ON jid_map_global.jid_row_id = lid_global._id
+                        LEFT JOIN jid_map as jid_map_group
+                            ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                        LEFT JOIN jid lid_group
+                            ON jid_map_group.jid_row_id = lid_group._id
                     WHERE key_remote_jid <> '-1'
                         {empty_filter}
                         {date_filter}
