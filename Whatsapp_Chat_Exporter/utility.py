@@ -534,7 +534,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
         else:
             msg = "The security code in this chat changed"
     elif content["action_type"] == 58:
-        msg = "You blocked this contact"
+        msg = "You blocked/unblocked this contact"
     elif content["action_type"] == 67:
         return  # (PM) this contact use secure service from Facebook???
     elif content["action_type"] == 69:
