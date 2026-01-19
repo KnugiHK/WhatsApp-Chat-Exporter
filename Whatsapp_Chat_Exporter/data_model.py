@@ -66,6 +66,7 @@ class ChatCollection(MutableMapping):
     def __init__(self) -> None:
         """Initialize an empty chat collection."""
         self._chats: Dict[str, ChatStore] = {}
+        self._system: Dict[str, Any] = {}
 
     def __getitem__(self, key: str) -> 'ChatStore':
         """Get a chat by its ID. Required for dict-like access."""
@@ -147,6 +148,28 @@ class ChatCollection(MutableMapping):
             Dict[str, Any]: Dictionary representation of all chats
         """
         return {chat_id: chat.to_json() for chat_id, chat in self._chats.items()}
+
+    def get_system(self, key: str) -> Any:
+        """
+        Get a system value by its key.
+
+        Args:
+            key (str): The key of the system value to retrieve
+
+        Returns:
+            Any: The system value if found, None otherwise
+        """
+        return self._system.get(key)
+    
+    def set_system(self, key: str, value: Any) -> None:
+        """
+        Set a system value by its key.
+
+        Args:
+            key (str): The key of the system value to set
+            value (Any): The value to set
+        """
+        self._system[key] = value 
 
 
 class ChatStore:

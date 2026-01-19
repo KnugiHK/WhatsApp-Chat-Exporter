@@ -572,6 +572,24 @@ def get_status_location(output_folder: str, offline_static: str) -> str:
     return w3css
 
 
+def get_transcription_selection(db: sqlite3.Connection) -> str:
+    """
+    Returns the SQL selection statement for transcription text based on the database schema.
+
+    Args:
+        db (sqlite3.Connection): The SQLite database connection.
+    Returns:
+        str: The SQL selection statement for transcription.
+    """
+    cursor = db.cursor()
+    cursor.execute("PRAGMA table_info(message_media)")
+    columns = [row[1] for row in cursor.fetchall()]
+
+    if "raw_transcription_text" in columns:
+        return "message_media.raw_transcription_text AS transcription_text"
+    else:
+        return "NULL AS transcription_text"
+
 def setup_template(template: Optional[str], no_avatar: bool, experimental: bool = False) -> jinja2.Template:
     """
     Sets up the Jinja2 template environment and loads the template.

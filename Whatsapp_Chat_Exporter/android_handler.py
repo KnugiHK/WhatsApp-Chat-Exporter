@@ -82,7 +82,13 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         table_message = False
     except sqlite3.OperationalError:
         try:
-            content_cursor = _get_messages_cursor_new(c, filter_empty, filter_date, filter_chat)
+            content_cursor = _get_messages_cursor_new(
+                c,
+                filter_empty,
+                filter_date,
+                filter_chat,
+                data.get_system("transcription_selection"),
+            )
             table_message = True
         except Exception as e:
             raise e
@@ -217,7 +223,13 @@ def _get_messages_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
     return cursor
 
 
-def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
+def _get_messages_cursor_new(
+        cursor,
+        filter_empty,
+        filter_date,
+        filter_chat,
+        transcription_selection,
+    ):
     """Get cursor for new database schema."""
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
@@ -252,7 +264,7 @@ def _get_messages_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                             jid_global.type as jid_type,
                             COALESCE(receipt_user.receipt_timestamp, message.received_timestamp) as received_timestamp,
                             COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp,
-                            message_media.raw_transcription_text as transcription_text
+                            {transcription_selection}
                     FROM message
                         LEFT JOIN message_quoted
                             ON message_quoted.message_row_id = message._id
