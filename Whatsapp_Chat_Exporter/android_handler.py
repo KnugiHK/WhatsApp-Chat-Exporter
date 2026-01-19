@@ -92,6 +92,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             _process_single_message(data, content, table_message, timezone_offset)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
+    _get_reactions(db, data)
     logger.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 # Helper functions for message processing
