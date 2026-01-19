@@ -118,14 +118,16 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
                         {include_filter}
                         {exclude_filter}""")
     except sqlite3.OperationalError:
-        empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
+        empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
         date_filter = f'AND timestamp {filter_date}' if filter_date is not None else ''
         include_filter = get_chat_condition(
-            filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+            filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid", "android")
         exclude_filter = get_chat_condition(
-            filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+            filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid", "android")
 
-        cursor.execute(f"""SELECT count()
+        cursor.execute(f"""SELECT count(),
+                        COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
+                        COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid
                       FROM message
                         LEFT JOIN chat
                             ON chat._id = message.chat_row_id
@@ -133,6 +135,14 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
                             ON jid._id = chat.jid_row_id
                         LEFT JOIN jid jid_group
                             ON jid_group._id = message.sender_jid_row_id
+                        LEFT JOIN jid_map as jid_map_global
+                            ON chat.jid_row_id = jid_map_global.lid_row_id
+                        LEFT JOIN jid lid_global
+                            ON jid_map_global.jid_row_id = lid_global._id
+                        LEFT JOIN jid_map as jid_map_group
+                            ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                        LEFT JOIN jid lid_group
+                            ON jid_map_group.jid_row_id = lid_group._id
                       WHERE 1=1
                         {empty_filter}
                         {date_filter}
@@ -547,11 +557,13 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
         empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
         date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
         include_filter = get_chat_condition(
-            filter_chat[0], True, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+            filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid", "android")
         exclude_filter = get_chat_condition(
-            filter_chat[1], False, ["jid.raw_string", "jid_group.raw_string"], "jid", "android")
+            filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid", "android")
 
-        cursor.execute(f"""SELECT count()
+        cursor.execute(f"""SELECT count(),
+                        COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
+                        COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid
                     FROM message_media
                         INNER JOIN message
                             ON message_media.message_row_id = message._id
@@ -561,6 +573,14 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
                             ON jid._id = chat.jid_row_id
                         LEFT JOIN jid jid_group
                             ON jid_group._id = message.sender_jid_row_id
+                        LEFT JOIN jid_map as jid_map_global
+                            ON chat.jid_row_id = jid_map_global.lid_row_id
+                        LEFT JOIN jid lid_global
+                            ON jid_map_global.jid_row_id = lid_global._id
+                        LEFT JOIN jid_map as jid_map_group
+                            ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                        LEFT JOIN jid lid_group
+                            ON jid_map_group.jid_row_id = lid_group._id
                     WHERE 1=1    
                         {empty_filter}
                         {date_filter}
@@ -609,18 +629,19 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
     include_filter = get_chat_condition(
-        filter_chat[0], True, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
+        filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid", "android")
     exclude_filter = get_chat_condition(
-        filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
+        filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid", "android")
 
-    cursor.execute(f"""SELECT jid.raw_string as key_remote_jid,
+    cursor.execute(f"""SELECT COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
                     message_row_id,
                     file_path,
                     message_url,
                     mime_type,
                     media_key,
                     file_hash,
-                    thumbnail
+                    thumbnail,
+                    COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid
                 FROM message_media
                     INNER JOIN message
                         ON message_media.message_row_id = message._id
@@ -632,6 +653,14 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
                         ON message_media.file_hash = media_hash_thumbnail.media_hash
                     LEFT JOIN jid jid_group
                         ON jid_group._id = message.sender_jid_row_id
+                    LEFT JOIN jid_map as jid_map_global
+                        ON chat.jid_row_id = jid_map_global.lid_row_id
+                    LEFT JOIN jid lid_global
+                        ON jid_map_global.jid_row_id = lid_global._id
+                    LEFT JOIN jid_map as jid_map_group
+                        ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                    LEFT JOIN jid lid_group
+                        ON jid_map_group.jid_row_id = lid_group._id
                 WHERE jid.type <> 7
                     {empty_filter}
                     {date_filter}
@@ -720,29 +749,40 @@ def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
     """Execute vCard query for modern WhatsApp database schema."""
 
     # Build the filter conditions
-    chat_filter_include = get_chat_condition(
-        filter_chat[0], True, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
-    chat_filter_exclude = get_chat_condition(
-        filter_chat[1], False, ["messages.key_remote_jid", "remote_resource"], "jid", "android")
     date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "messages.needs_push")
+    include_filter = get_chat_condition(
+        filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid", "android")
+    exclude_filter = get_chat_condition(
+        filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid", "android")
 
     query = f"""SELECT message_row_id,
-                messages.key_remote_jid,
-                vcard,
-                messages.media_name
-             FROM messages_vcards
-                INNER JOIN messages
-                    ON messages_vcards.message_row_id = messages._id
-                INNER JOIN jid
-                    ON messages.key_remote_jid = jid.raw_string
-                LEFT JOIN chat
-                    ON chat.jid_row_id = jid._id
+                    COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
+                    vcard,
+                    messages.media_name,
+                    COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid
+                FROM messages_vcards
+                    INNER JOIN messages
+                        ON messages_vcards.message_row_id = messages._id
+                    INNER JOIN jid
+                        ON messages.key_remote_jid = jid.raw_string
+                    LEFT JOIN chat
+                        ON chat.jid_row_id = jid._id
+                    LEFT JOIN jid jid_group
+                        ON jid_group._id = message.sender_jid_row_id
+                    LEFT JOIN jid_map as jid_map_global
+                        ON chat.jid_row_id = jid_map_global.lid_row_id
+                    LEFT JOIN jid lid_global
+                        ON jid_map_global.jid_row_id = lid_global._id
+                    LEFT JOIN jid_map as jid_map_group
+                        ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                    LEFT JOIN jid lid_group
+                        ON jid_map_group.jid_row_id = lid_group._id
              WHERE 1=1
                 {empty_filter}
                 {date_filter}
-                {chat_filter_include}
-                {chat_filter_exclude}
+                {include_filter}
+                {exclude_filter}
              ORDER BY messages.key_remote_jid ASC;"""
     c.execute(query)
     return c.fetchall()
@@ -833,18 +873,23 @@ def _get_calls_count(c, filter_chat):
     """Get the count of call records that match the filter."""
 
     # Build the filter conditions
-    chat_filter_include = get_chat_condition(filter_chat[0], True, ["jid.raw_string"])
-    chat_filter_exclude = get_chat_condition(filter_chat[1], False, ["jid.raw_string"])
+    include_filter = get_chat_condition(filter_chat[0], True, ["key_remote_jid"])
+    exclude_filter = get_chat_condition(filter_chat[1], False, ["key_remote_jid"])
 
-    query = f"""SELECT count()
+    query = f"""SELECT count(),
+                COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid
             FROM call_log
                 INNER JOIN jid
                     ON call_log.jid_row_id = jid._id
                 LEFT JOIN chat
                     ON call_log.jid_row_id = chat.jid_row_id
+                LEFT JOIN jid_map as jid_map_global
+                    ON chat.jid_row_id = jid_map_global.lid_row_id
+                LEFT JOIN jid lid_global
+                    ON jid_map_global.jid_row_id = lid_global._id
             WHERE 1=1
-                {chat_filter_include}
-                {chat_filter_exclude}"""
+                {include_filter}
+                {exclude_filter}"""
     c.execute(query)
     return c.fetchone()[0]
 
@@ -853,11 +898,11 @@ def _fetch_calls_data(c, filter_chat):
     """Fetch call data from the database."""
 
     # Build the filter conditions
-    chat_filter_include = get_chat_condition(filter_chat[0], True, ["jid.raw_string"])
-    chat_filter_exclude = get_chat_condition(filter_chat[1], False, ["jid.raw_string"])
+    include_filter = get_chat_condition(filter_chat[0], True, ["key_remote_jid"])
+    exclude_filter = get_chat_condition(filter_chat[1], False, ["key_remote_jid"])
 
     query = f"""SELECT call_log._id,
-                    jid.raw_string,
+                    COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
                     from_me,
                     call_id,
                     timestamp,
@@ -871,9 +916,13 @@ def _fetch_calls_data(c, filter_chat):
                     ON call_log.jid_row_id = jid._id
                 LEFT JOIN chat
                     ON call_log.jid_row_id = chat.jid_row_id
+                LEFT JOIN jid_map as jid_map_global
+                    ON chat.jid_row_id = jid_map_global.lid_row_id
+                LEFT JOIN jid lid_global
+                    ON jid_map_global.jid_row_id = lid_global._id
             WHERE 1=1
-                {chat_filter_include}
-                {chat_filter_exclude}"""
+                {include_filter}
+                {exclude_filter}"""
     c.execute(query)
     return c
 
@@ -891,7 +940,7 @@ def _process_call_record(content, chat, data, timezone_offset):
     )
 
     # Get caller/callee name
-    _jid = content["raw_string"]
+    _jid = content["key_remote_jid"]
     name = data.get_chat(_jid).name if _jid in data else content["chat_subject"] or None
     if _jid is not None and "@" in _jid:
         fallback = _jid.split('@')[0]
