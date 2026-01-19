@@ -10,11 +10,11 @@ from mimetypes import MimeTypes
 from markupsafe import escape as htmle
 from base64 import b64decode, b64encode
 from datetime import datetime
-from Whatsapp_Chat_Exporter.data_model import ChatStore, Message, Timing
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, MAX_SIZE, ROW_SIZE, JidType, Device
+from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, MAX_SIZE, ROW_SIZE, JidType, Device, get_jid_map_join
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
-from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, determine_metadata
-from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable
+from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, get_jid_map_selection
+from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable, determine_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         filter_empty: Filter for empty chats
     """
     c = db.cursor()
-    total_row_number = _get_message_count(c, filter_empty, filter_date, filter_chat)
+    total_row_number = _get_message_count(c, filter_empty, filter_date, filter_chat, data.get_system("jid_map_exists"))
 
     try:
         content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
@@ -88,6 +88,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 filter_date,
                 filter_chat,
                 data.get_system("transcription_selection"),
+                data.get_system("jid_map_exists")
             )
             table_message = True
         except Exception as e:
@@ -103,7 +104,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
 
 # Helper functions for message processing
 
-def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
+def _get_message_count(cursor, filter_empty, filter_date, filter_chat, jid_map_exists):
     """Get the total number of messages to process."""
     try:
         empty_filter = get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")
@@ -127,29 +128,23 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat):
     except sqlite3.OperationalError:
         empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
         date_filter = f'AND timestamp {filter_date}' if filter_date is not None else ''
+        remote_jid_selection, group_jid_selection = get_jid_map_selection(jid_map_exists)
         include_filter = get_chat_condition(
             filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid", "android")
         exclude_filter = get_chat_condition(
             filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid", "android")
 
         cursor.execute(f"""SELECT count(),
-                        COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
-                        COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid
+                        {remote_jid_selection} as key_remote_jid,
+                        {group_jid_selection} as group_sender_jid
                       FROM message
                         LEFT JOIN chat
                             ON chat._id = message.chat_row_id
-                        INNER JOIN jid
-                            ON jid._id = chat.jid_row_id
+                        INNER JOIN jid jid_global
+                            ON jid_global._id = chat.jid_row_id
                         LEFT JOIN jid jid_group
                             ON jid_group._id = message.sender_jid_row_id
-                        LEFT JOIN jid_map as jid_map_global
-                            ON chat.jid_row_id = jid_map_global.lid_row_id
-                        LEFT JOIN jid lid_global
-                            ON jid_map_global.jid_row_id = lid_global._id
-                        LEFT JOIN jid_map as jid_map_group
-                            ON message.sender_jid_row_id = jid_map_group.lid_row_id
-                        LEFT JOIN jid lid_group
-                            ON jid_map_group.jid_row_id = lid_group._id
+                        {get_jid_map_join(jid_map_exists)}
                       WHERE 1=1
                         {empty_filter}
                         {date_filter}
@@ -229,16 +224,18 @@ def _get_messages_cursor_new(
         filter_date,
         filter_chat,
         transcription_selection,
+        jid_map_exists
     ):
     """Get cursor for new database schema."""
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
+    remote_jid_selection, group_jid_selection = get_jid_map_selection(jid_map_exists)
     include_filter = get_chat_condition(
-        filter_chat[0], True, ["key_remote_jid", "lid_group.raw_string"], "jid_global", "android")
+        filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid_global", "android")
     exclude_filter = get_chat_condition(
-        filter_chat[1], False, ["key_remote_jid", "lid_group.raw_string"], "jid_global", "android")
+        filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid_global", "android")
 
-    cursor.execute(f"""SELECT COALESCE(lid_global.raw_string, jid_global.raw_string) as key_remote_jid,
+    cursor.execute(f"""SELECT {remote_jid_selection} as key_remote_jid,
                             message._id,
                             message.from_me as key_from_me,
                             message.timestamp,
@@ -253,7 +250,7 @@ def _get_messages_cursor_new(
                             message.key_id,
                             message_quoted.text_data as quoted_data,
                             message.message_type as media_wa_type,
-                            COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid,
+                            {group_jid_selection} as group_sender_jid,
                             chat.subject as chat_subject,
                             missed_call_logs.video_call,
                             message.sender_jid_row_id,
@@ -296,14 +293,7 @@ def _get_messages_cursor_new(
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
-                        LEFT JOIN jid_map as jid_map_global
-                            ON chat.jid_row_id = jid_map_global.lid_row_id
-                        LEFT JOIN jid lid_global
-                            ON jid_map_global.jid_row_id = lid_global._id
-                        LEFT JOIN jid_map as jid_map_group
-                            ON message.sender_jid_row_id = jid_map_group.lid_row_id
-                        LEFT JOIN jid lid_group
-                            ON jid_map_group.jid_row_id = lid_group._id
+                        {get_jid_map_join(jid_map_exists)}
                     WHERE key_remote_jid <> '-1'
                         {empty_filter}
                         {date_filter}
