@@ -16,7 +16,7 @@ from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OF
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
 from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
-from Whatsapp_Chat_Exporter.utility import get_transcription_selection
+from Whatsapp_Chat_Exporter.utility import get_transcription_selection, check_jid_map
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -551,6 +551,7 @@ def process_messages(args, data: ChatCollection) -> None:
         # Process messages
         if args.android:
             message_handler = android_handler
+            data.set_system("jid_map_exists", check_jid_map(db))
             data.set_system("transcription_selection", get_transcription_selection(db))
         else:
             message_handler = ios_handler

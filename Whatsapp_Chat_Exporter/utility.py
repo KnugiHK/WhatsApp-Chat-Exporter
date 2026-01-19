@@ -572,6 +572,50 @@ def get_status_location(output_folder: str, offline_static: str) -> str:
     return w3css
 
 
+def check_jid_map(db: sqlite3.Connection) -> bool:
+    """
+    Checks if the jid_map table exists in the database.
+
+    Args:
+        db (sqlite3.Connection): The SQLite database connection.
+
+    Returns:
+        bool: True if the jid_map table exists, False otherwise.
+    """
+    cursor = db.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jid_map'")
+    return cursor.fetchone()is not None
+
+
+def get_jid_map_join(jid_map_exists: bool) -> str:
+    """
+    Returns the SQL JOIN statements for jid_map table.
+    """
+    if not jid_map_exists:
+        return ""
+    else:
+        return """LEFT JOIN jid_map as jid_map_global
+                    ON chat.jid_row_id = jid_map_global.lid_row_id
+                LEFT JOIN jid lid_global
+                    ON jid_map_global.jid_row_id = lid_global._id
+                LEFT JOIN jid_map as jid_map_group
+                    ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                LEFT JOIN jid lid_group
+                    ON jid_map_group.jid_row_id = lid_group._id"""
+
+def get_jid_map_selection(jid_map_exists: bool) -> tuple:
+    """
+    Returns the SQL selection statements for jid_map table.
+    """
+    if not jid_map_exists:
+        return "jid_global.raw_string", "jid_group.raw_string"
+    else:
+        return (
+            "COALESCE(lid_global.raw_string, jid_global.raw_string)",
+            "COALESCE(lid_group.raw_string, jid_group.raw_string)"
+        )
+        
+
 def get_transcription_selection(db: sqlite3.Connection) -> str:
     """
     Returns the SQL selection statement for transcription text based on the database schema.
