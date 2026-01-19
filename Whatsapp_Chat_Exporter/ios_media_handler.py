@@ -6,7 +6,9 @@ import sqlite3
 import os
 import getpass
 from sys import exit, platform as osname
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier
+import sys
+from tqdm import tqdm
+from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, WhatsAppIdentifier, convert_time_unit
 from Whatsapp_Chat_Exporter.bplist import BPListReader
 try:
     from iphone_backup_decrypt import EncryptedBackup, RelativePath
@@ -79,6 +81,8 @@ class BackupExtractor:
 
         logger.info(f"Encryption detected on the backup!{CLEAR_LINE}")
         password = getpass.getpass("Enter the password for the backup:")
+        sys.stdout.write("\033[F\033[K")
+        sys.stdout.flush()
         self._decrypt_backup(password)
         self._extract_decrypted_files()
 
@@ -89,7 +93,7 @@ class BackupExtractor:
         Args:
             password (str): The password for the encrypted backup.
         """
-        logger.info(f"Trying to decrypt the iOS backup...{CLEAR_LINE}")
+        logger.info(f"Trying to open the iOS backup...{CLEAR_LINE}")
         self.backup = EncryptedBackup(
             backup_directory=self.base_dir,
             passphrase=password,
@@ -97,7 +101,7 @@ class BackupExtractor:
             check_same_thread=False,
             decrypt_chunk_size=self.decrypt_chunk_size,
         )
-        logger.info(f"iOS backup decrypted successfully{CLEAR_LINE}")
+        logger.info(f"iOS backup is opened successfully{CLEAR_LINE}")
         logger.info("Decrypting WhatsApp database...\r")
         try:
             self.backup.extract_file(
@@ -130,9 +134,12 @@ class BackupExtractor:
 
     def _extract_decrypted_files(self):
         """Extract all WhatsApp files after decryption"""
+        pbar = tqdm(desc="Decrypting and extracting files", unit="file", leave=False)
         def extract_progress_handler(file_id, domain, relative_path, n, total_files):
-            if n % 100 == 0:
-                logger.info(f"Decrypting and extracting files...({n}/{total_files})\r")
+            if pbar.total is None:
+                pbar.total = total_files
+            pbar.n = n
+            pbar.refresh()
             return True
 
         self.backup.extract_files(
@@ -141,7 +148,9 @@ class BackupExtractor:
             preserve_folders=True,
             filter_callback=extract_progress_handler
         )
-        logger.info(f"All required files are decrypted and extracted.{CLEAR_LINE}")
+        total_time = pbar.format_dict['elapsed']
+        pbar.close()
+        logger.info(f"All required files are decrypted and extracted in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
     def _extract_unencrypted_backup(self):
         """
@@ -192,7 +201,6 @@ class BackupExtractor:
             c = manifest.cursor()
             c.execute(f"SELECT count() FROM Files WHERE domain = '{_wts_id}'")
             total_row_number = c.fetchone()[0]
-            logger.info(f"Extracting WhatsApp files...(0/{total_row_number})\r")
             c.execute(
                 f"""
                 SELECT fileID, relativePath, flags, file AS metadata,
@@ -205,33 +213,30 @@ class BackupExtractor:
             if not os.path.isdir(_wts_id):
                 os.mkdir(_wts_id)
 
-            row = c.fetchone()
-            while row is not None:
-                if not row["relativePath"]:  # Skip empty relative paths
-                    row = c.fetchone()
-                    continue
+            with tqdm(total=total_row_number, desc="Extracting WhatsApp files", unit="file", leave=False) as pbar:
+                while (row := c.fetchone()) is not None:
+                    if not row["relativePath"]:  # Skip empty relative paths
+                        continue
 
-                destination = os.path.join(_wts_id, row["relativePath"])
-                hashes = row["fileID"]
-                folder = hashes[:2]
-                flags = row["flags"]
+                    destination = os.path.join(_wts_id, row["relativePath"])
+                    hashes = row["fileID"]
+                    folder = hashes[:2]
+                    flags = row["flags"]
 
-                if flags == 2:  # Directory
-                    try:
-                        os.mkdir(destination)
-                    except FileExistsError:
-                        pass
-                elif flags == 1:  # File
-                    shutil.copyfile(os.path.join(self.base_dir, folder, hashes), destination)
-                    metadata = BPListReader(row["metadata"]).parse()
-                    creation = metadata["$objects"][1]["Birth"]
-                    modification = metadata["$objects"][1]["LastModified"]
-                    os.utime(destination, (modification, modification))
-
-                if row["_index"] % 100 == 0:
-                    logger.info(f"Extracting WhatsApp files...({row['_index']}/{total_row_number})\r")
-                row = c.fetchone()
-            logger.info(f"Extracted WhatsApp files...({total_row_number}){CLEAR_LINE}")
+                    if flags == 2:  # Directory
+                        try:
+                            os.mkdir(destination)
+                        except FileExistsError:
+                            pass
+                    elif flags == 1:  # File
+                        shutil.copyfile(os.path.join(self.base_dir, folder, hashes), destination)
+                        metadata = BPListReader(row["metadata"]).parse()
+                        _creation = metadata["$objects"][1]["Birth"]
+                        modification = metadata["$objects"][1]["LastModified"]
+                        os.utime(destination, (modification, modification))
+                    pbar.update(1)
+            total_time = pbar.format_dict['elapsed']
+            logger.info(f"Extracted {total_row_number} WhatsApp files in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def extract_media(base_dir, identifiers, decrypt_chunk_size):

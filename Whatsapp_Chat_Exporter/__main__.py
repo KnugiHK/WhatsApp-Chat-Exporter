@@ -11,14 +11,15 @@ import logging
 import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
-from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, Crypt, check_update
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OFFSET, Crypt
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
-from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, DbType
-from Whatsapp_Chat_Exporter.utility import telegram_json_format
+from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
+from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
+from tqdm import tqdm
 from sys import exit
 from typing import Optional, List, Dict
 from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
@@ -286,12 +287,16 @@ def setup_argument_parser() -> ArgumentParser:
         help="Specify the chunk size for decrypting iOS backup, which may affect the decryption speed."
     )
     misc_group.add_argument(
-        "--max-bruteforce-worker", dest="max_bruteforce_worker", default=10, type=int,
+        "--max-bruteforce-worker", dest="max_bruteforce_worker", default=4, type=int,
         help="Specify the maximum number of worker for bruteforce decryption."
     )
     misc_group.add_argument(
         "--no-banner", dest="no_banner", default=False, action='store_true',
         help="Do not show the banner"
+    )
+    misc_group.add_argument(
+        "--fix-dot-files", dest="fix_dot_files", default=False, action='store_true',
+        help="Fix files with a dot at the end of their name (allowing the outputs be stored in FAT filesystems)"
     )
 
     return parser
@@ -537,6 +542,7 @@ def process_messages(args, data: ChatCollection) -> None:
         exit(6)
 
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
+    timing = Timing(args.timezone_offset if args.timezone_offset else CURRENT_TZ_OFFSET)
 
     with sqlite3.connect(msg_db) as db:
         db.row_factory = sqlite3.Row
@@ -548,14 +554,14 @@ def process_messages(args, data: ChatCollection) -> None:
             message_handler = ios_handler
 
         message_handler.messages(
-            db, data, args.media, args.timezone_offset, args.filter_date,
+            db, data, args.media, timing, args.filter_date,
             filter_chat, args.filter_empty, args.no_reply_ios
         )
 
         # Process media
         message_handler.media(
             db, data, args.media, args.filter_date,
-            filter_chat, args.filter_empty, args.separate_media
+            filter_chat, args.filter_empty, args.separate_media, args.fix_dot_files
         )
 
         # Process vcards
@@ -565,17 +571,17 @@ def process_messages(args, data: ChatCollection) -> None:
         )
 
         # Process calls
-        process_calls(args, db, data, filter_chat)
+        process_calls(args, db, data, filter_chat, timing)
 
 
-def process_calls(args, db, data: ChatCollection, filter_chat) -> None:
+def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
     """Process call history if available."""
     if args.android:
-        android_handler.calls(db, data, args.timezone_offset, filter_chat)
+        android_handler.calls(db, data, timing, filter_chat)
     elif args.ios and args.call_db_ios is not None:
         with sqlite3.connect(args.call_db_ios) as cdb:
             cdb.row_factory = sqlite3.Row
-            ios_handler.calls(cdb, data, args.timezone_offset, filter_chat)
+            ios_handler.calls(cdb, data, timing, filter_chat)
 
 
 def handle_media_directory(args) -> None:
@@ -665,24 +671,27 @@ def export_multiple_json(args, data: Dict) -> None:
 
     # Export each chat
     total = len(data.keys())
-    for index, jik in enumerate(data.keys()):
-        if data[jik]["name"] is not None:
-            contact = data[jik]["name"].replace('/', '')
-        else:
-            contact = jik.replace('+', '')
+    with tqdm(total=total, desc="Generating JSON files", unit="file", leave=False) as pbar:
+        for jik in data.keys():
+            if data[jik]["name"] is not None:
+                contact = data[jik]["name"].replace('/', '')
+            else:
+                contact = jik.replace('+', '')
 
-        if args.telegram:
-            messages = telegram_json_format(jik, data[jik], args.timezone_offset)
-        else:
-            messages = {jik: data[jik]}
-        with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
-            file_content = json.dumps(
-                messages,
-                ensure_ascii=not args.avoid_encoding_json,
-                indent=args.pretty_print_json
-            )
-            f.write(file_content)
-            logger.info(f"Writing JSON file...({index + 1}/{total})\r")
+            if args.telegram:
+                messages = telegram_json_format(jik, data[jik], args.timezone_offset)
+            else:
+                messages = {jik: data[jik]}
+            with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
+                file_content = json.dumps(
+                    messages,
+                    ensure_ascii=not args.avoid_encoding_json,
+                    indent=args.pretty_print_json
+                )
+                f.write(file_content)
+                pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:

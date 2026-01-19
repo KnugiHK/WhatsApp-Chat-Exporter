@@ -5,13 +5,13 @@ import json
 import os
 import unicodedata
 import re
-import string
 import math
 import shutil
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
+from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
 from typing import Dict, List, Optional, Tuple, Union
 try:
@@ -248,13 +248,13 @@ def import_from_json(json_file: str, data: ChatCollection):
     with open(json_file, "r") as f:
         temp_data = json.loads(f.read())
     total_row_number = len(tuple(temp_data.keys()))
-    logger.info(f"Importing chats from JSON...(0/{total_row_number})\r")
-    for index, (jid, chat_data) in enumerate(temp_data.items()):
-        chat = ChatStore.from_json(chat_data)
-        data.add_chat(jid, chat)
-        logger.info(
-            f"Importing chats from JSON...({index + 1}/{total_row_number})\r")
-    logger.info(f"Imported {total_row_number} chats from JSON{CLEAR_LINE}")
+    with tqdm(total=total_row_number, desc="Importing chats from JSON", unit="chat", leave=False) as pbar:
+        for jid, chat_data in temp_data.items():
+            chat = ChatStore.from_json(chat_data)
+            data.add_chat(jid, chat)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
@@ -439,7 +439,7 @@ CRYPT14_OFFSETS = (
     {"iv": 67, "db": 193},
     {"iv": 67, "db": 194},
     {"iv": 67, "db": 158},
-    {"iv": 67, "db": 196}
+    {"iv": 67, "db": 196},
 )
 
 
@@ -534,7 +534,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
         else:
             msg = "The security code in this chat changed"
     elif content["action_type"] == 58:
-        msg = "You blocked this contact"
+        msg = "You blocked/unblocked this contact"
     elif content["action_type"] == 67:
         return  # (PM) this contact use secure service from Facebook???
     elif content["action_type"] == 69:
@@ -639,11 +639,17 @@ def get_from_string(msg: Dict, chat_id: str) -> str:
 
 def get_chat_type(chat_id: str) -> str:
     """Return the chat type based on the whatsapp id"""
-    if chat_id.endswith("@s.whatsapp.net"):
+    if chat_id == "000000000000000":
+        return "calls"
+    elif chat_id.endswith("@s.whatsapp.net"):
         return "personal_chat"
-    if chat_id.endswith("@g.us"):
+    elif chat_id.endswith("@g.us"):
         return "private_group"
-    logger.warning("Unknown chat type for %s, defaulting to private_group", chat_id)
+    elif chat_id == "status@broadcast":
+        return "status_broadcast"
+    elif chat_id.endswith("@broadcast"):
+        return "broadcast_channel"
+    logger.warning(f"Unknown chat type for {chat_id}, defaulting to private_group{CLEAR_LINE}")
     return "private_group"
 
 
@@ -674,34 +680,35 @@ def telegram_json_format(jik: str, data: Dict, timezone_offset) -> Dict:
     except ValueError:
         # not a real chat: e.g. statusbroadcast
         chat_id = 0
-    obj = {
-            "name": data["name"] if data["name"] else jik,
-            "type": get_chat_type(jik),
-            "id": chat_id,
-            "messages": [ {
-                "id": int(msgId),
-                "type": "message",
-                "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
-                "date_unixtime": int(msg["timestamp"]),
-                "from": get_from_string(msg, chat_id),
-                "from_id": get_from_id(msg, chat_id),
-                "reply_to_message_id": get_reply_id(data, msg["reply"]),
-                "text": msg["data"],
-                "text_entities": [
-                    {
-                        # TODO this will lose formatting and different types
-                        "type": "plain",
-                        "text": msg["data"],
-                        }
-                    ],
-                } for msgId, msg in data["messages"].items()]
+    json_obj = {
+        "name": data["name"] if data["name"] else jik,
+        "type": get_chat_type(jik),
+        "id": chat_id,
+        "messages": [ {
+            "id": int(msgId),
+            "type": "message",
+            "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
+            "date_unixtime": int(msg["timestamp"]),
+            "from": get_from_string(msg, chat_id),
+            "from_id": get_from_id(msg, chat_id),
+            "reply_to_message_id": get_reply_id(data, msg["reply"]),
+            "text": msg["data"],
+            "text_entities": [
+                {
+                    # TODO this will lose formatting and different types
+                    "type": "plain",
+                    "text": msg["data"],
+                    }
+                ],
             }
+        for msgId, msg in data["messages"].items()]
+    }
     # remove empty messages and replies
-    for msg_id, msg in enumerate(obj["messages"]):
+    for msg_id, msg in enumerate(json_obj["messages"]):
         if not msg["reply_to_message_id"]:
-            del obj["messages"][msg_id]["reply_to_message_id"]
-    obj["messages"] = [m for m in obj["messages"] if m["text"]]
-    return obj
+            del json_obj["messages"][msg_id]["reply_to_message_id"]
+    json_obj["messages"] = [m for m in json_obj["messages"] if m["text"]]
+    return json_obj
 
 
 class WhatsAppIdentifier(StrEnum):
