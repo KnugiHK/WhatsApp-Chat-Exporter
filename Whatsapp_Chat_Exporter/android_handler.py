@@ -517,7 +517,8 @@ def _get_reactions(db, data):
                 message_add_on_reaction.reaction,
                 message_add_on.from_me,
                 jid.raw_string as sender_jid_raw,
-                chat_jid.raw_string as chat_jid_raw
+                chat_jid.raw_string as chat_jid_raw,
+                message_add_on_reaction.sender_timestamp
             FROM message_add_on
                 INNER JOIN message_add_on_reaction 
                     ON message_add_on._id = message_add_on_reaction.message_add_on_row_id
@@ -540,6 +541,7 @@ def _get_reactions(db, data):
             parent_id = row["parent_message_row_id"]
             reaction = row["reaction"]
             chat_id = row["chat_jid_raw"]
+            _react_timestamp = row["sender_timestamp"]
 
             if chat_id and chat_id in data:
                 chat = data[chat_id]
