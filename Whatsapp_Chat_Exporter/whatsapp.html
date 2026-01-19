@@ -230,7 +230,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm">
+                            <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm relative {% if msg.reactions %}mb-2{% endif %}">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
                                     <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
@@ -289,11 +289,20 @@
                                     {% endif %}
                                 </p>
                                 <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }}</p>
+                                {% if msg.reactions %}
+                                <div class="flex flex-wrap gap-1 mt-1 justify-end absolute -bottom-3 -right-2">
+                                {% for sender, emoji in msg.reactions.items() %}
+                                    <div class="bg-white rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help" title="{{ sender }}">
+                                        {{ emoji }}
+                                    </div>
+                                {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         {% else %}
                         <div class="flex justify-start items-center group" id="{{ msg.key_id }}">
-                            <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm">
+                            <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm relative {% if msg.reactions %}mb-2{% endif %}">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
                                     <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
@@ -360,6 +369,15 @@
                                     <span class="flex-grow min-w-[4px]"></span>
                                     <span class="flex-shrink-0">{{ msg.time }}</span>
                                     </div>
+                                {% if msg.reactions %}
+                                <div class="flex flex-wrap gap-1 mt-1 justify-start absolute -bottom-3 -left-2">
+                                {% for sender, emoji in msg.reactions.items() %}
+                                    <div class="bg-gray-100 rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help" title="{{ sender }}">
+                                        {{ emoji }}
+                                    </div>
+                                {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                             <!-- <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 relative ml-2">
                                 <div class="relative">
