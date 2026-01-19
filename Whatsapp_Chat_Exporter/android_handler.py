@@ -498,7 +498,8 @@ def _format_message_text(text):
 
 def _get_reactions(db, data):
     """
-    Process message reactions.
+    Process message reactions. Only new schema is supported.
+    Chat filter is not applied here at the moment. Maybe in the future.
     """
     c = db.cursor()
     
@@ -507,7 +508,7 @@ def _get_reactions(db, data):
         c.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='message_add_on'")
         if c.fetchone()[0] == 0:
             return
-        
+
         logger.info("Processing reactions...\r")
 
         c.execute("""
@@ -531,35 +532,38 @@ def _get_reactions(db, data):
         logger.warning(f"Could not fetch reactions (schema might be too old or incompatible){CLEAR_LINE}")
         return
 
-    row = c.fetchone()
-    while row is not None:
-        parent_id = row["parent_message_row_id"]
-        reaction = row["reaction"]
-        chat_id = row["chat_jid_raw"]
-        
-        if chat_id and chat_id in data:
-            chat = data[chat_id]
-            if parent_id in chat._messages:
-                message = chat._messages[parent_id]
-                
-                # Determine sender name
-                sender_name = None
-                if row["from_me"]:
-                    sender_name = "You"
-                elif row["sender_jid_raw"]:
-                    sender_jid = row["sender_jid_raw"]
-                    if sender_jid in data:
-                         sender_name = data[sender_jid].name
+    rows = c.fetchall()
+    total_row_number = len(rows)
+
+    with tqdm(total=total_row_number, desc="Processing reactions", unit="reaction", leave=False) as pbar:
+        for row in rows:
+            parent_id = row["parent_message_row_id"]
+            reaction = row["reaction"]
+            chat_id = row["chat_jid_raw"]
+
+            if chat_id and chat_id in data:
+                chat = data[chat_id]
+                if parent_id in chat._messages:
+                    message = chat._messages[parent_id]
+                    
+                    # Determine sender name
+                    sender_name = None
+                    if row["from_me"]:
+                        sender_name = "You"
+                    elif row["sender_jid_raw"]:
+                        sender_jid = row["sender_jid_raw"]
+                        if sender_jid in data:
+                            sender_name = data[sender_jid].name
+                        if not sender_name:
+                            sender_name = sender_jid.split('@')[0] if "@" in sender_jid else sender_jid
+                    
                     if not sender_name:
-                         sender_name = sender_jid.split('@')[0] if "@" in sender_jid else sender_jid
-                
-                if not sender_name:
-                    sender_name = "Unknown"
+                        sender_name = "Unknown"
 
-                message.reactions[sender_name] = reaction
-
-        row = c.fetchone()
-    logger.info(f"Processed reactions{CLEAR_LINE}")
+                    message.reactions[sender_name] = reaction
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logger.info(f"Processed {total_row_number} reactions in {convert_time_unit(total_time)}{CLEAR_LINE}")
 
 
 def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True, fix_dot_files=False):
