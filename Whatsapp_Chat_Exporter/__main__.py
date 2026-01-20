@@ -525,6 +525,7 @@ def process_contacts(args, data: ChatCollection) -> None:
     if os.path.isfile(contact_db):
         with sqlite3.connect(contact_db) as db:
             db.row_factory = sqlite3.Row
+            db.text_factory = lambda b: b.decode(encoding="utf-8", errors="replace")
             if args.android:
                 android_handler.contacts(db, data, args.enrich_from_vcards)
             else:
@@ -547,6 +548,7 @@ def process_messages(args, data: ChatCollection) -> None:
 
     with sqlite3.connect(msg_db) as db:
         db.row_factory = sqlite3.Row
+        db.text_factory = lambda b: b.decode(encoding="utf-8", errors="replace")
 
         # Process messages
         if args.android:
@@ -584,6 +586,7 @@ def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
     elif args.ios and args.call_db_ios is not None:
         with sqlite3.connect(args.call_db_ios) as cdb:
             cdb.row_factory = sqlite3.Row
+            cdb.text_factory = lambda b: b.decode(encoding="utf-8", errors="replace")
             ios_handler.calls(cdb, data, timing, filter_chat)
 
 
