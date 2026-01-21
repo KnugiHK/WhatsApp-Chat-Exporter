@@ -141,6 +141,13 @@ After extracting, you will get this:
 ![Private Message](imgs/pm.png)
 
 
+## Working with Business
+If you are working with WhatsApp Business, add the `--business` flag to the command
+```sh
+wtsexporter -a --business ...other flags
+wtsexporter -i --business ...other flags
+```
+
 ## More options
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
