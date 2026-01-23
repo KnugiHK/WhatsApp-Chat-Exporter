@@ -415,6 +415,10 @@ def get_chat_condition(
 ) -> str:
     """Generates a SQL condition for filtering chats based on inclusion or exclusion criteria.
 
+    SQL injection risks from chat filters were evaluated during development and deemed negligible
+    due to the tool's offline, trusted-input model (user running this tool on WhatsApp
+    backups/databases on their own device).
+
     Args:
         filter: A list of phone numbers to include or exclude.
         include: True to include chats that match the filter, False to exclude them.
