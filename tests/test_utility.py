@@ -273,7 +273,7 @@ class TestGetChatCondition:
     def test_include_multiple_chats_single_column(self):
         """Test including multiple chats with single column"""
         result = get_chat_condition(["1234567890", "0987654321"], True, ["phone"])
-        assert result == "AND ( phone LIKE '%1234567890%'  OR phone LIKE '%0987654321%')"
+        assert result == "AND ( phone LIKE '%1234567890%' OR phone LIKE '%0987654321%')"
 
     def test_exclude_single_chat_single_column(self):
         """Test excluding a single chat with single column"""
@@ -283,38 +283,38 @@ class TestGetChatCondition:
     def test_exclude_multiple_chats_single_column(self):
         """Test excluding multiple chats with single column"""
         result = get_chat_condition(["1234567890", "0987654321"], False, ["phone"])
-        assert result == "AND ( phone NOT LIKE '%1234567890%'  AND phone NOT LIKE '%0987654321%')"
+        assert result == "AND ( phone NOT LIKE '%1234567890%' AND phone NOT LIKE '%0987654321%')"
 
     def test_include_with_jid_android(self):
         """Test including chats with JID for Android platform"""
         result = get_chat_condition(["1234567890"], True, ["phone", "name"], "jid", "android")
-        assert result == "AND ( phone LIKE '%1234567890%'  OR (name LIKE '%1234567890%' AND jid.type == 1))"
+        assert result == "AND ( phone LIKE '%1234567890%' OR (name LIKE '%1234567890%' AND jid.type == 1))"
 
     def test_include_with_jid_ios(self):
         """Test including chats with JID for iOS platform"""
         result = get_chat_condition(["1234567890"], True, ["phone", "name"], "jid", "ios")
-        assert result == "AND ( phone LIKE '%1234567890%'  OR (name LIKE '%1234567890%' AND jid IS NOT NULL))"
+        assert result == "AND ( phone LIKE '%1234567890%' OR (name LIKE '%1234567890%' AND jid IS NOT NULL))"
 
     def test_exclude_with_jid_android(self):
         """Test excluding chats with JID for Android platform"""
         result = get_chat_condition(["1234567890"], False, ["phone", "name"], "jid", "android")
-        assert result == "AND ( phone NOT LIKE '%1234567890%'  AND (name NOT LIKE '%1234567890%' AND jid.type == 1))"
+        assert result == "AND ( phone NOT LIKE '%1234567890%' AND (name NOT LIKE '%1234567890%' AND jid.type == 1))"
 
     def test_exclude_with_jid_ios(self):
         """Test excluding chats with JID for iOS platform"""
         result = get_chat_condition(["1234567890"], False, ["phone", "name"], "jid", "ios")
-        assert result == "AND ( phone NOT LIKE '%1234567890%'  AND (name NOT LIKE '%1234567890%' AND jid IS NOT NULL))"
+        assert result == "AND ( phone NOT LIKE '%1234567890%' AND (name NOT LIKE '%1234567890%' AND jid IS NOT NULL))"
 
     def test_multiple_chats_with_jid_android(self):
         """Test multiple chats with JID for Android platform"""
         result = get_chat_condition(["1234567890", "0987654321"], True, ["phone", "name"], "jid", "android")
-        expected = "AND ( phone LIKE '%1234567890%'  OR (name LIKE '%1234567890%' AND jid.type == 1)  OR phone LIKE '%0987654321%'  OR (name LIKE '%0987654321%' AND jid.type == 1))"
+        expected = "AND ( phone LIKE '%1234567890%' OR (name LIKE '%1234567890%' AND jid.type == 1) OR phone LIKE '%0987654321%' OR (name LIKE '%0987654321%' AND jid.type == 1))"
         assert result == expected
 
     def test_multiple_chats_exclude_with_jid_android(self):
         """Test excluding multiple chats with JID for Android platform"""
         result = get_chat_condition(["1234567890", "0987654321"], False, ["phone", "name"], "jid", "android")
-        expected = "AND ( phone NOT LIKE '%1234567890%'  AND (name NOT LIKE '%1234567890%' AND jid.type == 1)  AND phone NOT LIKE '%0987654321%'  AND (name NOT LIKE '%0987654321%' AND jid.type == 1))"
+        expected = "AND ( phone NOT LIKE '%1234567890%' AND (name NOT LIKE '%1234567890%' AND jid.type == 1) AND phone NOT LIKE '%0987654321%' AND (name NOT LIKE '%0987654321%' AND jid.type == 1))"
         assert result == expected
 
     def test_invalid_column_count_with_jid(self):
@@ -338,7 +338,7 @@ class TestGetChatCondition:
     def test_filter_with_empty_strings(self):
         """Test with filter containing empty strings"""
         result = get_chat_condition(["", "1234567890"], True, ["phone"])
-        assert result == "AND ( phone LIKE '%%'  OR phone LIKE '%1234567890%')"
+        assert result == "AND ( phone LIKE '%%' OR phone LIKE '%1234567890%')"
         
         result = get_chat_condition([""], True, ["phone"])
         assert result == "AND ( phone LIKE '%%')"

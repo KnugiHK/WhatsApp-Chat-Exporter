@@ -384,7 +384,35 @@ def get_cond_for_empty(enable: bool, jid_field: str, broadcast_field: str) -> st
     return f"AND (chat.hidden=0 OR {jid_field}='status@broadcast' OR {broadcast_field}>0)" if enable else ""
 
 
-def get_chat_condition(filter: Optional[List[str]], include: bool, columns: List[str], jid: Optional[str] = None, platform: Optional[str] = None) -> str:
+def _get_group_condition(jid: str, platform: str) -> str:
+    """Generate platform-specific group identification condition.
+    
+    Args:
+        jid: The JID column name.
+        platform: The platform ("android" or "ios").
+        
+    Returns:
+        SQL condition string for group identification.
+        
+    Raises:
+        ValueError: If platform is not supported.
+    """
+    if platform == "android":
+        return f"{jid}.type == 1"
+    elif platform == "ios":
+        return f"{jid} IS NOT NULL"
+    else:
+        raise ValueError(
+            "Only android and ios are supported for argument platform if jid is not None")
+
+
+def get_chat_condition(
+    filter: Optional[List[str]],
+    include: bool,
+    columns: List[str],
+    jid: Optional[str] = None,
+    platform: Optional[str] = None
+) -> str:
     """Generates a SQL condition for filtering chats based on inclusion or exclusion criteria.
 
     Args:
@@ -400,35 +428,39 @@ def get_chat_condition(filter: Optional[List[str]], include: bool, columns: List
     Raises:
         ValueError: If the column count is invalid or an unsupported platform is provided.
     """
-    if filter is not None and len(filter) > 0:
-        conditions = []
-        if len(columns) < 2 and jid is not None:
-            raise ValueError(
-                "There must be at least two elements in argument columns if jid is not None")
-        if jid is not None:
-            if platform == "android":
-                is_group = f"{jid}.type == 1"
-            elif platform == "ios":
-                is_group = f"{jid} IS NOT NULL"
-            else:
-                raise ValueError(
-                    "Only android and ios are supported for argument platform if jid is not None")
-        for index, chat in enumerate(filter):
-            if include:
-                conditions.append(
-                    f"{' OR' if index > 0 else ''} {columns[0]} LIKE '%{chat}%'")
-                if len(columns) > 1:
-                    conditions.append(
-                        f" OR ({columns[1]} LIKE '%{chat}%' AND {is_group})")
-            else:
-                conditions.append(
-                    f"{' AND' if index > 0 else ''} {columns[0]} NOT LIKE '%{chat}%'")
-                if len(columns) > 1:
-                    conditions.append(
-                        f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {is_group})")
-        return f"AND ({' '.join(conditions)})"
-    else:
+    if not filter:
         return ""
+    
+    if jid is not None and len(columns) < 2:
+        raise ValueError(
+            "There must be at least two elements in argument columns if jid is not None")
+
+    # Get group condition if needed
+    is_group_condition = None
+    if jid is not None:
+        is_group_condition = _get_group_condition(jid, platform)
+
+    # Build conditions for each chat filter
+    conditions = []
+    for index, chat in enumerate(filter):
+        # Add connector for subsequent conditions (with double space)
+        connector = " OR" if include else " AND"
+        prefix = connector if index > 0 else ""
+
+        # Primary column condition
+        operator = "LIKE" if include else "NOT LIKE"
+        conditions.append(f"{prefix} {columns[0]} {operator} '%{chat}%'")
+
+        # Secondary column condition for groups
+        if len(columns) > 1 and is_group_condition:
+            if include:
+                group_condition = f" OR ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})" 
+            else:
+                group_condition = f" AND ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})"
+            conditions.append(group_condition)
+
+    combined_conditions = "".join(conditions)
+    return f"AND ({combined_conditions})"
 
 
 # Android Specific
