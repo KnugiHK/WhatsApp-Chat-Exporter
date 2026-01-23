@@ -765,7 +765,7 @@ def check_jid_map(db: sqlite3.Connection) -> bool:
     """
     cursor = db.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jid_map'")
-    return cursor.fetchone()is not None
+    return cursor.fetchone() is not None
 
 
 def get_jid_map_join(jid_map_exists: bool) -> str:
@@ -814,6 +814,7 @@ def get_transcription_selection(db: sqlite3.Connection) -> str:
         return "message_media.raw_transcription_text AS transcription_text"
     else:
         return "NULL AS transcription_text"
+
 
 def setup_template(template: Optional[str], no_avatar: bool, experimental: bool = False) -> jinja2.Template:
     """
