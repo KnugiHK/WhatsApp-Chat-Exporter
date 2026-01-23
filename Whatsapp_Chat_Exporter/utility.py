@@ -400,7 +400,7 @@ def get_chat_condition(filter: Optional[List[str]], include: bool, columns: List
     Raises:
         ValueError: If the column count is invalid or an unsupported platform is provided.
     """
-    if filter is not None:
+    if filter is not None and len(filter) > 0:
         conditions = []
         if len(columns) < 2 and jid is not None:
             raise ValueError(
