@@ -767,6 +767,9 @@ def main():
 
     # Print banner if not suppressed
     if not args.no_banner:
+        # Note: This may raise UnicodeEncodeError on Windows if the terminal 
+        # doesn't support UTF-8 (e.g., Legacy CMD). Use a modern terminal 
+        # or set PYTHONUTF8=1 in your environment.
         print(WTSEXPORTER_BANNER)
 
     if args.debug:
