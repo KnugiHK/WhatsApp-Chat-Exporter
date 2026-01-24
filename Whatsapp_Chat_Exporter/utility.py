@@ -287,7 +287,7 @@ class IncrementalMerger:
             logger.error("No JSON files found in the source directory.")
             raise SystemExit(1)
         
-        logger.info("JSON files found:", json_files)
+        logger.debug("JSON files found:", json_files)
         return json_files
 
     def _copy_new_file(self, source_path: str, target_path: str, target_dir: str, json_file: str) -> None:
@@ -389,7 +389,7 @@ class IncrementalMerger:
             target_path: Path to target file.
             json_file: Name of the JSON file.
         """
-        logger.info(f"Merging '{json_file}' with existing file in target directory...")
+        logger.info(f"Merging '{json_file}' with existing file in target directory...\r")
         
         source_data = self._load_chat_data(source_path)
         target_data = self._load_chat_data(target_path)
@@ -401,10 +401,10 @@ class IncrementalMerger:
         merged_data = self._serialize_chats(merged_chats)
         
         if self._has_changes(merged_data, target_data):
-            logger.info(f"Changes detected in '{json_file}', updating target file...")
+            logger.info(f"Changes detected in '{json_file}', updating target file...{CLEAR_LINE}")
             self._save_merged_data(target_path, merged_data)
         else:
-            logger.info(f"No changes detected in '{json_file}', skipping update.")
+            logger.info(f"No changes detected in '{json_file}', skipping update.{CLEAR_LINE}")
 
     def _should_copy_media_file(self, source_file: str, target_file: str) -> bool:
         """Check if media file should be copied.
@@ -429,7 +429,7 @@ class IncrementalMerger:
         source_media_path = os.path.join(source_dir, media_dir)
         target_media_path = os.path.join(target_dir, media_dir)
         
-        logger.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
+        logger.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}{CLEAR_LINE}")
         
         if not os.path.exists(source_media_path):
             return
@@ -444,7 +444,7 @@ class IncrementalMerger:
                 target_file = os.path.join(target_root, file)
                 
                 if self._should_copy_media_file(source_file, target_file):
-                    logger.info(f"Copying '{source_file}' to '{target_file}'...")
+                    logger.debug(f"Copying '{source_file}' to '{target_file}'...")
                     shutil.copy2(source_file, target_file)
 
     def merge(self, source_dir: str, target_dir: str, media_dir: str) -> None:
@@ -457,6 +457,7 @@ class IncrementalMerger:
         """
         json_files = self._get_json_files(source_dir)
         
+        logger.info("Starting incremental merge process...{CLEAR_LINE}")
         for json_file in json_files:
             source_path = os.path.join(source_dir, json_file)
             target_path = os.path.join(target_dir, json_file)
