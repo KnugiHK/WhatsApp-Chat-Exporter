@@ -127,6 +127,125 @@
             --tw-translate-x: -50%;
             transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
         }
+
+        .status-indicator {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 0.8em;
+            color: #8c8c8c;
+        }
+
+        .status-indicator.read {
+            color: #34B7F1;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 8px solid white;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .speaker-icon {
+            position: relative;
+            width: 8px;
+            height: 6px;
+            background: #666;
+            border-radius: 1px 0 0 1px;
+        }
+
+        .speaker-icon::before {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: -1px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid #666;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+
+        .speaker-icon::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -3px;
+            width: 8px;
+            height: 12px;
+            border: 2px solid #666;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .search-icon {
+            width: 20px;
+            height: 20px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .search-icon::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #aebac1;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+        }
+
+        .search-icon::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 6px;
+            background: #aebac1;
+            transform: rotate(45deg);
+            top: 12px;
+            left: 12px;
+        }
+
+        .arrow-left {
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 8px solid #aebac1;
+            display: inline-block;
+        }
+
+        .arrow-right {
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 8px solid #aebac1;
+            display: inline-block;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+        }
+
+        .info-icon::before {
+            content: 'i';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+            font-style: normal;
+        }
         </style>
         <script>
             function search(event) {
@@ -163,34 +282,24 @@
                     </div>
                     <div class="flex space-x-4">
                         <!-- <button id="searchButton">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button> -->
-                        <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg> -->
+                                <span class="search-icon"></span>
+                            </button> -->
+                        <!-- <span class="arrow-left"></span> -->
                         {% if previous %}
                         <a href="./{{ previous }}" target="_self">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5l-7 7 7 7" />
-                            </svg>
+                            <span class="arrow-left"></span>
                         </a>
                         {% endif %}
                         {% if next %}
                         <a href="./{{ next }}" target="_self">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
+                            <span class="arrow-right"></span>
                         </a>
                         {% endif %}
                     </div>
                     <!-- Search Input Overlay -->
                     <div id="mainSearchInput" class="search-input absolute article top-0 bg-whatsapp-dark p-3 flex items-center space-x-3">
                         <button id="closeMainSearch" class="text-[#aebac1]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
+                            <span class="arrow-left"></span>
                         </button>
                         <input type="text" placeholder="Search..." class="flex-1 bg-[#1f2c34] text-white rounded-lg px-3 py-1 focus:outline-none" id="mainHeaderSearchInput" onkeyup="search(event)">
                     </div>
@@ -230,18 +339,44 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm">
+                            <div class="bg-whatsapp-light rounded-lg p-2 max-w-[80%] shadow-sm relative {% if msg.reactions %}mb-2{% endif %}">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
-                                    <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
-                                        <p class="text-whatsapp font-medium text-xs">Replying to</p>
-                                        <p class="text-[#111b21] text-xs truncate">
-                                            {% if msg.quoted_data is not none %}
-                                                "{{msg.quoted_data}}"
-                                            {% else %}
-                                                this message
+                                    <div
+                                        class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 overflow-hidden">
+                                                <p class="text-whatsapp font-medium text-xs">Replying to</p>
+                                                <p class="text-[#111b21] text-xs truncate">
+                                                    {% if msg.quoted_data is not none %}
+                                                    "{{msg.quoted_data}}"
+                                                    {% else %}
+                                                    this message
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            {% set replied_msg = msgs | selectattr('key_id', 'equalto', msg.reply) | first %}
+                                            {% if replied_msg and replied_msg.media == true %}
+                                            <div class="flex-shrink-0">
+                                                {% if "image/" in replied_msg.mime %}
+                                                <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}"
+                                                    class="w-8 h-8 rounded object-cover" loading="lazy" />
+                                                {% elif "video/" in replied_msg.mime %}
+                                                <div class="relative w-8 h-8 rounded overflow-hidden bg-gray-200">
+                                                    <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}"
+                                                        class="w-full h-full object-cover" loading="lazy" />
+                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                        <div class="play-icon"></div>
+                                                    </div>
+                                                </div>
+                                                {% elif "audio/" in replied_msg.mime %}
+                                                <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
+                                                    <div class="speaker-icon"></div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                             {% endif %}
-                                        </p>
+                                        </div>
                                     </div>
                                 </a>
                                 {% endif %}
@@ -281,28 +416,73 @@
                                                 {% filter escape %}{{ msg.data }}{% endfilter %}
                                             {% endif %}
                                             {% if msg.caption is not none %}
-                                                {{ msg.caption | urlize(none, true, '_blank') }}
+                                                <p class='mt-1 {% if "audio/" in msg.mime %}text-[#808080]{% endif %}'>
+                                                    {{ msg.caption | urlize(none, true, '_blank') }}
+                                                </p>
                                             {% endif %}
                                         {% endif %}
                                     {% endif %}
                                 </p>
-                                <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }}</p>
+                                <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }}
+                                    <span class="status-indicator{% if msg.read_timestamp %} read{% endif %}">
+                                        {% if msg.received_timestamp %}
+                                        ✓✓
+                                        {% else %}
+                                        ✓
+                                        {% endif %}
+                                    </span>
+                                </p>
+                                {% if msg.reactions %}
+                                <div class="flex flex-wrap gap-1 mt-1 justify-end absolute -bottom-3 -right-2">
+                                {% for sender, emoji in msg.reactions.items() %}
+                                    <div class="bg-white rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help" title="{{ sender }}">
+                                        {{ emoji }}
+                                    </div>
+                                {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         {% else %}
                         <div class="flex justify-start items-center group" id="{{ msg.key_id }}">
-                            <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm">
+                            <div class="bg-white rounded-lg p-2 max-w-[80%] shadow-sm relative {% if msg.reactions %}mb-2{% endif %}">
                                 {% if msg.reply is not none %}
                                 <a href="#{{msg.reply}}" target="_self" class="no-base">
-                                    <div class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
-                                        <p class="text-whatsapp font-medium text-xs">Replying to</p>
-                                        <p class="text-[#808080] text-xs truncate">
-                                            {% if msg.quoted_data is not none %}
-                                                {{msg.quoted_data}}
-                                            {% else %}
-                                                this message
+                                    <div
+                                        class="mb-2 p-1 bg-whatsapp-chat-light rounded border-l-4 border-whatsapp text-sm reply-box">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 overflow-hidden">
+                                                <p class="text-whatsapp font-medium text-xs">Replying to</p>
+                                                <p class="text-[#808080] text-xs truncate">
+                                                    {% if msg.quoted_data is not none %}
+                                                    {{msg.quoted_data}}
+                                                    {% else %}
+                                                    this message
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            {% set replied_msg = msgs | selectattr('key_id', 'equalto', msg.reply) | first %}
+                                            {% if replied_msg and replied_msg.media == true %}
+                                            <div class="flex-shrink-0">
+                                                {% if "image/" in replied_msg.mime %}
+                                                <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}"
+                                                    class="w-8 h-8 rounded object-cover" loading="lazy" />
+                                                {% elif "video/" in replied_msg.mime %}
+                                                <div class="relative w-8 h-8 rounded overflow-hidden bg-gray-200">
+                                                    <img src="{{ replied_msg.thumb if replied_msg.thumb is not none else replied_msg.data }}"
+                                                        class="w-full h-full object-cover" loading="lazy" />
+                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                        <div class="play-icon"></div>
+                                                    </div>
+                                                </div>
+                                                {% elif "audio/" in replied_msg.mime %}
+                                                <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
+                                                    <div class="speaker-icon"></div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                             {% endif %}
-                                        </p>
+                                        </div>
                                     </div>
                                 </a>
                                 {% endif %}
@@ -342,7 +522,9 @@
                                                 {% filter escape %}{{ msg.data }}{% endfilter %}
                                             {% endif %}
                                             {% if msg.caption is not none %}
-                                                {{ msg.caption | urlize(none, true, '_blank') }}
+                                                <p class='mt-1 {% if "audio/" in msg.mime %}text-[#808080]{% endif %}'>
+                                                    {{ msg.caption | urlize(none, true, '_blank') }}
+                                                </p>
                                             {% endif %}
                                         {% endif %}
                                     {% endif %}
@@ -356,6 +538,15 @@
                                     <span class="flex-grow min-w-[4px]"></span>
                                     <span class="flex-shrink-0">{{ msg.time }}</span>
                                     </div>
+                                {% if msg.reactions %}
+                                <div class="flex flex-wrap gap-1 mt-1 justify-start absolute -bottom-3 -left-2">
+                                {% for sender, emoji in msg.reactions.items() %}
+                                    <div class="bg-gray-100 rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help" title="{{ sender }}">
+                                        {{ emoji }}
+                                    </div>
+                                {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                             <!-- <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 relative ml-2">
                                 <div class="relative">
@@ -377,20 +568,19 @@
                     {% endfor %}
                 </div>
                 <footer>
-                    <h2 class="text-center">
                     {% if not next %}
-                    End of History
+                    <div class="flex justify-center mb-6">
+                        <div class="bg-[#e1f2fb] rounded-lg px-3 py-2 text-sm text-[#54656f]">
+                            End of History
+                        </div>
+                    </div>
                     {% endif %}
-                    </h2>
                     <br>
-                    Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a> created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. 
+                    Portions of this page are reproduced from <a href="https://web.dev/articles/lazy-loading-video">work</a>
+                    created and <a href="https://developers.google.com/readme/policies">shared by Google</a> and used
+                    according to terms described in the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0
+                        License</a>.
                 </footer>
-                <svg style="display: none;">
-                    <!-- Tooltip info icon -->
-                    <symbol id="info-icon" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </symbol>
-                </svg>
             </div>
         </article>
     </body>

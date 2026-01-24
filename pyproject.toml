@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatsapp-chat-exporter"
-version = "0.13.0rc2"
+version = "0.13.0"
 description = "A Whatsapp database parser that provides history of your Whatsapp conversations in HTML and JSON. Android, iOS, iPadOS, Crypt12, Crypt14, Crypt15 supported."
 readme = "README.md"
 authors = [
@@ -36,17 +36,19 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "jinja2",
-    "bleach"
+    "bleach",
+    "tqdm"
 ]
 
 [project.optional-dependencies]
 android_backup = ["pycryptodome", "javaobj-py3"]
+ios_backup = ["iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
 crypt12 = ["pycryptodome"]
 crypt14 = ["pycryptodome"]
 crypt15 = ["pycryptodome", "javaobj-py3"]
-all = ["pycryptodome", "javaobj-py3"]
-everything = ["pycryptodome", "javaobj-py3"]
-backup = ["pycryptodome", "javaobj-py3"]
+all = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
+everything = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
+backup = ["pycryptodome", "javaobj-py3", "iphone_backup_decrypt @ git+https://github.com/KnugiHK/iphone_backup_decrypt"]
 
 [project.scripts]
 wtsexporter = "Whatsapp_Chat_Exporter.__main__:main"

@@ -3,10 +3,9 @@ import re
 import quopri
 from typing import List, TypedDict
 from Whatsapp_Chat_Exporter.data_model import ChatStore
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, Device
+from Whatsapp_Chat_Exporter.utility import Device
 
 
-logger = logging.getLogger(__name__)
 
 
 class ExportedContactNumbers(TypedDict):
@@ -45,9 +44,9 @@ def decode_quoted_printable(value: str, charset: str) -> str:
         return bytes_val.decode(charset, errors="replace")
     except Exception:
         # Fallback: return the original value if decoding fails
-        logger.warning(
+        logging.warning(
             f"Failed to decode quoted-printable value: {value}, "
-            f"charset: {charset}. Please report this issue.{CLEAR_LINE}"
+            f"charset: {charset}. Please report this issue."
         )
         return value
 
@@ -176,7 +175,7 @@ def read_vcards_file(vcf_file_path, default_country_code: str):
         if contact := process_vcard_entry(vcard):
             contacts.append(contact)
 
-    logger.info(f"Imported {len(contacts)} contacts/vcards{CLEAR_LINE}")
+    logging.info(f"Imported {len(contacts)} contacts/vcards")
     return map_number_to_name(contacts, default_country_code)
 
 

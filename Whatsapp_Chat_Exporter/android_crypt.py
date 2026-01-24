@@ -1,14 +1,13 @@
-import time
 import hmac
 import io
 import logging
-import threading
 import zlib
 import concurrent.futures
+from tqdm import tqdm
 from typing import Tuple, Union
 from hashlib import sha256
-from sys import exit
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CRYPT14_OFFSETS, Crypt, DbType
+from functools import partial
+from Whatsapp_Chat_Exporter.utility import CRYPT14_OFFSETS, Crypt, DbType
 
 try:
     import zlib
@@ -26,7 +25,6 @@ else:
     support_crypt15 = True
 
 
-logger = logging.getLogger(__name__)
 
 
 class DecryptionError(Exception):
@@ -112,13 +110,36 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
             zlib.error: If decompression fails.
             ValueError: if the plaintext is not a SQLite database.
     """
+    FOOTER_SIZE = 32
+    if len(db_ciphertext) <= FOOTER_SIZE:
+        raise ValueError("Input data too short to contain a valid GCM tag.")
+    
+    actual_ciphertext = db_ciphertext[:-FOOTER_SIZE]
+    tag = db_ciphertext[-FOOTER_SIZE: -FOOTER_SIZE + 16]
+
     cipher = AES.new(main_key, AES.MODE_GCM, iv)
-    db_compressed = cipher.decrypt(db_ciphertext)
-    db = zlib.decompress(db_compressed)
-    if db[0:6].upper() != b"SQLITE":
+    try:
+        db_compressed = cipher.decrypt_and_verify(actual_ciphertext, tag)
+    except ValueError:
+        # This could be key, IV, or tag is wrong, but likely the key is wrong.
+        raise ValueError("Decryption/Authentication failed. Ensure you are using the correct key.")
+
+    if len(db_compressed) < 2 or db_compressed[0] != 0x78:
+        logging.debug(f"Data passes GCM but is not Zlib. Header: {db_compressed[:2].hex()}")
         raise ValueError(
-            "The plaintext is not a SQLite database. Ensure you are using the correct key."
+            "Key is correct, but decrypted data is not a valid compressed stream. "
+            "Is this even a valid WhatsApp database backup?"
         )
+
+    try:
+        db = zlib.decompress(db_compressed)
+    except zlib.error as e:
+        raise zlib.error(f"Decompression failed (The backup file likely corrupted at source): {e}")
+
+    if not db.startswith(b"SQLite"):
+        raise ValueError(
+            "Data is valid and decompressed, but it is not a SQLite database. "
+            "Is this even a valid WhatsApp database backup?")
     return db
 
 
@@ -142,81 +163,68 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
 
     # Attempt known offsets first
     for offsets in CRYPT14_OFFSETS:
-        iv = database[offsets["iv"]:offsets["iv"] + 16]
-        db_ciphertext = database[offsets["db"]:]
+        iv = offsets["iv"]
+        db = offsets["db"]
         try:
-            decrypted_db = _decrypt_database(db_ciphertext, main_key, iv)
+            decrypted_db = _attempt_decrypt_task((iv, iv + 16, db), database, main_key)
         except (zlib.error, ValueError):
-            pass  # Try next offset
+            continue
         else:
-            logger.debug(
-                f"Decryption successful with known offsets: IV {offsets['iv']}, DB {offsets['db']}{CLEAR_LINE}"
+            logging.debug(
+                f"Decryption successful with known offsets: IV {iv}, DB {db}"
             )
             return decrypted_db  # Successful decryption
 
-    def animate_message(stop_event):
-        base_msg = "Common offsets failed. Initiating brute-force with multithreading"
-        dots = ["", ".", "..", "..."]
-        i = 0
-        while not stop_event.is_set():
-            logger.info(f"{base_msg}{dots[i % len(dots)]}\x1b[K\r")
-            time.sleep(0.3)
-            i += 1
-        logger.info(f"Common offsets failed but brute-forcing the offset works!{CLEAR_LINE}")
-
-    stop_event = threading.Event()
-    anim_thread = threading.Thread(target=animate_message, args=(stop_event,))
-    anim_thread.start()
-
-    # Convert brute force generator into a list for parallel processing
-    offset_combinations = list(brute_force_offset())
-
-    def attempt_decrypt(offset_tuple):
-        """Attempt decryption with the given offsets."""
-        start_iv, end_iv, start_db = offset_tuple
-        iv = database[start_iv:end_iv]
-        db_ciphertext = database[start_db:]
-        logger.debug(""f"Trying offsets: IV {start_iv}-{end_iv}, DB {start_db}{CLEAR_LINE}")
-
-        try:
-            db = _decrypt_database(db_ciphertext, main_key, iv)
-        except (zlib.error, ValueError):
-            return None  # Decryption failed, move to next
-        else:
-            stop_event.set()
-            anim_thread.join()
-            logger.info(
-                f"The offsets of your IV and database are {start_iv} and "
-                f"{start_db}, respectively. To include your offsets in the "
-                "program, please report it by creating an issue on GitHub: "
-                "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47"
-                f"\nShutting down other threads...{CLEAR_LINE}"
-            )
-            return db
-
-    with concurrent.futures.ThreadPoolExecutor(max_worker) as executor:
-        future_to_offset = {executor.submit(attempt_decrypt, offset)
-                                            : offset for offset in offset_combinations}
-
-        try:
-            for future in concurrent.futures.as_completed(future_to_offset):
-                result = future.result()
-                if result is not None:
-                    # Shutdown remaining threads
+    logging.info(f"Common offsets failed. Will attempt to brute-force")
+    offset_max = 200
+    workers = max_worker
+    check_offset = partial(_attempt_decrypt_task, database=database, main_key=main_key)
+    all_offsets = list(brute_force_offset(offset_max, offset_max))
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
+    try:
+        with tqdm(total=len(all_offsets), desc="Brute-forcing offsets", unit="trial", leave=False) as pbar:
+            results = executor.map(check_offset, all_offsets, chunksize=8)
+            found = False
+            for offset_info, result in zip(all_offsets, results):
+                pbar.update(1)
+                if result:
+                    start_iv, _, start_db = offset_info
+                    # Clean shutdown on success
                     executor.shutdown(wait=False, cancel_futures=True)
-                    return result
+                    found = True
+                    break
+        if found:
+            logging.info(
+                f"The offsets of your IV and database are {start_iv} and {start_db}, respectively."
+            )
+            logging.info(
+                f"To include your offsets in the expoter, please report it in the discussion thread on GitHub:"
+            )
+            logging.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47")
+            return result
 
-        except KeyboardInterrupt:
-            stop_event.set()
-            anim_thread.join()
-            logger.info(f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully...{CLEAR_LINE}")
-            executor.shutdown(wait=False, cancel_futures=True)
-            exit(1)
-        finally:
-            stop_event.set()
-            anim_thread.join()
+    except KeyboardInterrupt:
+        executor.shutdown(wait=False, cancel_futures=True)
+        logging.info("")
+        raise KeyboardInterrupt(
+            f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully..."
+        )
+    
+    finally:
+        executor.shutdown(wait=False)
 
     raise OffsetNotFoundError("Could not find the correct offsets for decryption.")
+
+def _attempt_decrypt_task(offset_tuple, database, main_key):
+    """Attempt decryption with the given offsets."""
+    start_iv, end_iv, start_db = offset_tuple
+    iv = database[start_iv:end_iv]
+    db_ciphertext = database[start_db:]
+    
+    try:
+        return _decrypt_database(db_ciphertext, main_key, iv)
+    except (zlib.error, ValueError):
+        return None
 
 
 def _decrypt_crypt12(database: bytes, main_key: bytes) -> bytes:
@@ -337,7 +345,7 @@ def decrypt_backup(
             main_key, hex_key = _derive_main_enc_key(key)
         if show_crypt15:
             hex_key_str = ' '.join([hex_key.hex()[c:c+4] for c in range(0, len(hex_key.hex()), 4)])
-            logger.info(f"The HEX key of the crypt15 backup is: {hex_key_str}{CLEAR_LINE}")
+            logging.info(f"The HEX key of the crypt15 backup is: {hex_key_str}")
     else:
         main_key = key[126:]
 

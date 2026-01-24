@@ -66,6 +66,7 @@ class ChatCollection(MutableMapping):
     def __init__(self) -> None:
         """Initialize an empty chat collection."""
         self._chats: Dict[str, ChatStore] = {}
+        self._system: Dict[str, Any] = {}
 
     def __getitem__(self, key: str) -> 'ChatStore':
         """Get a chat by its ID. Required for dict-like access."""
@@ -147,6 +148,28 @@ class ChatCollection(MutableMapping):
             Dict[str, Any]: Dictionary representation of all chats
         """
         return {chat_id: chat.to_json() for chat_id, chat in self._chats.items()}
+
+    def get_system(self, key: str) -> Any:
+        """
+        Get a system value by its key.
+
+        Args:
+            key (str): The key of the system value to retrieve
+
+        Returns:
+            Any: The system value if found, None otherwise
+        """
+        return self._system.get(key)
+    
+    def set_system(self, key: str, value: Any) -> None:
+        """
+        Set a system value by its key.
+
+        Args:
+            key (str): The key of the system value to set
+            value (Any): The value to set
+        """
+        self._system[key] = value 
 
 
 class ChatStore:
@@ -279,7 +302,7 @@ class Message:
             key_id: Union[int, str],
             received_timestamp: int = None,
             read_timestamp: int = None,
-            timezone_offset: int = 0,
+            timezone_offset: Optional[Timing] = Timing(0),
             message_type: Optional[int] = None
     ) -> None:
         """
@@ -300,10 +323,9 @@ class Message:
         """
         self.from_me = bool(from_me)
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
-        timing = Timing(timezone_offset)
 
         if isinstance(time, (int, float)):
-            self.time = timing.format_timestamp(self.timestamp, "%H:%M")
+            self.time = timezone_offset.format_timestamp(self.timestamp, "%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
@@ -318,14 +340,14 @@ class Message:
         self.mime = None
         self.message_type = message_type
         if isinstance(received_timestamp, (int, float)):
-            self.received_timestamp = timing.format_timestamp(
+            self.received_timestamp = timezone_offset.format_timestamp(
                 received_timestamp, "%Y/%m/%d %H:%M")
         elif isinstance(received_timestamp, str):
             self.received_timestamp = received_timestamp
         else:
             self.received_timestamp = None
         if isinstance(read_timestamp, (int, float)):
-            self.read_timestamp = timing.format_timestamp(
+            self.read_timestamp = timezone_offset.format_timestamp(
                 read_timestamp, "%Y/%m/%d %H:%M")
         elif isinstance(read_timestamp, str):
             self.read_timestamp = read_timestamp
@@ -338,6 +360,7 @@ class Message:
         self.caption = None
         self.thumb = None  # Android specific
         self.sticker = False
+        self.reactions = {}
 
     def to_json(self) -> Dict[str, Any]:
         """Convert message to JSON-serializable dict."""

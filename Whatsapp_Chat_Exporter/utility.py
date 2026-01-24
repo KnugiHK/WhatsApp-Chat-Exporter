@@ -5,15 +5,15 @@ import json
 import os
 import unicodedata
 import re
-import string
 import math
 import shutil
 from bleach import clean as sanitize
 from markupsafe import Markup
 from datetime import datetime, timedelta
 from enum import IntEnum
+from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 try:
     from enum import StrEnum, IntEnum
 except ImportError:
@@ -30,9 +30,7 @@ except ImportError:
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
 CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().seconds / 3600
-CLEAR_LINE = "\x1b[K\n"
 
-logger = logging.getLogger(__name__)
 
 
 def convert_time_unit(time_second: int) -> str:
@@ -159,39 +157,40 @@ def determine_day(last: int, current: int) -> Optional[datetime.date]:
         return current
 
 
-def check_update():
+def check_update(include_beta: bool = False) -> int:
     import urllib.request
     import json
     import importlib
     from sys import platform
+    from packaging import version
 
     PACKAGE_JSON = "https://pypi.org/pypi/whatsapp-chat-exporter/json"
     try:
         raw = urllib.request.urlopen(PACKAGE_JSON)
     except Exception:
-        logger.error("Failed to check for updates.")
+        logging.error("Failed to check for updates.")
         return 1
     else:
         with raw:
             package_info = json.load(raw)
-            latest_version = tuple(
-                map(int, package_info["info"]["version"].split(".")))
-            __version__ = importlib.metadata.version("whatsapp_chat_exporter")
-            current_version = tuple(map(int, __version__.split(".")))
+            if include_beta:
+                all_versions = [version.parse(v) for v in package_info["releases"].keys()]
+                latest_version = max(all_versions, key=lambda v: (v.release, v.pre))
+            else:
+                latest_version = version.parse(package_info["info"]["version"])
+            current_version = version.parse(importlib.metadata.version("whatsapp_chat_exporter"))
             if current_version < latest_version:
-                logger.info(
+                logging.info(
                     "===============Update===============\n"
                     "A newer version of WhatsApp Chat Exporter is available.\n"
-                    f"Current version: {__version__}\n"
-                    f"Latest version: {package_info['info']['version']}\n"
+                    f"Current version: {current_version}\n"
+                    f"Latest version: {latest_version}"
                 )
-                if platform == "win32":
-                    logger.info("Update with: pip install --upgrade whatsapp-chat-exporter\n")
-                else:
-                    logger.info("Update with: pip3 install --upgrade whatsapp-chat-exporter\n")
-                logger.info("====================================\n")
+                pip_cmd = "pip" if platform == "win32" else "pip3"
+                logging.info(f"Update with: {pip_cmd} install --upgrade whatsapp-chat-exporter {'--pre' if include_beta else ''}")
+                logging.info("====================================")
             else:
-                logger.info("You are using the latest version of WhatsApp Chat Exporter.\n")
+                logging.info("You are using the latest version of WhatsApp Chat Exporter.")
     return 0
 
 
@@ -248,94 +247,240 @@ def import_from_json(json_file: str, data: ChatCollection):
     with open(json_file, "r") as f:
         temp_data = json.loads(f.read())
     total_row_number = len(tuple(temp_data.keys()))
-    logger.info(f"Importing chats from JSON...(0/{total_row_number})\r")
-    for index, (jid, chat_data) in enumerate(temp_data.items()):
-        chat = ChatStore.from_json(chat_data)
-        data.add_chat(jid, chat)
-        logger.info(
-            f"Importing chats from JSON...({index + 1}/{total_row_number})\r")
-    logger.info(f"Imported {total_row_number} chats from JSON{CLEAR_LINE}")
+    with tqdm(total=total_row_number, desc="Importing chats from JSON", unit="chat", leave=False) as pbar:
+        for jid, chat_data in temp_data.items():
+            chat = ChatStore.from_json(chat_data)
+            data.add_chat(jid, chat)
+            pbar.update(1)
+        total_time = pbar.format_dict['elapsed']
+    logging.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}")
 
 
-def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool):
-    """Merges JSON files from the source directory into the target directory.
+class IncrementalMerger:
+    """Handles incremental merging of WhatsApp chat exports."""
+    
+    def __init__(self, pretty_print_json: int, avoid_encoding_json: bool):
+        """Initialize the merger with JSON formatting options.
+        
+        Args:
+            pretty_print_json: JSON indentation level.
+            avoid_encoding_json: Whether to avoid ASCII encoding.
+        """
+        self.pretty_print_json = pretty_print_json
+        self.avoid_encoding_json = avoid_encoding_json
+    
+    def _get_json_files(self, source_dir: str) -> List[str]:
+        """Get list of JSON files from source directory.
+        
+        Args:
+            source_dir: Path to the source directory.
+            
+        Returns:
+            List of JSON filenames.
+            
+        Raises:
+            SystemExit: If no JSON files are found.
+        """
+        json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
+        if not json_files:
+            logging.error("No JSON files found in the source directory.")
+            raise SystemExit(1)
+        
+        logging.debug("JSON files found:", json_files)
+        return json_files
 
-    Args:
-        source_dir (str): The path to the source directory containing JSON files.
-        target_dir (str): The path to the target directory to merge into.
-        media_dir (str): The path to the media directory.
-    """
-    json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
-    if not json_files:
-        logger.error("No JSON files found in the source directory.")
-        return
+    def _copy_new_file(self, source_path: str, target_path: str, target_dir: str, json_file: str) -> None:
+        """Copy a new JSON file to target directory.
+        
+        Args:
+            source_path: Path to source file.
+            target_path: Path to target file.
+            target_dir: Target directory path.
+            json_file: Name of the JSON file.
+        """
+        logging.info(f"Copying '{json_file}' to target directory...")
+        os.makedirs(target_dir, exist_ok=True)
+        shutil.copy2(source_path, target_path)
 
-    logger.info("JSON files found:", json_files)
+    def _load_chat_data(self, file_path: str) -> Dict[str, Any]:
+        """Load JSON data from file.
+        
+        Args:
+            file_path: Path to JSON file.
+            
+        Returns:
+            Loaded JSON data.
+        """
+        with open(file_path, 'r') as file:
+            return json.load(file)
 
-    for json_file in json_files:
-        source_path = os.path.join(source_dir, json_file)
-        target_path = os.path.join(target_dir, json_file)
+    def _parse_chats_from_json(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse JSON data into ChatStore objects.
+        
+        Args:
+            data: Raw JSON data.
+            
+        Returns:
+            Dictionary of JID to ChatStore objects.
+        """
+        return {jid: ChatStore.from_json(chat) for jid, chat in data.items()}
 
-        if not os.path.exists(target_path):
-            logger.info(f"Copying '{json_file}' to target directory...")
-            os.makedirs(target_dir, exist_ok=True)
-            shutil.copy2(source_path, target_path)
+    def _merge_chat_stores(self, source_chats: Dict[str, Any], target_chats: Dict[str, Any]) -> Dict[str, Any]:
+        """Merge source chats into target chats.
+        
+        Args:
+            source_chats: Source ChatStore objects.
+            target_chats: Target ChatStore objects.
+            
+        Returns:
+            Merged ChatStore objects.
+        """
+        for jid, chat in source_chats.items():
+            if jid in target_chats:
+                target_chats[jid].merge_with(chat)
+            else:
+                target_chats[jid] = chat
+        return target_chats
+
+    def _serialize_chats(self, chats: Dict[str, Any]) -> Dict[str, Any]:
+        """Serialize ChatStore objects to JSON format.
+        
+        Args:
+            chats: Dictionary of ChatStore objects.
+            
+        Returns:
+            Serialized JSON data.
+        """
+        return {jid: chat.to_json() for jid, chat in chats.items()}
+
+    def _has_changes(self, merged_data: Dict[str, Any], original_data: Dict[str, Any]) -> bool:
+        """Check if merged data differs from original data.
+        
+        Args:
+            merged_data: Merged JSON data.
+            original_data: Original JSON data.
+            
+        Returns:
+            True if changes detected, False otherwise.
+        """
+        return json.dumps(merged_data, sort_keys=True) != json.dumps(original_data, sort_keys=True)
+
+    def _save_merged_data(self, target_path: str, merged_data: Dict[str, Any]) -> None:
+        """Save merged data to target file.
+        
+        Args:
+            target_path: Path to target file.
+            merged_data: Merged JSON data.
+        """
+        with open(target_path, 'w') as merged_file:
+            json.dump(
+                merged_data,
+                merged_file,
+                indent=self.pretty_print_json,
+                ensure_ascii=not self.avoid_encoding_json,
+            )
+
+    def _merge_json_file(self, source_path: str, target_path: str, json_file: str) -> None:
+        """Merge a single JSON file.
+        
+        Args:
+            source_path: Path to source file.
+            target_path: Path to target file.
+            json_file: Name of the JSON file.
+        """
+        logging.info(f"Merging '{json_file}' with existing file in target directory...", extra={"clear": True})
+        
+        source_data = self._load_chat_data(source_path)
+        target_data = self._load_chat_data(target_path)
+        
+        source_chats = self._parse_chats_from_json(source_data)
+        target_chats = self._parse_chats_from_json(target_data)
+        
+        merged_chats = self._merge_chat_stores(source_chats, target_chats)
+        merged_data = self._serialize_chats(merged_chats)
+        
+        if self._has_changes(merged_data, target_data):
+            logging.info(f"Changes detected in '{json_file}', updating target file...")
+            self._save_merged_data(target_path, merged_data)
         else:
-            logger.info(
-                f"Merging '{json_file}' with existing file in target directory...")
-            with open(source_path, 'r') as src_file, open(target_path, 'r') as tgt_file:
-                source_data = json.load(src_file)
-                target_data = json.load(tgt_file)
+            logging.info(f"No changes detected in '{json_file}', skipping update.")
 
-                # Parse JSON into ChatStore objects using from_json()
-                source_chats = {jid: ChatStore.from_json(
-                    chat) for jid, chat in source_data.items()}
-                target_chats = {jid: ChatStore.from_json(
-                    chat) for jid, chat in target_data.items()}
+    def _should_copy_media_file(self, source_file: str, target_file: str) -> bool:
+        """Check if media file should be copied.
+        
+        Args:
+            source_file: Path to source media file.
+            target_file: Path to target media file.
+            
+        Returns:
+            True if file should be copied, False otherwise.
+        """
+        return not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file)
 
-                # Merge chats using merge_with()
-                for jid, chat in source_chats.items():
-                    if jid in target_chats:
-                        target_chats[jid].merge_with(chat)
-                    else:
-                        target_chats[jid] = chat
-
-                # Serialize merged data
-                merged_data = {jid: chat.to_json()
-                               for jid, chat in target_chats.items()}
-
-                # Check if the merged data differs from the original target data
-                if json.dumps(merged_data, sort_keys=True) != json.dumps(target_data, sort_keys=True):
-                    logger.info(
-                        f"Changes detected in '{json_file}', updating target file...")
-                    with open(target_path, 'w') as merged_file:
-                        json.dump(
-                            merged_data,
-                            merged_file,
-                            indent=pretty_print_json,
-                            ensure_ascii=not avoid_encoding_json,
-                        )
-                else:
-                    logger.info(
-                        f"No changes detected in '{json_file}', skipping update.")
-
-    # Merge media directories
-    source_media_path = os.path.join(source_dir, media_dir)
-    target_media_path = os.path.join(target_dir, media_dir)
-    logger.info(
-        f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
-    if os.path.exists(source_media_path):
+    def _merge_media_directories(self, source_dir: str, target_dir: str, media_dir: str) -> None:
+        """Merge media directories from source to target.
+        
+        Args:
+            source_dir: Source directory path.
+            target_dir: Target directory path.
+            media_dir: Media directory name.
+        """
+        source_media_path = os.path.join(source_dir, media_dir)
+        target_media_path = os.path.join(target_dir, media_dir)
+        
+        logging.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
+        
+        if not os.path.exists(source_media_path):
+            return
+        
         for root, _, files in os.walk(source_media_path):
             relative_path = os.path.relpath(root, source_media_path)
             target_root = os.path.join(target_media_path, relative_path)
             os.makedirs(target_root, exist_ok=True)
+            
             for file in files:
                 source_file = os.path.join(root, file)
                 target_file = os.path.join(target_root, file)
-                # we only copy if the file doesn't exist in the target or if the source is newer
-                if not os.path.exists(target_file) or os.path.getmtime(source_file) > os.path.getmtime(target_file):
-                    logger.info(f"Copying '{source_file}' to '{target_file}'...")
+                
+                if self._should_copy_media_file(source_file, target_file):
+                    logging.debug(f"Copying '{source_file}' to '{target_file}'...")
                     shutil.copy2(source_file, target_file)
+
+    def merge(self, source_dir: str, target_dir: str, media_dir: str) -> None:
+        """Merge JSON files and media from source to target directory.
+        
+        Args:
+            source_dir: The path to the source directory containing JSON files.
+            target_dir: The path to the target directory to merge into.
+            media_dir: The path to the media directory.
+        """
+        json_files = self._get_json_files(source_dir)
+        
+        logging.info("Starting incremental merge process...")
+        for json_file in json_files:
+            source_path = os.path.join(source_dir, json_file)
+            target_path = os.path.join(target_dir, json_file)
+            
+            if not os.path.exists(target_path):
+                self._copy_new_file(source_path, target_path, target_dir, json_file)
+            else:
+                self._merge_json_file(source_path, target_path, json_file)
+        
+        self._merge_media_directories(source_dir, target_dir, media_dir)
+
+
+def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_print_json: int, avoid_encoding_json: bool) -> None:
+    """Wrapper for merging JSON files from the source directory into the target directory.
+
+    Args:
+        source_dir: The path to the source directory containing JSON files.
+        target_dir: The path to the target directory to merge into.
+        media_dir: The path to the media directory.
+        pretty_print_json: JSON indentation level.
+        avoid_encoding_json: Whether to avoid ASCII encoding.
+    """
+    merger = IncrementalMerger(pretty_print_json, avoid_encoding_json)
+    merger.merge(source_dir, target_dir, media_dir)
 
 
 def get_file_name(contact: str, chat: ChatStore) -> Tuple[str, str]:
@@ -384,8 +529,40 @@ def get_cond_for_empty(enable: bool, jid_field: str, broadcast_field: str) -> st
     return f"AND (chat.hidden=0 OR {jid_field}='status@broadcast' OR {broadcast_field}>0)" if enable else ""
 
 
-def get_chat_condition(filter: Optional[List[str]], include: bool, columns: List[str], jid: Optional[str] = None, platform: Optional[str] = None) -> str:
+def _get_group_condition(jid: str, platform: str) -> str:
+    """Generate platform-specific group identification condition.
+    
+    Args:
+        jid: The JID column name.
+        platform: The platform ("android" or "ios").
+        
+    Returns:
+        SQL condition string for group identification.
+        
+    Raises:
+        ValueError: If platform is not supported.
+    """
+    if platform == "android":
+        return f"{jid}.type == 1"
+    elif platform == "ios":
+        return f"{jid} IS NOT NULL"
+    else:
+        raise ValueError(
+            "Only android and ios are supported for argument platform if jid is not None")
+
+
+def get_chat_condition(
+    filter: Optional[List[str]],
+    include: bool,
+    columns: List[str],
+    jid: Optional[str] = None,
+    platform: Optional[str] = None
+) -> str:
     """Generates a SQL condition for filtering chats based on inclusion or exclusion criteria.
+
+    SQL injection risks from chat filters were evaluated during development and deemed negligible
+    due to the tool's offline, trusted-input model (user running this tool on WhatsApp
+    backups/databases on their own device).
 
     Args:
         filter: A list of phone numbers to include or exclude.
@@ -400,35 +577,39 @@ def get_chat_condition(filter: Optional[List[str]], include: bool, columns: List
     Raises:
         ValueError: If the column count is invalid or an unsupported platform is provided.
     """
-    if filter is not None:
-        conditions = []
-        if len(columns) < 2 and jid is not None:
-            raise ValueError(
-                "There must be at least two elements in argument columns if jid is not None")
-        if jid is not None:
-            if platform == "android":
-                is_group = f"{jid}.type == 1"
-            elif platform == "ios":
-                is_group = f"{jid} IS NOT NULL"
-            else:
-                raise ValueError(
-                    "Only android and ios are supported for argument platform if jid is not None")
-        for index, chat in enumerate(filter):
-            if include:
-                conditions.append(
-                    f"{' OR' if index > 0 else ''} {columns[0]} LIKE '%{chat}%'")
-                if len(columns) > 1:
-                    conditions.append(
-                        f" OR ({columns[1]} LIKE '%{chat}%' AND {is_group})")
-            else:
-                conditions.append(
-                    f"{' AND' if index > 0 else ''} {columns[0]} NOT LIKE '%{chat}%'")
-                if len(columns) > 1:
-                    conditions.append(
-                        f" AND ({columns[1]} NOT LIKE '%{chat}%' AND {is_group})")
-        return f"AND ({' '.join(conditions)})"
-    else:
+    if not filter:
         return ""
+    
+    if jid is not None and len(columns) < 2:
+        raise ValueError(
+            "There must be at least two elements in argument columns if jid is not None")
+
+    # Get group condition if needed
+    is_group_condition = None
+    if jid is not None:
+        is_group_condition = _get_group_condition(jid, platform)
+
+    # Build conditions for each chat filter
+    conditions = []
+    for index, chat in enumerate(filter):
+        # Add connector for subsequent conditions (with double space)
+        connector = " OR" if include else " AND"
+        prefix = connector if index > 0 else ""
+
+        # Primary column condition
+        operator = "LIKE" if include else "NOT LIKE"
+        conditions.append(f"{prefix} {columns[0]} {operator} '%{chat}%'")
+
+        # Secondary column condition for groups
+        if len(columns) > 1 and is_group_condition:
+            if include:
+                group_condition = f" OR ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})" 
+            else:
+                group_condition = f" AND ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})"
+            conditions.append(group_condition)
+
+    combined_conditions = "".join(conditions)
+    return f"AND ({combined_conditions})"
 
 
 # Android Specific
@@ -439,7 +620,7 @@ CRYPT14_OFFSETS = (
     {"iv": 67, "db": 193},
     {"iv": 67, "db": 194},
     {"iv": 67, "db": 158},
-    {"iv": 67, "db": 196}
+    {"iv": 67, "db": 196},
 )
 
 
@@ -534,7 +715,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
         else:
             msg = "The security code in this chat changed"
     elif content["action_type"] == 58:
-        msg = "You blocked this contact"
+        msg = "You blocked/unblocked this contact"
     elif content["action_type"] == 67:
         return  # (PM) this contact use secure service from Facebook???
     elif content["action_type"] == 69:
@@ -570,6 +751,69 @@ def get_status_location(output_folder: str, offline_static: str) -> str:
                 f.write(resp.read())
     w3css = os.path.join(offline_static, "w3.css")
     return w3css
+
+
+def check_jid_map(db: sqlite3.Connection) -> bool:
+    """
+    Checks if the jid_map table exists in the database.
+
+    Args:
+        db (sqlite3.Connection): The SQLite database connection.
+
+    Returns:
+        bool: True if the jid_map table exists, False otherwise.
+    """
+    cursor = db.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jid_map'")
+    return cursor.fetchone() is not None
+
+
+def get_jid_map_join(jid_map_exists: bool) -> str:
+    """
+    Returns the SQL JOIN statements for jid_map table.
+    """
+    if not jid_map_exists:
+        return ""
+    else:
+        return """LEFT JOIN jid_map as jid_map_global
+                    ON chat.jid_row_id = jid_map_global.lid_row_id
+                LEFT JOIN jid lid_global
+                    ON jid_map_global.jid_row_id = lid_global._id
+                LEFT JOIN jid_map as jid_map_group
+                    ON message.sender_jid_row_id = jid_map_group.lid_row_id
+                LEFT JOIN jid lid_group
+                    ON jid_map_group.jid_row_id = lid_group._id"""
+
+def get_jid_map_selection(jid_map_exists: bool) -> tuple:
+    """
+    Returns the SQL selection statements for jid_map table.
+    """
+    if not jid_map_exists:
+        return "jid_global.raw_string", "jid_group.raw_string"
+    else:
+        return (
+            "COALESCE(lid_global.raw_string, jid_global.raw_string)",
+            "COALESCE(lid_group.raw_string, jid_group.raw_string)"
+        )
+        
+
+def get_transcription_selection(db: sqlite3.Connection) -> str:
+    """
+    Returns the SQL selection statement for transcription text based on the database schema.
+
+    Args:
+        db (sqlite3.Connection): The SQLite database connection.
+    Returns:
+        str: The SQL selection statement for transcription.
+    """
+    cursor = db.cursor()
+    cursor.execute("PRAGMA table_info(message_media)")
+    columns = [row[1] for row in cursor.fetchall()]
+
+    if "raw_transcription_text" in columns:
+        return "message_media.raw_transcription_text AS transcription_text"
+    else:
+        return "NULL AS transcription_text"
 
 
 def setup_template(template: Optional[str], no_avatar: bool, experimental: bool = False) -> jinja2.Template:
@@ -639,11 +883,17 @@ def get_from_string(msg: Dict, chat_id: str) -> str:
 
 def get_chat_type(chat_id: str) -> str:
     """Return the chat type based on the whatsapp id"""
-    if chat_id.endswith("@s.whatsapp.net"):
+    if chat_id == "000000000000000":
+        return "calls"
+    elif chat_id.endswith("@s.whatsapp.net"):
         return "personal_chat"
-    if chat_id.endswith("@g.us"):
+    elif chat_id.endswith("@g.us"):
         return "private_group"
-    logger.warning("Unknown chat type for %s, defaulting to private_group", chat_id)
+    elif chat_id == "status@broadcast":
+        return "status_broadcast"
+    elif chat_id.endswith("@broadcast"):
+        return "broadcast_channel"
+    logging.warning(f"Unknown chat type for {chat_id}, defaulting to private_group")
     return "private_group"
 
 
@@ -674,34 +924,35 @@ def telegram_json_format(jik: str, data: Dict, timezone_offset) -> Dict:
     except ValueError:
         # not a real chat: e.g. statusbroadcast
         chat_id = 0
-    obj = {
-            "name": data["name"] if data["name"] else jik,
-            "type": get_chat_type(jik),
-            "id": chat_id,
-            "messages": [ {
-                "id": int(msgId),
-                "type": "message",
-                "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
-                "date_unixtime": int(msg["timestamp"]),
-                "from": get_from_string(msg, chat_id),
-                "from_id": get_from_id(msg, chat_id),
-                "reply_to_message_id": get_reply_id(data, msg["reply"]),
-                "text": msg["data"],
-                "text_entities": [
-                    {
-                        # TODO this will lose formatting and different types
-                        "type": "plain",
-                        "text": msg["data"],
-                        }
-                    ],
-                } for msgId, msg in data["messages"].items()]
+    json_obj = {
+        "name": data["name"] if data["name"] else jik,
+        "type": get_chat_type(jik),
+        "id": chat_id,
+        "messages": [ {
+            "id": int(msgId),
+            "type": "message",
+            "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
+            "date_unixtime": int(msg["timestamp"]),
+            "from": get_from_string(msg, chat_id),
+            "from_id": get_from_id(msg, chat_id),
+            "reply_to_message_id": get_reply_id(data, msg["reply"]),
+            "text": msg["data"],
+            "text_entities": [
+                {
+                    # TODO this will lose formatting and different types
+                    "type": "plain",
+                    "text": msg["data"],
+                    }
+                ],
             }
+        for msgId, msg in data["messages"].items()]
+    }
     # remove empty messages and replies
-    for msg_id, msg in enumerate(obj["messages"]):
+    for msg_id, msg in enumerate(json_obj["messages"]):
         if not msg["reply_to_message_id"]:
-            del obj["messages"][msg_id]["reply_to_message_id"]
-    obj["messages"] = [m for m in obj["messages"] if m["text"]]
-    return obj
+            del json_obj["messages"][msg_id]["reply_to_message_id"]
+    json_obj["messages"] = [m for m in json_obj["messages"] if m["text"]]
+    return json_obj
 
 
 class WhatsAppIdentifier(StrEnum):
