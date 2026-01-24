@@ -145,20 +145,22 @@ After extracting, you will get this:
 Invoke the wtsexporter with --help option will show you all options available.
 ```sh
 > wtsexporter --help
-usage: wtsexporter [-h] [--debug] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-d DB] [-k [KEY]]
-                   [--call-db [CALL_DB_IOS]] [--wab WAB] [-o OUTPUT] [-j [JSON]] [--txt [TEXT_FORMAT]] [--no-html]
-                   [--size [SIZE]] [--no-reply] [--avoid-encoding-json] [--pretty-print-json [PRETTY_PRINT_JSON]]
-                   [--tg] [--per-chat] [--import] [-t TEMPLATE] [--offline OFFLINE] [--no-avatar] [--old-theme]
-                   [--headline HEADLINE] [-c] [--create-separated-media] [--time-offset {-12 to 14}] [--date DATE]
+usage: wtsexporter [-h] [--debug] [-a] [-i] [-e EXPORTED] [-w WA] [-m MEDIA] [-b BACKUP] [-d DB]
+                   [-k [KEY]] [--call-db [CALL_DB_IOS]] [--wab WAB] [-o OUTPUT] [-j [JSON]]
+                   [--txt [TEXT_FORMAT]] [--no-html] [--size [SIZE]] [--no-reply] [--avoid-encoding-json]
+                   [--pretty-print-json [PRETTY_PRINT_JSON]] [--tg] [--per-chat] [--import] [-t TEMPLATE]
+                   [--offline OFFLINE] [--no-avatar] [--old-theme] [--headline HEADLINE] [-c]
+                   [--create-separated-media] [--time-offset {-12 to 14}] [--date DATE]
                    [--date-format FORMAT] [--include [phone number ...]] [--exclude [phone number ...]]
                    [--dont-filter-empty] [--enrich-from-vcards ENRICH_FROM_VCARDS]
-                   [--default-country-code DEFAULT_COUNTRY_CODE] [--incremental-merge] [--source-dir SOURCE_DIR]
-                   [--target-dir TARGET_DIR] [-s] [--check-update] [--assume-first-as-me] [--business]
-                   [--decrypt-chunk-size DECRYPT_CHUNK_SIZE] [--max-bruteforce-worker MAX_BRUTEFORCE_WORKER]
-                   [--no-banner]
+                   [--default-country-code DEFAULT_COUNTRY_CODE] [--incremental-merge]
+                   [--source-dir SOURCE_DIR] [--target-dir TARGET_DIR] [-s] [--check-update]
+                   [--check-update-pre] [--assume-first-as-me] [--business]
+                   [--decrypt-chunk-size DECRYPT_CHUNK_SIZE]
+                   [--max-bruteforce-worker MAX_BRUTEFORCE_WORKER] [--no-banner] [--fix-dot-files]
 
-A customizable Android and iOS/iPadOS WhatsApp database parser that will give you the history of your WhatsApp
-conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
+A customizable Android and iOS/iPadOS WhatsApp database parser that will give you the history of your
+WhatsApp conversations in HTML and JSON. Android Backup Crypt12, Crypt14 and Crypt15 supported.
 
 options:
   -h, --help            show this help message and exit
@@ -174,9 +176,10 @@ Input Files:
   -w, --wa WA           Path to contact database (default: wa.db/ContactsV2.sqlite)
   -m, --media MEDIA     Path to WhatsApp media folder (default: WhatsApp)
   -b, --backup BACKUP   Path to Android (must be used together with -k)/iOS WhatsApp backup
-  -d, --db DB           Path to database file (default: msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
-  -k, --key [KEY]       Path to key file. If this option is set for crypt15 backup but nothing is specified, you will
-                        be prompted to enter the key.
+  -d, --db DB           Path to database file (default:
+                        msgstore.db/7c7fba66680ef796b916b067077cc246adacf01d)
+  -k, --key [KEY]       Path to key file. If this option is set for crypt15 backup but nothing is
+                        specified, you will be prompted to enter the key.
   --call-db [CALL_DB_IOS]
                         Path to call database (default: 1b432994e958845fffe8e2f190f26d1511534088) iOS only
   --wab, --wa-backup WAB
@@ -185,8 +188,8 @@ Input Files:
 Output Options:
   -o, --output OUTPUT   Output to specific directory (default: result)
   -j, --json [JSON]     Save the result to a single JSON file (default if present: result.json)
-  --txt [TEXT_FORMAT]   Export chats in text format similar to what WhatsApp officially provided (default if present:
-                        result/)
+  --txt [TEXT_FORMAT]   Export chats in text format similar to what WhatsApp officially provided (default
+                        if present: result/)
   --no-html             Do not output html files
   --size, --output-size, --split [SIZE]
                         Maximum (rough) size of a single output file in bytes, 0 for auto
@@ -197,7 +200,8 @@ JSON Options:
                         Don't encode non-ascii characters in the output JSON files
   --pretty-print-json [PRETTY_PRINT_JSON]
                         Pretty print the output JSON.
-  --tg, --telegram      Output the JSON in a format compatible with Telegram export (implies json-per-chat)
+  --tg, --telegram      Output the JSON in a format compatible with Telegram export (implies json-per-
+                        chat)
   --per-chat            Output the JSON file per chat
   --import              Import JSON file and convert to HTML output
 
@@ -207,7 +211,8 @@ HTML Options:
   --offline OFFLINE     Relative path to offline static files
   --no-avatar           Do not render avatar in HTML output
   --old-theme           Use the old Telegram-alike theme
-  --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat name
+  --headline HEADLINE   The custom headline for the HTML output. Use '??' as a placeholder for the chat
+                        name
 
 Media Handling:
   -c, --move-media      Move the media directory to output directory if the flag is set, otherwise copy it
@@ -223,24 +228,26 @@ Filtering Options:
                         Include chats that match the supplied phone number
   --exclude [phone number ...]
                         Exclude chats that match the supplied phone number
-  --dont-filter-empty   By default, the exporter will not render chats with no valid message. Setting this flag will
-                        cause the exporter to render those. This is useful if chat(s) are missing from the output
+  --dont-filter-empty   By default, the exporter will not render chats with no valid message. Setting this
+                        flag will cause the exporter to render those. This is useful if chat(s) are
+                        missing from the output
 
 Contact Enrichment:
   --enrich-from-vcards ENRICH_FROM_VCARDS
-                        Path to an exported vcf file from Google contacts export. Add names missing from WhatsApp's
-                        default database
+                        Path to an exported vcf file from Google contacts export. Add names missing from
+                        WhatsApp's default database
   --default-country-code DEFAULT_COUNTRY_CODE
-                        Use with --enrich-from-vcards. When numbers in the vcf file does not have a country code, this
-                        will be used. 1 is for US, 66 for Thailand etc. Most likely use the number of your own country
+                        Use with --enrich-from-vcards. When numbers in the vcf file does not have a
+                        country code, this will be used. 1 is for US, 66 for Thailand etc. Most likely use
+                        the number of your own country
 
 Incremental Merging:
-  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-dir and --target-
-                        dir. The chats (JSON files only) and media from the source directory will be merged into the
-                        target directory. No chat messages or media will be deleted from the target directory; only
-                        new chat messages and media will be added to it. This enables chat messages and media to be
-                        deleted from the device to free up space, while ensuring they are preserved in the exported
-                        backups.
+  --incremental-merge   Performs an incremental merge of two exports. Requires setting both --source-dir
+                        and --target-dir. The chats (JSON files only) and media from the source directory
+                        will be merged into the target directory. No chat messages or media will be
+                        deleted from the target directory; only new chat messages and media will be added
+                        to it. This enables chat messages and media to be deleted from the device to free
+                        up space, while ensuring they are preserved in the exported backups.
   --source-dir SOURCE_DIR
                         Sets the source directory. Used for performing incremental merges.
   --target-dir TARGET_DIR
@@ -249,16 +256,20 @@ Incremental Merging:
 Miscellaneous:
   -s, --showkey         Show the HEX key used to decrypt the database
   --check-update        Check for updates (require Internet access)
+  --check-update-pre    Check for updates including pre-releases (require Internet access)
   --assume-first-as-me  Assume the first message in a chat as sent by me (must be used together with -e)
   --business            Use Whatsapp Business default files (iOS only)
   --decrypt-chunk-size DECRYPT_CHUNK_SIZE
-                        Specify the chunk size for decrypting iOS backup, which may affect the decryption speed.
+                        Specify the chunk size for decrypting iOS backup, which may affect the decryption
+                        speed.
   --max-bruteforce-worker MAX_BRUTEFORCE_WORKER
                         Specify the maximum number of worker for bruteforce decryption.
   --no-banner           Do not show the banner
+  --fix-dot-files       Fix files with a dot at the end of their name (allowing the outputs be stored in
+                        FAT filesystems)
 
-WhatsApp Chat Exporter: 0.13.0rc2 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open source
-licenses.
+WhatsApp Chat Exporter: 0.13.0 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
+source licenses.
 ```
 
 # Verifying Build Integrity
@@ -266,7 +277,7 @@ licenses.
 To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries using the GitHub CLI.
 
 > [!NOTE]
-> Requires version 0.13.0rc1 or newer. Legacy binaries are unsupported.
+> Requires version 0.13.0 or newer. Legacy binaries are unsupported.
 
 ### Using Bash (Linux/WSL/macOS)
 
