@@ -142,6 +142,8 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat, jid_map_e
                       FROM message
                         LEFT JOIN chat
                             ON chat._id = message.chat_row_id
+                        INNER JOIN jid
+                            ON jid._id = chat.jid_row_id
                         INNER JOIN jid jid_global
                             ON jid_global._id = chat.jid_row_id
                         LEFT JOIN jid jid_group
