@@ -18,20 +18,17 @@ jobs:
         include:
           - os: windows-latest
             python-version: "3.13"
-            env: 
-              PYTHONUTF8: "1"
+            python_utf8: "1"
           - os: macos-latest
             python-version: "3.13"
           - os: windows-11-arm
             python-version: "3.13"
-            env: 
-              PYTHONUTF8: "1"
+            python_utf8: "1"
           - os: macos-15-intel
             python-version: "3.13"
           - os: windows-latest
             python-version: "3.14"
-            env: 
-              PYTHONUTF8: "1"
+            python_utf8: "1"
 
     steps:
       - name: Checkout code
@@ -43,6 +40,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
+        env:
+          PYTHONUTF8: ${{ matrix.python_utf8 || '0' }}  
         run: |
           python -m pip install --upgrade pip
           pip install .[all] pytest nuitka
