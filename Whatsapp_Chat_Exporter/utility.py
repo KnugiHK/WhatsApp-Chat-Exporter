@@ -30,7 +30,6 @@ except ImportError:
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
 CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().seconds / 3600
-CLEAR_LINE = "\x1b[K\n"
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +253,7 @@ def import_from_json(json_file: str, data: ChatCollection):
             data.add_chat(jid, chat)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}{CLEAR_LINE}")
+    logger.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}")
 
 
 class IncrementalMerger:
@@ -389,7 +388,7 @@ class IncrementalMerger:
             target_path: Path to target file.
             json_file: Name of the JSON file.
         """
-        logger.info(f"Merging '{json_file}' with existing file in target directory...\r")
+        logger.info(f"Merging '{json_file}' with existing file in target directory...", extra={"clear": True})
         
         source_data = self._load_chat_data(source_path)
         target_data = self._load_chat_data(target_path)
@@ -401,10 +400,10 @@ class IncrementalMerger:
         merged_data = self._serialize_chats(merged_chats)
         
         if self._has_changes(merged_data, target_data):
-            logger.info(f"Changes detected in '{json_file}', updating target file...{CLEAR_LINE}")
+            logger.info(f"Changes detected in '{json_file}', updating target file...")
             self._save_merged_data(target_path, merged_data)
         else:
-            logger.info(f"No changes detected in '{json_file}', skipping update.{CLEAR_LINE}")
+            logger.info(f"No changes detected in '{json_file}', skipping update.")
 
     def _should_copy_media_file(self, source_file: str, target_file: str) -> bool:
         """Check if media file should be copied.
@@ -429,7 +428,7 @@ class IncrementalMerger:
         source_media_path = os.path.join(source_dir, media_dir)
         target_media_path = os.path.join(target_dir, media_dir)
         
-        logger.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}{CLEAR_LINE}")
+        logger.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
         
         if not os.path.exists(source_media_path):
             return
@@ -457,7 +456,7 @@ class IncrementalMerger:
         """
         json_files = self._get_json_files(source_dir)
         
-        logger.info("Starting incremental merge process...{CLEAR_LINE}")
+        logger.info("Starting incremental merge process...")
         for json_file in json_files:
             source_path = os.path.join(source_dir, json_file)
             target_path = os.path.join(target_dir, json_file)
@@ -894,7 +893,7 @@ def get_chat_type(chat_id: str) -> str:
         return "status_broadcast"
     elif chat_id.endswith("@broadcast"):
         return "broadcast_channel"
-    logger.warning(f"Unknown chat type for {chat_id}, defaulting to private_group{CLEAR_LINE}")
+    logger.warning(f"Unknown chat type for {chat_id}, defaulting to private_group")
     return "private_group"
 
 

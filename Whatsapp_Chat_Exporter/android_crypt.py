@@ -7,7 +7,7 @@ from tqdm import tqdm
 from typing import Tuple, Union
 from hashlib import sha256
 from functools import partial
-from Whatsapp_Chat_Exporter.utility import CLEAR_LINE, CRYPT14_OFFSETS, Crypt, DbType
+from Whatsapp_Chat_Exporter.utility import CRYPT14_OFFSETS, Crypt, DbType
 
 try:
     import zlib
@@ -172,11 +172,11 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
             continue
         else:
             logger.debug(
-                f"Decryption successful with known offsets: IV {iv}, DB {db}{CLEAR_LINE}"
+                f"Decryption successful with known offsets: IV {iv}, DB {db}"
             )
             return decrypted_db  # Successful decryption
 
-    logger.info(f"Common offsets failed. Will attempt to brute-force{CLEAR_LINE}")
+    logger.info(f"Common offsets failed. Will attempt to brute-force")
     offset_max = 200
     workers = max_worker
     check_offset = partial(_attempt_decrypt_task, database=database, main_key=main_key)
@@ -196,19 +196,19 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
                     break
         if found:
             logger.info(
-                f"The offsets of your IV and database are {start_iv} and {start_db}, respectively.{CLEAR_LINE}"
+                f"The offsets of your IV and database are {start_iv} and {start_db}, respectively."
             )
             logger.info(
-                f"To include your offsets in the expoter, please report it in the discussion thread on GitHub:{CLEAR_LINE}"
+                f"To include your offsets in the expoter, please report it in the discussion thread on GitHub:"
             )
-            logger.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47{CLEAR_LINE}")
+            logger.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47")
             return result
 
     except KeyboardInterrupt:
         executor.shutdown(wait=False, cancel_futures=True)
         print("\n")
         raise KeyboardInterrupt(
-            f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully...{CLEAR_LINE}"
+            f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully..."
         )
     
     finally:
@@ -346,7 +346,7 @@ def decrypt_backup(
             main_key, hex_key = _derive_main_enc_key(key)
         if show_crypt15:
             hex_key_str = ' '.join([hex_key.hex()[c:c+4] for c in range(0, len(hex_key.hex()), 4)])
-            logger.info(f"The HEX key of the crypt15 backup is: {hex_key_str}{CLEAR_LINE}")
+            logger.info(f"The HEX key of the crypt15 backup is: {hex_key_str}")
     else:
         main_key = key[126:]
 

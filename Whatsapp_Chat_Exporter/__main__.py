@@ -12,7 +12,7 @@ import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CLEAR_LINE, CURRENT_TZ_OFFSET, Crypt
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CURRENT_TZ_OFFSET, Crypt
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
 from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
@@ -440,10 +440,10 @@ def setup_contact_store(args) -> Optional['ContactsFromVCards']:
 def decrypt_android_backup(args) -> int:
     """Decrypt Android backup files and return error code."""
     if args.key is None or args.backup is None:
-        logger.error(f"You must specify the backup file with -b and a key with -k{CLEAR_LINE}")
+        logger.error(f"You must specify the backup file with -b and a key with -k")
         return 1
 
-    logger.info(f"Decryption key specified, decrypting WhatsApp backup...{CLEAR_LINE}")
+    logger.info(f"Decryption key specified, decrypting WhatsApp backup...")
 
     # Determine crypt type
     if "crypt12" in args.backup:
@@ -454,7 +454,7 @@ def decrypt_android_backup(args) -> int:
         crypt = Crypt.CRYPT15
     else:
         logger.error(
-            f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.{CLEAR_LINE}")
+            f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.")
         return 1
 
     # Get key
@@ -597,20 +597,20 @@ def handle_media_directory(args) -> None:
 
         if os.path.isdir(media_path):
             logger.info(
-                f"WhatsApp directory already exists in output directory. Skipping...{CLEAR_LINE}")
+                f"WhatsApp directory already exists in output directory. Skipping...")
         else:
             if args.move_media:
                 try:
-                    logger.info(f"Moving media directory...\r")
+                    logger.info(f"Moving media directory...", extra={"clear": True})
                     shutil.move(args.media, f"{args.output}/")
-                    logger.info(f"Media directory has been moved to the output directory{CLEAR_LINE}")
+                    logger.info(f"Media directory has been moved to the output directory")
                 except PermissionError:
                     logger.warning("Cannot remove original WhatsApp directory. "
                                    "Perhaps the directory is opened?\n")
             else:
-                logger.info(f"Copying media directory...\r")
+                logger.info(f"Copying media directory...", extra={"clear": True})
                 shutil.copytree(args.media, media_path)
-                logger.info(f"Media directory has been copied to the output directory{CLEAR_LINE}")
+                logger.info(f"Media directory has been copied to the output directory")
 
 
 def create_output_files(args, data: ChatCollection) -> None:
@@ -631,7 +631,7 @@ def create_output_files(args, data: ChatCollection) -> None:
 
     # Create text files if requested
     if args.text_format:
-        logger.info(f"Writing text file...{CLEAR_LINE}")
+        logger.info(f"Writing text file...")
         android_handler.create_txt(data, args.text_format)
 
     # Create JSON files if requested
@@ -661,9 +661,9 @@ def export_single_json(args, data: Dict) -> None:
             ensure_ascii=not args.avoid_encoding_json,
             indent=args.pretty_print_json
         )
-        logger.info(f"Writing JSON file...\r")
+        logger.info(f"Writing JSON file...", extra={"clear": True})
         f.write(json_data)
-    logger.info(f"JSON file saved...({bytes_to_readable(len(json_data))}){CLEAR_LINE}")
+    logger.info(f"JSON file saved...({bytes_to_readable(len(json_data))})")
 
 
 def export_multiple_json(args, data: Dict) -> None:
@@ -697,7 +697,7 @@ def export_multiple_json(args, data: Dict) -> None:
                 f.write(file_content)
                 pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}{CLEAR_LINE}")
+    logger.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:
@@ -722,16 +722,29 @@ def process_exported_chat(args, data: ChatCollection) -> None:
         shutil.copy(file, args.output)
 
 
+class ClearLineFilter(logging.Filter):
+    def filter(self, record):
+        is_clear = getattr(record, 'clear', False)
+        if is_clear:
+            record.line_end = "\r"
+            record.prefix = "\x1b[K" 
+        else:
+            record.line_end = "\n"
+            record.prefix = ""
+        return True
+
+
 def setup_logging(level):
     log_handler_stdout = logging.StreamHandler()
     log_handler_stdout.terminator = ""
     handlers = [log_handler_stdout]
+    log_handler_stdout.addFilter(ClearLineFilter())
     if level == logging.DEBUG:
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         handlers.append(logging.FileHandler(f"wtsexpoter-debug-{timestamp}.log", mode="w"))
     logging.basicConfig(
         level=level,
-        format="[%(levelname)s] %(message)s",
+        format="[%(levelname)s] %(message)s%(line_end)s",
         handlers=handlers
     )
 
@@ -822,7 +835,7 @@ def main():
                         args.backup, identifiers, args.decrypt_chunk_size)
                 else:
                     logger.info(
-                        f"WhatsApp directory already exists, skipping WhatsApp file extraction.{CLEAR_LINE}")
+                        f"WhatsApp directory already exists, skipping WhatsApp file extraction.")
 
             # Set default DB paths if not provided
             if args.db is None:
@@ -838,7 +851,7 @@ def main():
                 args.pretty_print_json,
                 args.avoid_encoding_json
             )
-            logger.info(f"Incremental merge completed successfully.{CLEAR_LINE}")
+            logger.info(f"Incremental merge completed successfully.")
         else:
             # Process contacts
             process_contacts(args, data)
