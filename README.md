@@ -113,7 +113,7 @@ Do an iPhone/iPad Backup with iTunes/Finder first.
 > [!NOTE]
 > If you are working on unencrypted iOS/iPadOS backup, skip this.
 
-If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
+If you want to work on an encrypted iOS/iPadOS Backup, you should install `iphone_backup_decrypt` from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
