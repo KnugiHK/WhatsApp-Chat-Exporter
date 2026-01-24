@@ -275,6 +275,10 @@ def setup_argument_parser() -> ArgumentParser:
         help="Check for updates (require Internet access)"
     )
     misc_group.add_argument(
+        "--check-update-pre", dest="check_update_pre", default=False, action='store_true',
+        help="Check for updates including pre-releases (require Internet access)"
+    )
+    misc_group.add_argument(
         "--assume-first-as-me", dest="assume_first_as_me", default=False, action='store_true',
         help="Assume the first message in a chat as sent by me (must be used together with -e)"
     )
@@ -775,8 +779,8 @@ def main():
         setup_logging(logging.INFO)
 
     # Check for updates
-    if args.check_update:
-        exit(check_update())
+    if args.check_update or args.check_update_pre:
+        exit(check_update(args.check_update_pre))
 
     # Validate arguments
     validate_args(parser, args)

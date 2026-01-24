@@ -157,11 +157,12 @@ def determine_day(last: int, current: int) -> Optional[datetime.date]:
         return current
 
 
-def check_update():
+def check_update(include_beta: bool = False) -> int:
     import urllib.request
     import json
     import importlib
     from sys import platform
+    from packaging import version
 
     PACKAGE_JSON = "https://pypi.org/pypi/whatsapp-chat-exporter/json"
     try:
@@ -172,21 +173,21 @@ def check_update():
     else:
         with raw:
             package_info = json.load(raw)
-            latest_version = tuple(
-                map(int, package_info["info"]["version"].split(".")))
-            __version__ = importlib.metadata.version("whatsapp_chat_exporter")
-            current_version = tuple(map(int, __version__.split(".")))
+            if include_beta:
+                all_versions = [version.parse(v) for v in package_info["releases"].keys()]
+                latest_version = max(all_versions, key=lambda v: (v.release, v.pre))
+            else:
+                latest_version = version.parse(package_info["info"]["version"])
+            current_version = version.parse(importlib.metadata.version("whatsapp_chat_exporter"))
             if current_version < latest_version:
                 logging.info(
                     "===============Update===============\n"
-                    "A newer version of WhatsApp Chat Exporter is available."
-                    f"Current version: {__version__}"
-                    f"Latest version: {package_info['info']['version']}"
+                    "A newer version of WhatsApp Chat Exporter is available.\n"
+                    f"Current version: {current_version}\n"
+                    f"Latest version: {latest_version}"
                 )
-                if platform == "win32":
-                    logging.info("Update with: pip install --upgrade whatsapp-chat-exporter")
-                else:
-                    logging.info("Update with: pip3 install --upgrade whatsapp-chat-exporter")
+                pip_cmd = "pip" if platform == "win32" else "pip3"
+                logging.info(f"Update with: {pip_cmd} install --upgrade whatsapp-chat-exporter {'--pre' if include_beta else ''}")
                 logging.info("====================================")
             else:
                 logging.info("You are using the latest version of WhatsApp Chat Exporter.")
