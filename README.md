@@ -115,7 +115,7 @@ Do an iPhone/iPad Backup with iTunes/Finder first.
 
 If you want to work on an encrypted iOS/iPadOS Backup, you should install iphone_backup_decrypt from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the extract_iphone_media.py.
 ```sh
-pip install whatsapp-chat-exporter["ios_backup"]
+pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 > [!NOTE]
 > You will need to disable the built-in end-to-end encryption for WhatsApp backups. See [WhatsApp's FAQ](https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup) for how to do it.
