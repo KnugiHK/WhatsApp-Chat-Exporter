@@ -31,7 +31,6 @@ MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
 CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().seconds / 3600
 
-logger = logging.getLogger(__name__)
 
 
 def convert_time_unit(time_second: int) -> str:
@@ -168,7 +167,7 @@ def check_update():
     try:
         raw = urllib.request.urlopen(PACKAGE_JSON)
     except Exception:
-        logger.error("Failed to check for updates.")
+        logging.error("Failed to check for updates.")
         return 1
     else:
         with raw:
@@ -178,19 +177,19 @@ def check_update():
             __version__ = importlib.metadata.version("whatsapp_chat_exporter")
             current_version = tuple(map(int, __version__.split(".")))
             if current_version < latest_version:
-                logger.info(
+                logging.info(
                     "===============Update===============\n"
-                    "A newer version of WhatsApp Chat Exporter is available.\n"
-                    f"Current version: {__version__}\n"
-                    f"Latest version: {package_info['info']['version']}\n"
+                    "A newer version of WhatsApp Chat Exporter is available."
+                    f"Current version: {__version__}"
+                    f"Latest version: {package_info['info']['version']}"
                 )
                 if platform == "win32":
-                    logger.info("Update with: pip install --upgrade whatsapp-chat-exporter\n")
+                    logging.info("Update with: pip install --upgrade whatsapp-chat-exporter")
                 else:
-                    logger.info("Update with: pip3 install --upgrade whatsapp-chat-exporter\n")
-                logger.info("====================================\n")
+                    logging.info("Update with: pip3 install --upgrade whatsapp-chat-exporter")
+                logging.info("====================================")
             else:
-                logger.info("You are using the latest version of WhatsApp Chat Exporter.\n")
+                logging.info("You are using the latest version of WhatsApp Chat Exporter.")
     return 0
 
 
@@ -253,7 +252,7 @@ def import_from_json(json_file: str, data: ChatCollection):
             data.add_chat(jid, chat)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}")
+    logging.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}")
 
 
 class IncrementalMerger:
@@ -283,10 +282,10 @@ class IncrementalMerger:
         """
         json_files = [f for f in os.listdir(source_dir) if f.endswith('.json')]
         if not json_files:
-            logger.error("No JSON files found in the source directory.")
+            logging.error("No JSON files found in the source directory.")
             raise SystemExit(1)
         
-        logger.debug("JSON files found:", json_files)
+        logging.debug("JSON files found:", json_files)
         return json_files
 
     def _copy_new_file(self, source_path: str, target_path: str, target_dir: str, json_file: str) -> None:
@@ -298,7 +297,7 @@ class IncrementalMerger:
             target_dir: Target directory path.
             json_file: Name of the JSON file.
         """
-        logger.info(f"Copying '{json_file}' to target directory...")
+        logging.info(f"Copying '{json_file}' to target directory...")
         os.makedirs(target_dir, exist_ok=True)
         shutil.copy2(source_path, target_path)
 
@@ -388,7 +387,7 @@ class IncrementalMerger:
             target_path: Path to target file.
             json_file: Name of the JSON file.
         """
-        logger.info(f"Merging '{json_file}' with existing file in target directory...", extra={"clear": True})
+        logging.info(f"Merging '{json_file}' with existing file in target directory...", extra={"clear": True})
         
         source_data = self._load_chat_data(source_path)
         target_data = self._load_chat_data(target_path)
@@ -400,10 +399,10 @@ class IncrementalMerger:
         merged_data = self._serialize_chats(merged_chats)
         
         if self._has_changes(merged_data, target_data):
-            logger.info(f"Changes detected in '{json_file}', updating target file...")
+            logging.info(f"Changes detected in '{json_file}', updating target file...")
             self._save_merged_data(target_path, merged_data)
         else:
-            logger.info(f"No changes detected in '{json_file}', skipping update.")
+            logging.info(f"No changes detected in '{json_file}', skipping update.")
 
     def _should_copy_media_file(self, source_file: str, target_file: str) -> bool:
         """Check if media file should be copied.
@@ -428,7 +427,7 @@ class IncrementalMerger:
         source_media_path = os.path.join(source_dir, media_dir)
         target_media_path = os.path.join(target_dir, media_dir)
         
-        logger.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
+        logging.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
         
         if not os.path.exists(source_media_path):
             return
@@ -443,7 +442,7 @@ class IncrementalMerger:
                 target_file = os.path.join(target_root, file)
                 
                 if self._should_copy_media_file(source_file, target_file):
-                    logger.debug(f"Copying '{source_file}' to '{target_file}'...")
+                    logging.debug(f"Copying '{source_file}' to '{target_file}'...")
                     shutil.copy2(source_file, target_file)
 
     def merge(self, source_dir: str, target_dir: str, media_dir: str) -> None:
@@ -456,7 +455,7 @@ class IncrementalMerger:
         """
         json_files = self._get_json_files(source_dir)
         
-        logger.info("Starting incremental merge process...")
+        logging.info("Starting incremental merge process...")
         for json_file in json_files:
             source_path = os.path.join(source_dir, json_file)
             target_path = os.path.join(target_dir, json_file)
@@ -893,7 +892,7 @@ def get_chat_type(chat_id: str) -> str:
         return "status_broadcast"
     elif chat_id.endswith("@broadcast"):
         return "broadcast_channel"
-    logger.warning(f"Unknown chat type for {chat_id}, defaulting to private_group")
+    logging.warning(f"Unknown chat type for {chat_id}, defaulting to private_group")
     return "private_group"
 
 

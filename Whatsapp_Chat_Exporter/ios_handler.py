@@ -13,7 +13,6 @@ from Whatsapp_Chat_Exporter.utility import APPLE_TIME, get_chat_condition, Devic
 from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name
 
 
-logger = logging.getLogger(__name__)
 
 
 def contacts(db, data):
@@ -21,7 +20,7 @@ def contacts(db, data):
     c = db.cursor()
     c.execute("""SELECT count() FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
     total_row_number = c.fetchone()[0]
-    logger.info(f"Pre-processing contacts...({total_row_number})", extra={"clear": True})
+    logging.info(f"Pre-processing contacts...({total_row_number})", extra={"clear": True})
 
     c.execute("""SELECT ZWHATSAPPID, ZABOUTTEXT FROM ZWAADDRESSBOOKCONTACT WHERE ZABOUTTEXT IS NOT NULL""")
     with tqdm(total=total_row_number, desc="Processing contacts", unit="contact", leave=False) as pbar:
@@ -35,7 +34,7 @@ def contacts(db, data):
             data.add_chat(zwhatsapp_id, current_chat)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Pre-processed {total_row_number} contacts in {convert_time_unit(total_time)}")
+    logging.info(f"Pre-processed {total_row_number} contacts in {convert_time_unit(total_time)}")
 
 
 def process_contact_avatars(current_chat, media_folder, contact_id):
@@ -132,7 +131,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             process_contact_avatars(current_chat, media_folder, contact_id)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}")
 
     # Get message count
     message_count_query = f"""
@@ -149,7 +148,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(message_count_query)
     total_row_number = c.fetchone()[0]
-    logger.info(f"Processing messages...(0/{total_row_number})", extra={"clear": True})
+    logging.info(f"Processing messages...(0/{total_row_number})", extra={"clear": True})
 
     # Fetch messages
     messages_query = f"""
@@ -226,7 +225,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
 
 
 def process_message_data(message, content, is_group_message, data, message_map, no_reply):
@@ -340,7 +339,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     """
     c.execute(media_count_query)
     total_row_number = c.fetchone()[0]
-    logger.info(f"Processing media...(0/{total_row_number})", extra={"clear": True})
+    logging.info(f"Processing media...(0/{total_row_number})", extra={"clear": True})
 
     # Fetch media items
     media_query = f"""
@@ -373,7 +372,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
             process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
 
 
 def process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files=False):
@@ -462,7 +461,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     c.execute(vcard_query)
     contents = c.fetchall()
     total_row_number = len(contents)
-    logger.info(f"Processing vCards...(0/{total_row_number})", extra={"clear": True})
+    logging.info(f"Processing vCards...(0/{total_row_number})", extra={"clear": True})
 
     # Create vCards directory
     path = f'{media_folder}/Message/vCards'
@@ -474,7 +473,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
             process_vcard_item(content, path, data)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
 
 
 def process_vcard_item(content, path, data):
@@ -566,7 +565,7 @@ def calls(db, data, timezone_offset, filter_chat):
 
     # Add calls chat to data
     data.add_chat("000000000000000", chat)
-    logger.info(f"Processed {total_row_number} calls in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} calls in {convert_time_unit(total_time)}")
 
 
 def process_call_record(content, chat, data, timezone_offset):

@@ -26,7 +26,6 @@ from typing import Optional, List, Dict
 from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 
 
-logger = logging.getLogger(__name__)
 __version__ = importlib.metadata.version("whatsapp_chat_exporter")
 WTSEXPORTER_BANNER = f"""========================================================================================================
                   ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗ █████╗ ██████╗ ██████╗
@@ -440,10 +439,10 @@ def setup_contact_store(args) -> Optional['ContactsFromVCards']:
 def decrypt_android_backup(args) -> int:
     """Decrypt Android backup files and return error code."""
     if args.key is None or args.backup is None:
-        logger.error(f"You must specify the backup file with -b and a key with -k")
+        logging.error(f"You must specify the backup file with -b and a key with -k")
         return 1
 
-    logger.info(f"Decryption key specified, decrypting WhatsApp backup...")
+    logging.info(f"Decryption key specified, decrypting WhatsApp backup...")
 
     # Determine crypt type
     if "crypt12" in args.backup:
@@ -453,7 +452,7 @@ def decrypt_android_backup(args) -> int:
     elif "crypt15" in args.backup:
         crypt = Crypt.CRYPT15
     else:
-        logger.error(
+        logging.error(
             f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.")
         return 1
 
@@ -506,15 +505,15 @@ def decrypt_android_backup(args) -> int:
 def handle_decrypt_error(error: int) -> None:
     """Handle decryption errors with appropriate messages."""
     if error == 1:
-        logger.error("Dependencies of decrypt_backup and/or extract_encrypted_key"
-                     " are not present. For details, see README.md.\n")
+        logging.error("Dependencies of decrypt_backup and/or extract_encrypted_key"
+                     " are not present. For details, see README.md.")
         exit(3)
     elif error == 2:
-        logger.error("Failed when decompressing the decrypted backup. "
-                     "Possibly incorrect offsets used in decryption.\n")
+        logging.error("Failed when decompressing the decrypted backup. "
+                     "Possibly incorrect offsets used in decryption.")
         exit(4)
     else:
-        logger.error("Unknown error occurred.\n")
+        logging.error("Unknown error occurred.")
         exit(5)
 
 
@@ -537,9 +536,9 @@ def process_messages(args, data: ChatCollection) -> None:
     msg_db = args.db if args.db else "msgstore.db" if args.android else args.identifiers.MESSAGE
 
     if not os.path.isfile(msg_db):
-        logger.error(
+        logging.error(
             "The message database does not exist. You may specify the path "
-            "to database file with option -d or check your provided path.\n"
+            "to database file with option -d or check your provided path."
         )
         exit(6)
 
@@ -596,21 +595,21 @@ def handle_media_directory(args) -> None:
         media_path = os.path.join(args.output, args.media)
 
         if os.path.isdir(media_path):
-            logger.info(
+            logging.info(
                 f"WhatsApp directory already exists in output directory. Skipping...")
         else:
             if args.move_media:
                 try:
-                    logger.info(f"Moving media directory...", extra={"clear": True})
+                    logging.info(f"Moving media directory...", extra={"clear": True})
                     shutil.move(args.media, f"{args.output}/")
-                    logger.info(f"Media directory has been moved to the output directory")
+                    logging.info(f"Media directory has been moved to the output directory")
                 except PermissionError:
-                    logger.warning("Cannot remove original WhatsApp directory. "
-                                   "Perhaps the directory is opened?\n")
+                    logging.warning("Cannot remove original WhatsApp directory. "
+                                   "Perhaps the directory is opened?")
             else:
-                logger.info(f"Copying media directory...", extra={"clear": True})
+                logging.info(f"Copying media directory...", extra={"clear": True})
                 shutil.copytree(args.media, media_path)
-                logger.info(f"Media directory has been copied to the output directory")
+                logging.info(f"Media directory has been copied to the output directory")
 
 
 def create_output_files(args, data: ChatCollection) -> None:
@@ -631,7 +630,7 @@ def create_output_files(args, data: ChatCollection) -> None:
 
     # Create text files if requested
     if args.text_format:
-        logger.info(f"Writing text file...")
+        logging.info(f"Writing text file...")
         android_handler.create_txt(data, args.text_format)
 
     # Create JSON files if requested
@@ -661,9 +660,9 @@ def export_single_json(args, data: Dict) -> None:
             ensure_ascii=not args.avoid_encoding_json,
             indent=args.pretty_print_json
         )
-        logger.info(f"Writing JSON file...", extra={"clear": True})
+        logging.info(f"Writing JSON file...", extra={"clear": True})
         f.write(json_data)
-    logger.info(f"JSON file saved...({bytes_to_readable(len(json_data))})")
+    logging.info(f"JSON file saved...({bytes_to_readable(len(json_data))})")
 
 
 def export_multiple_json(args, data: Dict) -> None:
@@ -697,7 +696,7 @@ def export_multiple_json(args, data: Dict) -> None:
                 f.write(file_content)
                 pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}")
+    logging.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:
@@ -737,11 +736,18 @@ class ClearLineFilter(logging.Filter):
 def setup_logging(level):
     log_handler_stdout = logging.StreamHandler()
     log_handler_stdout.terminator = ""
-    handlers = [log_handler_stdout]
     log_handler_stdout.addFilter(ClearLineFilter())
+    log_handler_stdout.set_name("console")
+
+    handlers = [log_handler_stdout]
+    
     if level == logging.DEBUG:
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        handlers.append(logging.FileHandler(f"wtsexpoter-debug-{timestamp}.log", mode="w"))
+        log_handler_file = logging.FileHandler(f"wtsexpoter-debug-{timestamp}.log", mode="w")
+        log_handler_file.terminator = ""
+        log_handler_file.addFilter(ClearLineFilter())
+        handlers.append(log_handler_file)
+
     logging.basicConfig(
         level=level,
         format="[%(levelname)s] %(message)s%(line_end)s",
@@ -755,22 +761,25 @@ def main():
     parser = setup_argument_parser()
     args = parser.parse_args()
 
-    # Check for updates
-    if args.check_update:
-        exit(check_update())
-
-    # Validate arguments
-    validate_args(parser, args)
-
     # Print banner if not suppressed
     if not args.no_banner:
         print(WTSEXPORTER_BANNER)
 
     if args.debug:
         setup_logging(logging.DEBUG)
-        logger.debug("Debug mode enabled.\n")
+        logging.debug("Debug mode enabled.")
+        for handler in logging.getLogger().handlers:
+            if handler.name == "console":
+                handler.setLevel(logging.INFO)
     else:
         setup_logging(logging.INFO)
+
+    # Check for updates
+    if args.check_update:
+        exit(check_update())
+
+    # Validate arguments
+    validate_args(parser, args)
 
     # Create output directory if it doesn't exist
     os.makedirs(args.output, exist_ok=True)
@@ -834,7 +843,7 @@ def main():
                     ios_media_handler.extract_media(
                         args.backup, identifiers, args.decrypt_chunk_size)
                 else:
-                    logger.info(
+                    logging.info(
                         f"WhatsApp directory already exists, skipping WhatsApp file extraction.")
 
             # Set default DB paths if not provided
@@ -851,7 +860,7 @@ def main():
                 args.pretty_print_json,
                 args.avoid_encoding_json
             )
-            logger.info(f"Incremental merge completed successfully.")
+            logging.info(f"Incremental merge completed successfully.")
         else:
             # Process contacts
             process_contacts(args, data)
@@ -869,7 +878,7 @@ def main():
             # Handle media directory
             handle_media_directory(args)
 
-        logger.info("Everything is done!")
+        logging.info("Everything is done!")
 
 
 if __name__ == "__main__":

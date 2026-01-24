@@ -18,7 +18,6 @@ else:
     support_encrypted = True
 
 
-logger = logging.getLogger(__name__)
 
 
 class BackupExtractor:
@@ -60,7 +59,7 @@ class BackupExtractor:
                     return False
         except sqlite3.DatabaseError as e:
             if str(e) == "authorization denied" and osname == "darwin":
-                logger.error(
+                logging.error(
                     "You don't have permission to access the backup database. Please"
                     "check your permissions or try moving the backup to somewhere else."
                 )
@@ -73,13 +72,13 @@ class BackupExtractor:
         Handles the extraction of data from an encrypted iOS backup.
         """
         if not support_encrypted:
-            logger.error("You don't have the dependencies to handle encrypted backup."
+            logging.error("You don't have the dependencies to handle encrypted backup."
                          "Read more on how to deal with encrypted backup:"
                          "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
                          )
             return
 
-        logger.info(f"Encryption detected on the backup!")
+        logging.info(f"Encryption detected on the backup!")
         password = getpass.getpass("Enter the password for the backup:")
         sys.stdout.write("\033[F\033[K")
         sys.stdout.flush()
@@ -93,7 +92,7 @@ class BackupExtractor:
         Args:
             password (str): The password for the encrypted backup.
         """
-        logger.info(f"Trying to open the iOS backup...")
+        logging.info(f"Trying to open the iOS backup...")
         self.backup = EncryptedBackup(
             backup_directory=self.base_dir,
             passphrase=password,
@@ -101,8 +100,8 @@ class BackupExtractor:
             check_same_thread=False,
             decrypt_chunk_size=self.decrypt_chunk_size,
         )
-        logger.info(f"iOS backup is opened successfully")
-        logger.info("Decrypting WhatsApp database...", extra={"clear": True})
+        logging.info(f"iOS backup is opened successfully")
+        logging.info("Decrypting WhatsApp database...", extra={"clear": True})
         try:
             self.backup.extract_file(
                 relative_path=RelativePath.WHATSAPP_MESSAGES,
@@ -120,17 +119,17 @@ class BackupExtractor:
                 output_filename=self.identifiers.CALL,
             )
         except ValueError:
-            logger.error("Failed to decrypt backup: incorrect password?")
+            logging.error("Failed to decrypt backup: incorrect password?")
             exit(7)
         except FileNotFoundError:
-            logger.error(
+            logging.error(
                 "Essential WhatsApp files are missing from the iOS backup. "
                 "Perhapse you enabled end-to-end encryption for the backup? "
                 "See https://wts.knugi.dev/docs.html?dest=iose2e"
             )
             exit(6)
         else:
-            logger.info(f"WhatsApp database decrypted successfully")
+            logging.info(f"WhatsApp database decrypted successfully")
 
     def _extract_decrypted_files(self):
         """Extract all WhatsApp files after decryption"""
@@ -150,7 +149,7 @@ class BackupExtractor:
         )
         total_time = pbar.format_dict['elapsed']
         pbar.close()
-        logger.info(f"All required files are decrypted and extracted in {convert_time_unit(total_time)}")
+        logging.info(f"All required files are decrypted and extracted in {convert_time_unit(total_time)}")
 
     def _extract_unencrypted_backup(self):
         """
@@ -169,10 +168,10 @@ class BackupExtractor:
 
         if not os.path.isfile(wts_db_path):
             if self.identifiers is WhatsAppIdentifier:
-                logger.error("WhatsApp database not found.")
+                logging.error("WhatsApp database not found.")
             else:
-                logger.error("WhatsApp Business database not found.")
-            logger.error(
+                logging.error("WhatsApp Business database not found.")
+            logging.error(
                 "Essential WhatsApp files are missing from the iOS backup. "
                 "Perhapse you enabled end-to-end encryption for the backup? "
                 "See https://wts.knugi.dev/docs.html?dest=iose2e"
@@ -182,12 +181,12 @@ class BackupExtractor:
             shutil.copyfile(wts_db_path, self.identifiers.MESSAGE)
 
         if not os.path.isfile(contact_db_path):
-            logger.warning(f"Contact database not found. Skipping...")
+            logging.warning(f"Contact database not found. Skipping...")
         else:
             shutil.copyfile(contact_db_path, self.identifiers.CONTACT)
 
         if not os.path.isfile(call_db_path):
-            logger.warning(f"Call database not found. Skipping...")
+            logging.warning(f"Call database not found. Skipping...")
         else:
             shutil.copyfile(call_db_path, self.identifiers.CALL)
 
@@ -236,7 +235,7 @@ class BackupExtractor:
                         os.utime(destination, (modification, modification))
                     pbar.update(1)
             total_time = pbar.format_dict['elapsed']
-            logger.info(f"Extracted {total_row_number} WhatsApp files in {convert_time_unit(total_time)}")
+            logging.info(f"Extracted {total_row_number} WhatsApp files in {convert_time_unit(total_time)}")
 
 
 def extract_media(base_dir, identifiers, decrypt_chunk_size):

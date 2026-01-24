@@ -17,7 +17,6 @@ from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_uni
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable, determine_metadata
 
 
-logger = logging.getLogger(__name__)
 
 
 def contacts(db, data, enrich_from_vcards):
@@ -38,14 +37,14 @@ def contacts(db, data, enrich_from_vcards):
 
     if total_row_number == 0:
         if enrich_from_vcards is not None:
-            logger.info(
-                "No contacts profiles found in the default database, contacts will be imported from the specified vCard file.\n")
+            logging.info(
+                "No contacts profiles found in the default database, contacts will be imported from the specified vCard file.")
         else:
-            logger.warning(
-                "No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google\n")
+            logging.warning(
+                "No contacts profiles found in the default database, consider using --enrich-from-vcards for adopting names from exported contacts from Google")
         return False
     else:
-        logger.info(f"Processed {total_row_number} contacts\n")
+        logging.info(f"Processed {total_row_number} contacts")
 
     c.execute("SELECT jid, COALESCE(display_name, wa_name) as display_name, status FROM wa_contacts;")
     
@@ -56,7 +55,7 @@ def contacts(db, data, enrich_from_vcards):
                 current_chat.status = row["status"]
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}")
 
     return True
 
@@ -81,7 +80,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         content_cursor = _get_messages_cursor_legacy(c, filter_empty, filter_date, filter_chat)
         table_message = False
     except sqlite3.OperationalError as e:
-        logger.debug(f'Got sql error "{e}" in _get_message_cursor_legacy trying fallback.\n')
+        logging.debug(f'Got sql error "{e}" in _get_message_cursor_legacy trying fallback.\n')
         try:
             content_cursor = _get_messages_cursor_new(
                 c,
@@ -101,7 +100,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     _get_reactions(db, data)
-    logger.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
 
 # Helper functions for message processing
 
@@ -127,7 +126,7 @@ def _get_message_count(cursor, filter_empty, filter_date, filter_chat, jid_map_e
                         {include_filter}
                         {exclude_filter}""")
     except sqlite3.OperationalError as e:
-        logger.debug(f'Got sql error "{e}" in _get_message_count trying fallback.\n')
+        logging.debug(f'Got sql error "{e}" in _get_message_count trying fallback.\n')
 
         empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
         date_filter = f'AND timestamp {filter_date}' if filter_date is not None else ''
@@ -315,8 +314,8 @@ def _fetch_row_safely(cursor):
         except sqlite3.OperationalError as e:
             # Not sure how often this might happen, but this check should reduce the overhead
             # if DEBUG flag is not set.
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f'Got sql error "{e}" in _fetch_row_safely ignoring row.\n')
+            if logging.isEnabledFor(logging.DEBUG):
+                logging.debug(f'Got sql error "{e}" in _fetch_row_safely ignoring row.\n')
             continue
 
 
@@ -518,7 +517,7 @@ def _get_reactions(db, data):
         if c.fetchone()[0] == 0:
             return
 
-        logger.info("Processing reactions...", extra={"clear": True})
+        logging.info("Processing reactions...", extra={"clear": True})
 
         c.execute("""
             SELECT
@@ -539,7 +538,7 @@ def _get_reactions(db, data):
                     ON chat.jid_row_id = chat_jid._id
         """)
     except sqlite3.OperationalError:
-        logger.warning(f"Could not fetch reactions (schema might be too old or incompatible)")
+        logging.warning(f"Could not fetch reactions (schema might be too old or incompatible)")
         return
 
     rows = c.fetchall()
@@ -574,7 +573,7 @@ def _get_reactions(db, data):
                     message.reactions[sender_name] = reaction
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} reactions in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} reactions in {convert_time_unit(total_time)}")
 
 
 def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separate_media=True, fix_dot_files=False):
@@ -595,7 +594,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     try:
         content_cursor = _get_media_cursor_legacy(c, filter_empty, filter_date, filter_chat)
     except sqlite3.OperationalError as e:
-        logger.debug(f'Got sql error "{e}" in _get_media_cursor_legacy trying fallback.\n')
+        logging.debug(f'Got sql error "{e}" in _get_media_cursor_legacy trying fallback.\n')
         content_cursor = _get_media_cursor_new(c, filter_empty, filter_date, filter_chat)
 
     content = content_cursor.fetchone()
@@ -609,7 +608,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
             _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
 
 # Helper functions for media processing
 
@@ -637,7 +636,7 @@ def _get_media_count(cursor, filter_empty, filter_date, filter_chat):
                         {include_filter}
                         {exclude_filter}""")
     except sqlite3.OperationalError as e:
-        logger.debug(f'Got sql error "{e}" in _get_media_count trying fallback.\n')
+        logging.debug(f'Got sql error "{e}" in _get_media_count trying fallback.\n')
         empty_filter = get_cond_for_empty(filter_empty, "jid.raw_string", "broadcast")
         date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
         include_filter = get_chat_condition(
@@ -814,7 +813,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     try:
         rows = _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty)
     except sqlite3.OperationalError as e:
-        logger.debug(f'Got sql error "{e}" in _execute_vcard_query_modern trying fallback.\n')
+        logging.debug(f'Got sql error "{e}" in _execute_vcard_query_modern trying fallback.\n')
         rows = _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty)
 
     total_row_number = len(rows)
@@ -828,7 +827,7 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
             _process_vcard_row(row, path, data)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
 
 def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
     """Execute vCard query for modern WhatsApp database schema."""
@@ -935,7 +934,7 @@ def calls(db, data, timezone_offset, filter_chat):
     if total_row_number == 0:
         return
 
-    logger.info(f"Processing calls...({total_row_number})", extra={"clear": True})
+    logging.info(f"Processing calls...({total_row_number})", extra={"clear": True})
 
     # Fetch call data
     calls_data = _fetch_calls_data(c, filter_chat)
@@ -952,7 +951,7 @@ def calls(db, data, timezone_offset, filter_chat):
 
     # Add the calls chat to the data
     data.add_chat("000000000000000", chat)
-    logger.info(f"Processed {total_row_number} calls in {convert_time_unit(total_time)}")
+    logging.info(f"Processed {total_row_number} calls in {convert_time_unit(total_time)}")
 
 def _get_calls_count(c, filter_chat):
     """Get the count of call records that match the filter."""
@@ -1128,7 +1127,7 @@ def create_html(
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logger.info(f"Generated {total_row_number} chats in {convert_time_unit(total_time)}")
+    logging.info(f"Generated {total_row_number} chats in {convert_time_unit(total_time)}")
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):
     """Generate a single HTML file for a chat."""

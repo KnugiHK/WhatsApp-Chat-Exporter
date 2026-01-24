@@ -25,7 +25,6 @@ else:
     support_crypt15 = True
 
 
-logger = logging.getLogger(__name__)
 
 
 class DecryptionError(Exception):
@@ -126,7 +125,7 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
         raise ValueError("Decryption/Authentication failed. Ensure you are using the correct key.")
 
     if len(db_compressed) < 2 or db_compressed[0] != 0x78:
-        logger.debug(f"Data passes GCM but is not Zlib. Header: {db_compressed[:2].hex()}")
+        logging.debug(f"Data passes GCM but is not Zlib. Header: {db_compressed[:2].hex()}")
         raise ValueError(
             "Key is correct, but decrypted data is not a valid compressed stream. "
             "Is this even a valid WhatsApp database backup?"
@@ -171,12 +170,12 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
         except (zlib.error, ValueError):
             continue
         else:
-            logger.debug(
+            logging.debug(
                 f"Decryption successful with known offsets: IV {iv}, DB {db}"
             )
             return decrypted_db  # Successful decryption
 
-    logger.info(f"Common offsets failed. Will attempt to brute-force")
+    logging.info(f"Common offsets failed. Will attempt to brute-force")
     offset_max = 200
     workers = max_worker
     check_offset = partial(_attempt_decrypt_task, database=database, main_key=main_key)
@@ -195,18 +194,18 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
                     found = True
                     break
         if found:
-            logger.info(
+            logging.info(
                 f"The offsets of your IV and database are {start_iv} and {start_db}, respectively."
             )
-            logger.info(
+            logging.info(
                 f"To include your offsets in the expoter, please report it in the discussion thread on GitHub:"
             )
-            logger.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47")
+            logging.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47")
             return result
 
     except KeyboardInterrupt:
         executor.shutdown(wait=False, cancel_futures=True)
-        print("\n")
+        logging.info("")
         raise KeyboardInterrupt(
             f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully..."
         )
@@ -346,7 +345,7 @@ def decrypt_backup(
             main_key, hex_key = _derive_main_enc_key(key)
         if show_crypt15:
             hex_key_str = ' '.join([hex_key.hex()[c:c+4] for c in range(0, len(hex_key.hex()), 4)])
-            logger.info(f"The HEX key of the crypt15 backup is: {hex_key_str}")
+            logging.info(f"The HEX key of the crypt15 backup is: {hex_key_str}")
     else:
         main_key = key[126:]
 
