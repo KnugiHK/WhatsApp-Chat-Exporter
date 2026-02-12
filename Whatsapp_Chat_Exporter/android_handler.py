@@ -921,10 +921,16 @@ def _process_vcard_row(row, path, data):
 
     chat = data.get_chat(row["key_remote_jid"])
     if chat is None:
+        logging.warning(f"Skipping vCard: Chat {row['key_remote_jid']} not found.")
         return
     try:
         message_row_id = row["message_row_id"]
-    except (KeyError, IndexError):
+    except (KeyError, IndexError) as exc:
+        err_msg: str = " ".join([
+            "Skipping vCard: Message ID was not found",
+            f"in Chat and raised exception: {type(exc).__name__}"
+        ])
+        logging.warning(err_msg)
         return
     message = chat.get_message(message_row_id)
     message.data = "This media include the following vCard file(s):<br>" \
