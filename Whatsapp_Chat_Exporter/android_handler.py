@@ -950,11 +950,10 @@ def _process_vcard_row(row, path, data):
     try:
         message_row_id = row["message_row_id"]
     except (KeyError, IndexError) as exc:
-        err_msg: str = " ".join([
-            "Skipping vCard: Message ID was not found",
-            f"in Chat and raised exception: {type(exc).__name__}"
-        ])
-        logging.warning(err_msg)
+        logging.warning(
+            "Skipping vCard: Message ID not found in Chat. "
+            f"Raised exception: {type(exc).__name__}"
+        )
         return
     message = chat.get_message(message_row_id)
     message.data = "This media include the following vCard file(s):<br>" \
