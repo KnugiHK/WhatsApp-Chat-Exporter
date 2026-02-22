@@ -945,7 +945,11 @@ def _process_vcard_row(row, path, data):
 
     chat = data.get_chat(row["key_remote_jid"])
     if chat is None:
-        logging.warning(f"Skipping vCard: Chat {row['key_remote_jid']} not found.")
+        logging.warning(
+            f"Skipping vCard: Chat {row['key_remote_jid']} not found. "
+            "Check your chat filters and ensure that the chat exists in the database. "
+            "If you believe this is an error, please report it in GitHub issues with details."
+        )
         return
     try:
         message_row_id = row["message_row_id"]
