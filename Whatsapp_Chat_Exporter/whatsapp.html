@@ -355,7 +355,7 @@
                                                     {% endif %}
                                                 </p>
                                             </div>
-                                            {% set replied_msg = msgs | selectattr('key_id', 'equalto', msg.reply) | first %}
+                                            {% set replied_msg = msg_map(msg.reply) %}
                                             {% if replied_msg and replied_msg.media == true %}
                                             <div class="flex-shrink-0">
                                                 {% if "image/" in replied_msg.mime %}
@@ -461,7 +461,7 @@
                                                     {% endif %}
                                                 </p>
                                             </div>
-                                            {% set replied_msg = msgs | selectattr('key_id', 'equalto', msg.reply) | first %}
+                                            {% set replied_msg = msg_map(msg.reply) %}
                                             {% if replied_msg and replied_msg.media == true %}
                                             <div class="flex-shrink-0">
                                                 {% if "image/" in replied_msg.mime %}

@@ -213,6 +213,9 @@ def rendering(
     if "??" not in headline:
         raise ValueError("Headline must contain '??' to replace with name")
     headline = headline.replace("??", name)
+    # Create a temporary lookup map only at render-time;
+    # media preview in reply is a UI-specific concern and
+    # is ignored by the core database processing
     with open(output_file_name, "w", encoding="utf-8") as f:
         f.write(
             template.render(
@@ -226,7 +229,8 @@ def rendering(
                 previous=previous,
                 status=chat.status,
                 media_base=chat.media_base,
-                headline=headline
+                headline=headline,
+                msg_map={m.key_id: m for m in msgs}.get
             )
         )
 
