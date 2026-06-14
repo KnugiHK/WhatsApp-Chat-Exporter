@@ -960,6 +960,12 @@ def _process_vcard_row(row, path, data):
         )
         return
     message = chat.get_message(message_row_id)
+    if message is None:
+        logging.warning(
+            "Skipping vCard: Message ID %s not found in chat.",
+            message_row_id,
+        )
+        return
     message.data = "This media include the following vCard file(s):<br>" \
         f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
     message.mime = "text/x-vcard"
