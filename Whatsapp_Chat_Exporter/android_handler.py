@@ -947,7 +947,12 @@ def _process_vcard_row(row, path, data):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(row["vcard"])
 
-    message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
+    chat = data.get_chat(row["key_remote_jid"])
+    if chat is None:
+        return
+    message = chat.get_message(row["message_row_id"])
+    if message is None:
+        return
     message.data = (
         Markup("This media include the following vCard file(s):<br>")
         + Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
