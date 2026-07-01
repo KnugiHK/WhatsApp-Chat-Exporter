@@ -103,9 +103,8 @@ def get_vcard_value(entry: str, field_name: str) -> list[str]:
             values.append(decode_quoted_printable(cached_line + line, charset))
             cached_line = ""
         else:
-            # Skip empty lines or lines that don't start with the target
-            # field (after stripping), considering potential grouping prefixes
-            if not line or (not line.upper().startswith(target_name) and f".{target_name}" not in line.upper().split(':')[0]):
+            # Skip empty lines
+            if not line:
                 continue
 
             parsed = _parse_vcard_line(line)
@@ -114,7 +113,7 @@ def get_vcard_value(entry: str, field_name: str) -> list[str]:
 
             prop_name, params, raw_value = parsed
 
-            if prop_name != target_name:
+            if prop_name != target_name and not prop_name.endswith('.' + target_name):
                 continue
 
             encoding = params.get('ENCODING')
