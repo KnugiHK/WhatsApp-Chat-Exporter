@@ -945,9 +945,11 @@ def _process_vcard_row(row, path, data):
 
     chat = data.get_chat(row["key_remote_jid"])
     if chat is None:
+        logging.debug(f"Chat {row['key_remote_jid']} not found for vCard processing.")
         return
     message = chat.get_message(row["message_row_id"])
     if message is None:
+        logging.debug(f"Message {row['message_row_id']} not found for vCard processing.")
         return
     message.data = "This media include the following vCard file(s):<br>" \
         f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
