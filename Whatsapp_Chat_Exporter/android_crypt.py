@@ -170,6 +170,10 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
         except (zlib.error, ValueError):
             continue
         else:
+            if decrypted_db is None:
+                # This known offset did not work (_attempt_decrypt_task returns
+                # None on failure); try the next offset instead of returning None.
+                continue
             logging.debug(
                 f"Decryption successful with known offsets: IV {iv}, DB {db}"
             )
