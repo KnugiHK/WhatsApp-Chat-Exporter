@@ -19,7 +19,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -36,7 +36,7 @@ jobs:
       
       - name: Deploy to gh-pages
         if: github.ref == 'refs/heads/main'  # Ensure deployment only happens from main
-        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
