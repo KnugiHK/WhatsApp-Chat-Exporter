@@ -128,8 +128,12 @@ def setup_argument_parser() -> ArgumentParser:
         help="Do not output html files"
     )
     output_group.add_argument(
-        "--size", "--output-size", "--split", dest="size", nargs='?', const="0", default=None,
-        help="Maximum (rough) size of a single output file in bytes, 0 for auto"
+        "--size", "--output-size", dest="size", nargs='?', const="0", default=None,
+        help="[deprecated: use --split] Maximum (rough) size of a single output file in bytes, 0 for auto"
+    )
+    output_group.add_argument(
+        "--split", dest="split", nargs='?', const="0", default=None,
+        help="Split output: m=monthly, q=quarterly, y=yearly, or size like 100K, 2M, 0=auto. Overrides --size."
     )
     output_group.add_argument(
         "--no-reply", dest="no_reply_ios", default=False, action='store_true',
@@ -353,14 +357,40 @@ def validate_args(parser: ArgumentParser, args) -> None:
         parser.error(
             "When --enrich-from-vcards is provided, you must also set --default-country-code")
 
-    # Size validation and conversion
-    if args.size is not None:
+    # Split flag validation (--split overrides deprecated --size)
+    def parse_split_mode(value: str) -> tuple:
+        if value in ('m', 'q', 'y'):
+            return ('time', value)
+        if value == '0':
+            return ('size', 0)
+        # Accept K/M shorthands (e.g. 100K, 2M) that readable_to_bytes doesn't handle
+        normalized = value
+        if value.upper().endswith('K') and not value.upper().endswith('KB'):
+            normalized = value + 'B'
+        elif value.upper().endswith('M') and not value.upper().endswith('MB'):
+            normalized = value + 'B'
         try:
-            args.size = readable_to_bytes(args.size)
+            return ('size', readable_to_bytes(normalized))
+        except ValueError:
+            raise ValueError(
+                "Invalid value for --split. Use m/q/y for time-based, "
+                "or a size like 100K, 2M, 0 for auto."
+            )
+
+    if args.split is not None:
+        try:
+            args.split = parse_split_mode(args.split)
+        except ValueError as e:
+            parser.error(str(e))
+    elif args.size is not None:
+        try:
+            args.split = ("size", readable_to_bytes(args.size))
         except ValueError:
             parser.error(
-                "The value for --split must be pure bytes or use a proper unit (e.g., 1048576 or 1MB)"
+                "The value for --size must be pure bytes or use a proper unit (e.g., 1048576 or 1MB)"
             )
+    else:
+        args.split = None
 
     # Date filter validation and processing
     if args.filter_date is not None:
@@ -655,7 +685,7 @@ def create_output_files(args, data: ChatCollection) -> None:
             args.template,
             args.embedded,
             args.offline,
-            args.size,
+            args.split,
             args.no_avatar,
             args.telegram_theme,
             args.headline
@@ -743,7 +773,7 @@ def process_exported_chat(args, data: ChatCollection) -> None:
             args.template,
             args.embedded,
             args.offline,
-            args.size,
+            args.split,
             args.no_avatar,
             args.telegram_theme,
             args.headline
@@ -835,7 +865,7 @@ def main():
             args.template,
             args.embedded,
             args.offline,
-            args.size,
+            args.split,
             args.no_avatar,
             args.telegram_theme,
             args.headline

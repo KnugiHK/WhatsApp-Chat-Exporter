@@ -1169,7 +1169,7 @@ def create_html(
     template=None,
     embedded=False,
     offline_static=False,
-    maximum_size=None,
+    split_mode=None,
     no_avatar=False,
     experimental=False,
     headline=None
@@ -1194,18 +1194,32 @@ def create_html(
 
             safe_file_name, name = get_file_name(contact, current_chat)
 
-            if maximum_size is not None:
-                _generate_paginated_chat(
-                    current_chat,
-                    safe_file_name,
-                    name,
-                    contact,
-                    output_folder,
-                    template,
-                    w3css,
-                    maximum_size,
-                    headline
-                )
+            if split_mode is not None:
+                mode, value = split_mode
+                if mode == 'time':
+                    _split_by_time(
+                        current_chat,
+                        safe_file_name,
+                        name,
+                        contact,
+                        output_folder,
+                        template,
+                        w3css,
+                        value,
+                        headline
+                    )
+                elif mode == 'size':
+                    _generate_paginated_chat(
+                        current_chat,
+                        safe_file_name,
+                        name,
+                        contact,
+                        output_folder,
+                        template,
+                        w3css,
+                        value,
+                        headline
+                    )
             else:
                 _generate_single_chat(
                     current_chat,
@@ -1259,7 +1273,7 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
 
         if current_size > maximum_size:
             # Create a new page
-            output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
+            output_file_name = f"{output_folder}/{safe_file_name}-part{current_page:02d}.html"
             rendering(
                 output_file_name,
                 template,
@@ -1269,8 +1283,8 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
                 w3css,
                 current_chat,
                 headline,
-                next=f"{safe_file_name}-{current_page + 1}.html",
-                previous=f"{safe_file_name}-{current_page - 1}.html" if current_page > 1 else False
+                next=f"{safe_file_name}-part{current_page + 1:02d}.html",
+                previous=f"{safe_file_name}-part{current_page - 1:02d}.html" if current_page > 1 else False
             )
             render_box = [message]
             current_size = 0
@@ -1279,10 +1293,7 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
             render_box.append(message)
             if message.key_id == last_msg:
                 # Last message, create final page
-                if current_page == 1:
-                    output_file_name = f"{output_folder}/{safe_file_name}.html"
-                else:
-                    output_file_name = f"{output_folder}/{safe_file_name}-{current_page}.html"
+                output_file_name = f"{output_folder}/{safe_file_name}-part{current_page:02d}.html"
                 rendering(
                     output_file_name,
                     template,
@@ -1293,8 +1304,53 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
                     current_chat,
                     headline,
                     False,
-                    previous=f"{safe_file_name}-{current_page - 1}.html"
+                    previous=f"{safe_file_name}-part{current_page - 1:02d}.html" if current_page > 1 else False
                 )
+
+
+def _split_by_time(current_chat, safe_file_name, name, contact, output_folder, template, w3css, period, headline):
+    """Split chat by time period: m=monthly, q=quarterly, y=yearly."""
+    pages = []
+    current_period = None
+    current_messages = []
+
+    for message in current_chat.values():
+        dt = datetime.fromtimestamp(message.timestamp)
+        if period == 'm':
+            key = dt.strftime('%Y-%m')
+        elif period == 'q':
+            quarter = (dt.month - 1) // 3 + 1
+            key = f'{dt.year}-Q{quarter}'
+        elif period == 'y':
+            key = dt.strftime('%Y')
+
+        if key != current_period:
+            if current_messages:
+                pages.append((current_period, current_messages))
+            current_period = key
+            current_messages = [message]
+        else:
+            current_messages.append(message)
+
+    if current_messages:
+        pages.append((current_period, current_messages))
+
+    for i, (period_key, msgs) in enumerate(pages):
+        output_file_name = f"{output_folder}/{safe_file_name}-{period_key}.html"
+        prev_file = f"{safe_file_name}-{pages[i-1][0]}.html" if i > 0 else False
+        next_file = f"{safe_file_name}-{pages[i+1][0]}.html" if i < len(pages) - 1 else False
+        rendering(
+            output_file_name,
+            template,
+            name,
+            msgs,
+            contact,
+            w3css,
+            current_chat,
+            headline,
+            next=next_file,
+            previous=prev_file
+        )
 
 
 def create_txt(data, output):
