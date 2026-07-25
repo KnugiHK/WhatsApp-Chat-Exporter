@@ -291,9 +291,9 @@ def process_message_data(message, content, is_group_message, data, message_map, 
     if metadata is not None and not no_reply and len(metadata) >= 2 and metadata[0] == 0x2A:
         # The byte after the 0x2A tag is the length of the quoted message ID,
         # which is not always 0x14, so read it instead of assuming it.
-        quoted_length = metadata[1]
-        quoted = metadata[2:2 + quoted_length]
-        if len(quoted) == quoted_length and quoted.isascii():
+        quoted_msg_id_length = metadata[1]
+        quoted = metadata[2:2 + quoted_msg_id_length]
+        if len(quoted) == quoted_msg_id_length and quoted.isascii():
             message.reply = quoted.decode("ascii")[:17]
             message.quoted_data = message_map.get(message.reply)
 
