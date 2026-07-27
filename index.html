@@ -652,7 +652,7 @@ source licenses.
 <p>Requires version 0.13.0 or newer. Legacy binaries are unsupported.</p>
 </div>
 <h3>Using Bash (Linux/WSL/macOS)</h3>
-<pre><code class="language-bash">for file in wtsexporter*; do ; gh attestation verify &quot;$file&quot; -R KnugiHK/WhatsApp-Chat-Exporter; done
+<pre><code class="language-bash">for file in wtsexporter*; do gh attestation verify &quot;$file&quot; -R KnugiHK/WhatsApp-Chat-Exporter; done
 </code></pre>
 <h3>Using PowerShell (Windows)</h3>
 <pre><code class="language-powershell">gci &quot;wtsexporter*&quot; | % { gh attestation verify $_.FullName -R KnugiHK/WhatsApp-Chat-Exporter }
