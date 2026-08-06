@@ -410,7 +410,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
         filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")
     date_filter = f'AND ZMESSAGEDATE {filter_date}' if filter_date is not None else ''
 
-    # Get media count
+    # Get media count. This must use the same conditions as the query below,
+    # otherwise the reported total counts rows that are never processed.
     media_count_query = f"""
         SELECT count()
         FROM ZWAMEDIAITEM
@@ -420,7 +421,7 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
                 ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
             LEFT JOIN ZWAGROUPMEMBER
                 ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
-        WHERE 1=1
+        WHERE ZMEDIALOCALPATH IS NOT NULL
             {date_filter}
             {chat_filter_include}
             {chat_filter_exclude}
