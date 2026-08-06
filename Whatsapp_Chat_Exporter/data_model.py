@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, tzinfo, timedelta
 from typing import MutableMapping, Union, Optional, Dict, Any
 
@@ -234,20 +233,20 @@ class ChatStore:
         self.name = name
         self._messages: Dict[str, 'Message'] = {}
         self.type = type
+        self.my_avatar = None
+        self.media_base = ""
         if media is not None:
-            from Whatsapp_Chat_Exporter.utility import Device
+            from Whatsapp_Chat_Exporter.utility import Device, media_base_href
             if self.type == Device.IOS:
-                self.my_avatar = os.path.join(media, "Media/Profile/Photo.jpg")
+                # Output paths are resolved against media_base, so they are stored
+                # relative to the media folder rather than as filesystem paths.
+                self.my_avatar = "Media/Profile/Photo.jpg"
+                self.media_base = media_base_href(media)
             elif self.type == Device.ANDROID:
                 self.my_avatar = None  # TODO: Add Android support
-            else:
-                self.my_avatar = None
-        else:
-            self.my_avatar = None
         self.their_avatar = None
         self.their_avatar_thumb = None
         self.status = None
-        self.media_base = ""
         self.aliases = []
 
     def __len__(self) -> int:

@@ -350,3 +350,124 @@ class TestGetChatCondition:
         
         result = get_chat_condition(["user-name"], True, ["username"])
         assert result == "AND ( username LIKE '%user-name%')"
+
+
+class TestMediaPathHelpers:
+    """Output paths must be relative to the media folder for both absolute and
+    relative --media values, so that <base href> resolves them correctly."""
+
+    media_folder_name_cases = [
+        ("WhatsApp", "WhatsApp"),
+        ("WhatsApp/", "WhatsApp"),
+        ("/Volumes/Backup/AppDomainGroup-group.net.whatsapp.WhatsApp.shared",
+         "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"),
+        ("/Volumes/Backup/AppDomainGroup-group.net.whatsapp.WhatsApp.shared/",
+         "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"),
+        ("extracted/WhatsApp", "WhatsApp"),
+    ]
+
+    @pytest.mark.parametrize("media_folder, expected", media_folder_name_cases)
+    def test_media_folder_name(self, media_folder, expected):
+        assert media_folder_name(media_folder) == expected
+
+    def test_media_base_href_appends_separator(self):
+        assert media_base_href("/backup/WhatsApp") == "WhatsApp/"
+
+    def test_media_base_href_is_empty_for_current_directory(self):
+        assert media_base_href(".") == ""
+
+    to_relative_cases = [
+        # (media_folder, file path, expected output path)
+        ("WhatsApp", "WhatsApp/Message/Media/x@g.us/a/b/f.jpg", "Message/Media/x@g.us/a/b/f.jpg"),
+        ("/backup/shared", "/backup/shared/Message/Media/x@g.us/a/b/f.jpg",
+         "Message/Media/x@g.us/a/b/f.jpg"),
+        ("/backup/shared/", "/backup/shared/Media/Profile/123.thumb", "Media/Profile/123.thumb"),
+        ("nested/dir/WhatsApp", "nested/dir/WhatsApp/Message/vCards/n.vcf", "Message/vCards/n.vcf"),
+        ("/media with spaces/shared", "/media with spaces/shared/Message/Media/f.jpg",
+         "Message/Media/f.jpg"),
+    ]
+
+    @pytest.mark.parametrize("media_folder, path, expected", to_relative_cases)
+    def test_to_media_relative_path(self, media_folder, path, expected):
+        assert to_media_relative_path(path, media_folder) == expected
+
+    def test_absolute_and_relative_media_folders_agree(self):
+        """The same file must produce the same output path either way."""
+        relative = to_media_relative_path("WhatsApp/Message/Media/f.jpg", "WhatsApp")
+        absolute = to_media_relative_path("/backup/WhatsApp/Message/Media/f.jpg", "/backup/WhatsApp")
+        assert relative == absolute == "Message/Media/f.jpg"
+
+    def test_log_missing_media_silent_when_nothing_missing(self, caplog):
+        log_missing_media(0, 100, "WhatsApp", "hint")
+        assert caplog.records == []
+
+    def test_log_missing_media_warns_with_hint(self, caplog):
+        log_missing_media(100, 100, "WhatsApp", "check the path")
+        messages = [record.getMessage() for record in caplog.records]
+        assert all(record.levelname == "WARNING" for record in caplog.records)
+        assert "100 of the 100 media files" in messages[0]
+        assert "100.0%" in messages[0]
+        assert "check the path" in messages[-1]
+
+    def test_log_missing_media_does_not_round_a_few_files_down_to_zero(self, caplog):
+        """63 of 206582 is 0.03%, which must not be reported as "0.0%"."""
+        log_missing_media(63, 206582, "WhatsApp", "check the path")
+        message = caplog.records[0].getMessage()
+        assert "63 of the 206582 media files" in message
+        assert "(<0.1%)" in message
+        assert "0.0%" not in message
+
+    def test_log_missing_media_omits_hint_when_mostly_found(self, caplog):
+        log_missing_media(1, 100, "WhatsApp", "check the path")
+        assert "check the path" not in " ".join(r.getMessage() for r in caplog.records)
+
+
+class TestValidateMediaFolder:
+    """A wrong --media path should be reported before any work is done."""
+
+    def test_missing_folder_warns(self, tmp_path, caplog):
+        assert validate_media_folder(str(tmp_path / "nope"), "ios", "hint") is False
+        messages = " ".join(r.getMessage() for r in caplog.records)
+        assert "does not exist" in messages
+        assert "hint" in messages
+
+    def test_ios_folder_with_message_media_accepted(self, tmp_path, caplog):
+        (tmp_path / "Message" / "Media").mkdir(parents=True)
+        assert validate_media_folder(str(tmp_path), "ios", "hint") is True
+        assert caplog.records == []
+
+    def test_ios_folder_with_only_profile_accepted(self, tmp_path):
+        """A backup with profile pictures but no message media is still valid."""
+        (tmp_path / "Media" / "Profile").mkdir(parents=True)
+        assert validate_media_folder(str(tmp_path), "ios", "hint") is True
+
+    def test_ios_media_subfolder_rejected(self, tmp_path, caplog):
+        """Pointing --media at Message/Media is the common iOS mistake."""
+        media = tmp_path / "Message" / "Media"
+        media.mkdir(parents=True)
+        assert validate_media_folder(str(media), "ios", "check the path") is False
+        messages = " ".join(r.getMessage() for r in caplog.records)
+        assert "does not look like a WhatsApp media folder" in messages
+        assert "Message/Media or Media/Profile" in messages
+        assert "check the path" in messages
+
+    def test_ios_folder_with_stale_vcards_still_rejected(self, tmp_path):
+        """Debris left by an earlier wrong run must not make the path look valid."""
+        media = tmp_path / "Message" / "Media"
+        (media / "Message" / "vCards").mkdir(parents=True)
+        assert validate_media_folder(str(media), "ios", "hint") is False
+
+    def test_android_folder_accepted(self, tmp_path, caplog):
+        (tmp_path / "Media").mkdir()
+        assert validate_media_folder(str(tmp_path), "android", "hint") is True
+        assert caplog.records == []
+
+    def test_android_folder_rejected(self, tmp_path, caplog):
+        (tmp_path / "Databases").mkdir()
+        assert validate_media_folder(str(tmp_path), "android", "hint") is False
+        assert "expected to find Media inside it" in " ".join(
+            r.getMessage() for r in caplog.records)
+
+    def test_unknown_device_is_not_rejected(self, tmp_path):
+        """Only known layouts are checked; anything else is left alone."""
+        assert validate_media_folder(str(tmp_path), "exported", "hint") is True
