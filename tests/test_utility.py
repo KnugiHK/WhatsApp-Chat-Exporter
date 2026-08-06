@@ -420,3 +420,54 @@ class TestMediaPathHelpers:
     def test_log_missing_media_omits_hint_when_mostly_found(self, caplog):
         log_missing_media(1, 100, "WhatsApp", "check the path")
         assert "check the path" not in " ".join(r.getMessage() for r in caplog.records)
+
+
+class TestValidateMediaFolder:
+    """A wrong --media path should be reported before any work is done."""
+
+    def test_missing_folder_warns(self, tmp_path, caplog):
+        assert validate_media_folder(str(tmp_path / "nope"), "ios", "hint") is False
+        messages = " ".join(r.getMessage() for r in caplog.records)
+        assert "does not exist" in messages
+        assert "hint" in messages
+
+    def test_ios_folder_with_message_media_accepted(self, tmp_path, caplog):
+        (tmp_path / "Message" / "Media").mkdir(parents=True)
+        assert validate_media_folder(str(tmp_path), "ios", "hint") is True
+        assert caplog.records == []
+
+    def test_ios_folder_with_only_profile_accepted(self, tmp_path):
+        """A backup with profile pictures but no message media is still valid."""
+        (tmp_path / "Media" / "Profile").mkdir(parents=True)
+        assert validate_media_folder(str(tmp_path), "ios", "hint") is True
+
+    def test_ios_media_subfolder_rejected(self, tmp_path, caplog):
+        """Pointing --media at Message/Media is the common iOS mistake."""
+        media = tmp_path / "Message" / "Media"
+        media.mkdir(parents=True)
+        assert validate_media_folder(str(media), "ios", "check the path") is False
+        messages = " ".join(r.getMessage() for r in caplog.records)
+        assert "does not look like a WhatsApp media folder" in messages
+        assert "Message/Media or Media/Profile" in messages
+        assert "check the path" in messages
+
+    def test_ios_folder_with_stale_vcards_still_rejected(self, tmp_path):
+        """Debris left by an earlier wrong run must not make the path look valid."""
+        media = tmp_path / "Message" / "Media"
+        (media / "Message" / "vCards").mkdir(parents=True)
+        assert validate_media_folder(str(media), "ios", "hint") is False
+
+    def test_android_folder_accepted(self, tmp_path, caplog):
+        (tmp_path / "Media").mkdir()
+        assert validate_media_folder(str(tmp_path), "android", "hint") is True
+        assert caplog.records == []
+
+    def test_android_folder_rejected(self, tmp_path, caplog):
+        (tmp_path / "Databases").mkdir()
+        assert validate_media_folder(str(tmp_path), "android", "hint") is False
+        assert "expected to find Media inside it" in " ".join(
+            r.getMessage() for r in caplog.records)
+
+    def test_unknown_device_is_not_rejected(self, tmp_path):
+        """Only known layouts are checked; anything else is left alone."""
+        assert validate_media_folder(str(tmp_path), "exported", "hint") is True

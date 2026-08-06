@@ -922,6 +922,48 @@ def to_media_relative_path(path: str, media_folder: str) -> str:
     return os.path.relpath(path, media_folder).replace(os.sep, "/")
 
 
+# Subdirectories that identify a directory as a WhatsApp media folder. Each entry
+# is a sequence of path components; a folder is accepted if any of them is present.
+MEDIA_FOLDER_MARKERS = {
+    "android": (("Media",),),
+    "ios": (("Message", "Media"), ("Media", "Profile")),
+}
+
+
+def validate_media_folder(media_folder: str, device: str, hint: str) -> bool:
+    """
+    Warn early when --media does not point at a WhatsApp media folder.
+
+    A wrong --media path is otherwise only noticeable once the output is opened,
+    and because the vCard and thumbnail directories are created with parents=True,
+    it also causes directories to be fabricated at the wrong location.
+
+    Args:
+        media_folder (str): The value of the --media option.
+        device (str): The Device the export is for.
+        hint (str): Platform specific advice on how to fix the --media path.
+
+    Returns:
+        bool: True if the folder looks like a WhatsApp media folder.
+    """
+    absolute = os.path.abspath(media_folder)
+    if not os.path.isdir(media_folder):
+        logging.warning(f"The media folder does not exist: {absolute}")
+        logging.warning(hint)
+        return False
+
+    markers = MEDIA_FOLDER_MARKERS.get(device, ())
+    if markers and not any(os.path.isdir(os.path.join(media_folder, *marker)) for marker in markers):
+        expected = " or ".join("/".join(marker) for marker in markers)
+        logging.warning(
+            f"{absolute} does not look like a WhatsApp media folder: expected to find "
+            f"{expected} inside it. Media will most likely be missing from the output."
+        )
+        logging.warning(hint)
+        return False
+    return True
+
+
 def log_missing_media(missing: int, looked_up: int, media_folder: str, hint: str) -> None:
     """
     Warn the user when media files referenced by the database are not on disk.

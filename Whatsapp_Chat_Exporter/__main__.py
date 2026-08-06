@@ -17,7 +17,7 @@ from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_t
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
 from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
 from Whatsapp_Chat_Exporter.utility import get_transcription_selection, check_jid_map
-from Whatsapp_Chat_Exporter.utility import media_folder_name
+from Whatsapp_Chat_Exporter.utility import media_folder_name, validate_media_folder, Device
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -553,6 +553,14 @@ def process_contacts(args, data: ChatCollection) -> None:
     """Process contacts from the database."""
     contact_db = args.wa if args.wa else "wa.db" if args.android else "ContactsV2.sqlite"
 
+    if not os.path.isfile(contact_db):
+        logging.warning(
+            f"Contact database not found, contact names may be missing or incomplete: "
+            f"{os.path.abspath(contact_db)}"
+        )
+        if os.path.isdir(contact_db):
+            logging.warning("--wa takes the path to the database file itself, not a directory.")
+
     if os.path.isfile(contact_db):
         with sqlite3.connect(contact_db) as db:
             db.row_factory = sqlite3.Row
@@ -906,6 +914,14 @@ def main():
             )
             logging.info(f"Incremental merge completed successfully.")
         else:
+            # Check the media path before any work is done, so that a wrong path is
+            # reported in the first second rather than after the export has finished
+            validate_media_folder(
+                args.media,
+                Device.ANDROID if args.android else Device.IOS,
+                android_handler.MEDIA_PATH_HINT if args.android else ios_handler.MEDIA_PATH_HINT
+            )
+
             # Process contacts
             process_contacts(args, data)
 
