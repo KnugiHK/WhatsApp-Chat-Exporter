@@ -872,6 +872,87 @@ def safe_name(text: Union[str, bytes]) -> str:
     return "-".join(''.join(safe_chars).split())
 
 
+def media_folder_name(media_folder: str) -> str:
+    """
+    Return the name the media folder has inside the output directory.
+
+    The media folder is copied (or moved) into the output directory under its own
+    basename, so this is the name that output-relative links must be built on.
+
+    Args:
+        media_folder (str): The value of the --media option.
+
+    Returns:
+        str: The basename of the media folder.
+    """
+    return os.path.basename(os.path.normpath(media_folder))
+
+
+def media_base_href(media_folder: str) -> str:
+    """
+    Return the <base href> value for chats belonging to a media folder.
+
+    Args:
+        media_folder (str): The value of the --media option.
+
+    Returns:
+        str: An output-relative directory prefix, or "" when the media folder
+            resolves to the output directory itself.
+    """
+    name = media_folder_name(media_folder)
+    return f"{name}/" if name not in ("", ".", "..", os.sep) else ""
+
+
+def to_media_relative_path(path: str, media_folder: str) -> str:
+    """
+    Convert a filesystem path inside the media folder to a media-relative one.
+
+    Paths written into the HTML output are resolved by the browser against
+    <base href>, and paths written into the JSON output are documented as being
+    relative to media_base. Both therefore have to be relative to the media
+    folder, whether the user passed an absolute or a relative --media path.
+
+    Args:
+        path (str): A path to a file inside the media folder.
+        media_folder (str): The value of the --media option.
+
+    Returns:
+        str: The path relative to the media folder, using forward slashes.
+    """
+    return os.path.relpath(path, media_folder).replace(os.sep, "/")
+
+
+def log_missing_media(missing: int, looked_up: int, media_folder: str, hint: str) -> None:
+    """
+    Warn the user when media files referenced by the database are not on disk.
+
+    Without this, a completely wrong --media path is indistinguishable from a
+    successful run until the generated HTML is opened.
+
+    Args:
+        missing (int): Number of media files that could not be found on disk.
+        looked_up (int): Number of media files whose paths were checked. This is
+            lower than the reported media count, which also includes rows that do
+            not reference a local file at all.
+        media_folder (str): The value of the --media option.
+        hint (str): Platform specific advice on how to fix the --media path.
+    """
+    if missing == 0:
+        return
+    percentage = missing / looked_up * 100 if looked_up else 0
+    # A handful of missing files out of hundreds of thousands must not be rounded
+    # down to "0.0%", which would read as if nothing were missing at all.
+    shown = f"{percentage:.1f}%" if percentage >= 0.1 else "<0.1%"
+    logging.warning(
+        f"{missing} of the {looked_up} media files referenced by the database "
+        f'({shown}) were not found on disk and will be shown as '
+        f'"The media is missing" in the output.'
+    )
+    logging.warning(f"Media was looked up under: {os.path.abspath(media_folder)}")
+    if percentage > 50:
+        logging.warning(hint)
+
+
 def get_from_string(msg: Dict, chat_id: str) -> str:
     """Return the number or name for the sender"""
     if msg["from_me"]:

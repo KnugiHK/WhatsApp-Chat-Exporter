@@ -12,8 +12,19 @@ from markupsafe import escape as htmle
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, get_chat_condition, Device
 from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name
+from Whatsapp_Chat_Exporter.utility import log_missing_media, media_base_href, to_media_relative_path
 from Whatsapp_Chat_Exporter.poll import decode_poll_from_receipt_blob
 from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
+
+
+MEDIA_PATH_HINT = (
+    "For iOS/iPadOS, --media must point at the extracted app group directory that "
+    "contains the \"Message\" and \"Media\" folders (usually named "
+    "\"AppDomainGroup-group.net.whatsapp.WhatsApp.shared\"), not at the media "
+    "folder inside it. The \"Message/\" prefix is added by this tool."
+)
+
+
 
 
 def contacts(db, data):
@@ -63,13 +74,13 @@ def process_contact_avatars(current_chat, media_folder, contact_id):
     avatars = glob(f"{path}*")
 
     if 0 < len(avatars) <= 1:
-        current_chat.their_avatar = avatars[0]
+        current_chat.their_avatar = to_media_relative_path(avatars[0], media_folder)
     else:
         for avatar in avatars:
             if avatar.endswith(".thumb") and current_chat.their_avatar_thumb is None:
-                current_chat.their_avatar_thumb = avatar
+                current_chat.their_avatar_thumb = to_media_relative_path(avatar, media_folder)
             elif avatar.endswith(".jpg") and current_chat.their_avatar is None:
-                current_chat.their_avatar = avatar
+                current_chat.their_avatar = to_media_relative_path(avatar, media_folder)
 
 
 def get_contact_name(content):
@@ -150,7 +161,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                     is_phone = contact_name.replace("+", "").replace(" ", "").isdigit() if contact_name else True
                     if not is_phone or current_chat.name is None:
                         current_chat.name = contact_name
-                current_chat.my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
+                current_chat.my_avatar = "Media/Profile/Photo.jpg"
+                current_chat.media_base = media_base_href(media_folder)
 
             # Process avatar images
             process_contact_avatars(current_chat, media_folder, contact_id)
@@ -234,7 +246,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
 
             # Ensure chat exists
             if contact_id not in data:
-                current_chat = data.add_chat(contact_id, ChatStore(Device.IOS))
+                current_chat = data.add_chat(contact_id, ChatStore(Device.IOS, media=media_folder))
                 process_contact_avatars(current_chat, media_folder, contact_id)
             else:
                 current_chat = data.get_chat(contact_id)
@@ -443,25 +455,35 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
 
     # Process each media item
     mime = MimeTypes()
+    missing = 0
+    looked_up = 0
     with tqdm(total=total_row_number, desc="Processing media", unit="media", leave=False) as pbar:
         while (content := c.fetchone()) is not None:
-            process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files,
-                               embed_exif, rename_media, timezone_offset)
+            looked_up += 1
+            if not process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files,
+                                      embed_exif, rename_media, timezone_offset):
+                missing += 1
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     logging.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
+    log_missing_media(missing, looked_up, media_folder, MEDIA_PATH_HINT)
 
 
 def process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files=False,
                        embed_exif=False, rename_media=False, timezone_offset=0):
-    """Process a single media item."""
+    """
+    Process a single media item.
+
+    Returns:
+        bool: True if the media file was found on disk, False otherwise.
+    """
     file_path = f"{media_folder}/Message/{content['ZMEDIALOCALPATH']}"
     current_chat = data.get_chat(content["ZCONTACTJID"])
     message = current_chat.get_message(content["ZMESSAGE"])
     message.media = True
 
     if current_chat.media_base == "":
-        current_chat.media_base = media_folder + "/"
+        current_chat.media_base = media_base_href(media_folder)
 
     if os.path.isfile(file_path):
         # Set MIME type
@@ -506,16 +528,21 @@ def process_media_item(content, data, media_folder, mime, separate_media, fix_do
             )
         else:
             final_path = file_path
-        message.data = os.path.join(*final_path.split(os.sep)[1:])
+        message.data = to_media_relative_path(final_path, media_folder)
+        found = True
+
     else:
         # Handle missing media
         message.data = "The media is missing"
         message.mime = "media"
         message.meta = True
+        found = False
 
     # Add caption if available
     if content["ZTITLE"] is not None:
         message.caption = content["ZTITLE"]
+
+    return found
 
 
 def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
@@ -562,13 +589,13 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     # Process each vCard
     with tqdm(total=total_row_number, desc="Processing vCards", unit="vcard", leave=False) as pbar:
         for content in contents:
-            process_vcard_item(content, path, data)
+            process_vcard_item(content, path, data, media_folder)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     logging.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
 
 
-def process_vcard_item(content, path, data):
+def process_vcard_item(content, path, data, media_folder):
     """Process a single vCard item."""
     file_paths = []
     vcard_names = content["ZVCARDNAME"].split("_$!<Name-Separator>!$_")
@@ -583,7 +610,7 @@ def process_vcard_item(content, path, data):
         file_name = "".join(x for x in name if x.isalnum())
         file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
         file_path = os.path.join(path, f"{file_name}.vcf")
-        file_paths.append(file_path)
+        file_paths.append(to_media_relative_path(file_path, media_folder))
 
         if not os.path.isfile(file_path):
             with open(file_path, "w", encoding="utf-8") as f:

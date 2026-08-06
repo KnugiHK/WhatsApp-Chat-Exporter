@@ -17,6 +17,7 @@ from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_t
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
 from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
 from Whatsapp_Chat_Exporter.utility import get_transcription_selection, check_jid_map
+from Whatsapp_Chat_Exporter.utility import media_folder_name
 from argparse import ArgumentParser, SUPPRESS
 from datetime import datetime
 from getpass import getpass
@@ -81,11 +82,16 @@ def setup_argument_parser() -> ArgumentParser:
     input_group = parser.add_argument_group('Input Files')
     input_group.add_argument(
         "-w", "--wa", dest="wa", default=None,
-        help="Path to contact database (default: wa.db/ContactsV2.sqlite)"
+        help="Path to the contact database file, not a directory "
+             "(default: wa.db/ContactsV2.sqlite)"
     )
     input_group.add_argument(
         "-m", "--media", dest="media", default=None,
-        help="Path to WhatsApp media folder (default: WhatsApp)"
+        help="Path to the folder that CONTAINS the WhatsApp media folder. For Android "
+             "this is the WhatsApp directory holding Media/ (default: WhatsApp); for "
+             "iOS/iPadOS this is the extracted app group directory holding Message/ and "
+             "Media/ (default: AppDomainGroup-group.net.whatsapp.WhatsApp.shared). Do "
+             "not point this at Message/Media itself"
     )
     input_group.add_argument(
         "-b", "--backup", dest="backup", default=None,
@@ -625,7 +631,9 @@ def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
 def handle_media_directory(args) -> None:
     """Handle media directory copying or moving."""
     if os.path.isdir(args.media):
-        media_path = os.path.join(args.output, args.media)
+        # The basename is used so that an absolute --media path lands inside the
+        # output directory instead of resolving back to the source directory.
+        media_path = os.path.join(args.output, media_folder_name(args.media))
 
         if os.path.isdir(media_path):
             logging.info(
