@@ -506,7 +506,7 @@ def process_media_item(content, data, media_folder, mime, separate_media, fix_do
             )
         else:
             final_path = file_path
-        message.data = os.path.join(*final_path.split(os.sep)[1:])
+        message.data = os.path.join(*Path(final_path).parts[1:])
     else:
         # Handle missing media
         message.data = "The media is missing"
