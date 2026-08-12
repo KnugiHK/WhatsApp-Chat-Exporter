@@ -206,12 +206,17 @@ def normalize_number(number: str, country_code: str):
     # Clean the number
     number = ''.join(c for c in number if c.isdigit() or c == "+")
 
+    # Clean the country code
+    if country_code:
+        country_code = ''.join(c for c in country_code if c.isdigit())
+        country_code = country_code.lstrip('0')
+
     # A number that starts with a + or 00 means it already have a country code
     for starting_char in ('+', "00"):
         if number.startswith(starting_char):
-            return number[len(starting_char):]
+            return number[len(starting_char):].lstrip("+0")
 
     # leading zero should be removed
     if number.startswith('0'):
         number = number[1:]
-    return country_code + number  # fall back
+    return (country_code or "") + number  # fall back

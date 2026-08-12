@@ -51,7 +51,13 @@ def contacts(db, data, enrich_from_vcards):
     
     with tqdm(total=total_row_number, desc="Processing contacts", unit="contact", leave=False) as pbar:
         while (row := _fetch_row_safely(c)) is not None:
-            current_chat = data.add_chat(row["jid"], ChatStore(Device.ANDROID, row["display_name"]))
+            jid = row["jid"]
+            if jid in data:
+                current_chat = data.get_chat(jid)
+                if row["display_name"] is not None:
+                    current_chat.name = row["display_name"]
+            else:
+                current_chat = data.add_chat(jid, ChatStore(Device.ANDROID, row["display_name"]))
             if row["status"] is not None:
                 current_chat.status = row["status"]
             pbar.update(1)
@@ -943,17 +949,19 @@ def _process_vcard_row(row, path, data):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(row["vcard"])
 
-    message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
-    message.data = "This media include the following vCard file(s):<br>" \
-        f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
-    message.mime = "text/x-vcard"
-    message.meta = True
-    message.safe = True
-
+    chat = data.get_chat(row["key_remote_jid"])
+    if chat is not None:
+        message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
+        message.data = "This media include the following vCard file(s):<br>" \
+            f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
+        message.mime = "text/x-vcard"
+        message.meta = True
+        message.safe = True
 
 def calls(db, data, timezone_offset, filter_chat):
     """Process call logs from WhatsApp database."""
     c = db.cursor()
+    jid_map_exists = data.get_system("jid_map_exists")
 
     # Check if there are any calls that match the filter
     # The order matters here, modern query should be attempted first,
@@ -1185,6 +1193,8 @@ def create_html(
 
     w3css = get_status_location(output_folder, offline_static)
 
+    generated_chats = []
+
     with tqdm(total=total_row_number, desc="Generating HTML", unit="file", leave=False) as pbar:
         for contact in data:
             current_chat = data.get_chat(contact)
@@ -1218,9 +1228,170 @@ def create_html(
                     headline
                 )
 
+            # Let's count media and size
+            media_count = 0
+            media_size = 0
+            for message in current_chat.values():
+                if message.media:
+                    media_count += 1
+                    if message.data and isinstance(message.data, str) and os.path.isfile(message.data):
+                        try:
+                            media_size += os.path.getsize(message.data)
+                        except Exception:
+                            pass
+
+            generated_chats.append({
+                "file": f"{safe_file_name}.html",
+                "name": name,
+                "jid": contact,
+                "count": len(current_chat),
+                "media_count": media_count,
+                "media_size": media_size,
+                "media_size_readable": bytes_to_readable(media_size) if media_size > 0 else "0 B"
+            })
+
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     logging.info(f"Generated {total_row_number} chats in {convert_time_unit(total_time)}")
+    _generate_index_html(output_folder, generated_chats)
+
+
+def _generate_index_html(output_folder, generated_chats):
+    """Generate index.html file that lists all exported chats."""
+    import json
+    
+    # Sort chats by name alphabetically
+    generated_chats.sort(key=lambda x: (x["name"] or "").lower())
+    
+    chats_json = json.dumps(generated_chats)
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Exported Chats Index</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {{
+            font-family: 'Inter', sans-serif;
+        }}
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="mb-10 text-center md:text-left flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                    WhatsApp Chat Exporter
+                </h1>
+                <p class="text-slate-400 mt-1">Index of exported chats</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-full text-sm font-semibold text-emerald-400">
+                <span id="chat-count">{len(generated_chats)}</span> Exported Chats
+            </div>
+        </header>
+
+        <div class="mb-8">
+            <div class="relative max-w-md">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" id="search" placeholder="Search by name or number..." 
+                       class="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                       oninput="filterChats()">
+            </div>
+        </div>
+
+        <main>
+            <div id="chats-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Chat cards will be inserted here dynamically -->
+            </div>
+            <div id="no-results" class="hidden text-center py-20 text-slate-500">
+                <svg class="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-xl font-medium">No chats found</p>
+                <p class="text-sm mt-1">Try changing your search filters</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const chats = {chats_json};
+
+        function renderChats(filteredChats) {{
+            const grid = document.getElementById('chats-grid');
+            const noResults = document.getElementById('no-results');
+            const countBadge = document.getElementById('chat-count');
+            
+            grid.innerHTML = '';
+            countBadge.textContent = filteredChats.length;
+
+            if (filteredChats.length === 0) {{
+                noResults.classList.remove('hidden');
+                return;
+            }}
+            noResults.classList.add('hidden');
+
+            filteredChats.forEach(chat => {{
+                const cleanJid = chat.jid.split('@')[0];
+                const hasName = chat.name && chat.name !== cleanJid;
+                
+                const card = document.createElement('a');
+                card.href = chat.file;
+                card.className = "block bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-950/20 transform hover:-translate-y-1 transition-all duration-300 group";
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="bg-slate-800/80 p-3 rounded-xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </div>
+                        <div class="text-right">
+                            <span class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full font-semibold border border-slate-700/50 block">
+                                ${{chat.count}} messages
+                            </span>
+                            <span class="text-[10px] text-slate-400 mt-1 block">
+                                ${{chat.media_count > 0 ? chat.media_count + ' media (' + chat.media_size_readable + ')' : 'No media'}}
+                            </span>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-100 group-hover:text-emerald-400 transition-colors duration-200 truncate">
+                        ${{chat.name || 'Unnamed Chat'}}
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1 truncate">
+                        ${{hasName ? cleanJid : chat.jid}}
+                    </p>
+                `;
+                grid.appendChild(card);
+            }});
+        }}
+
+        function filterChats() {{
+            const query = document.getElementById('search').value.toLowerCase().trim();
+            const filtered = chats.filter(chat => {{
+                const nameMatch = (chat.name || '').toLowerCase().includes(query);
+                const jidMatch = (chat.jid || '').toLowerCase().includes(query);
+                return nameMatch || jidMatch;
+            }});
+            renderChats(filtered);
+        }}
+
+        // Initial render
+        renderChats(chats);
+    </script>
+</body>
+</html>
+"""
+    index_path = os.path.join(output_folder, "index.html")
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    logging.info(f"Generated index.html inside {output_folder}")
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):
     """Generate a single HTML file for a chat."""

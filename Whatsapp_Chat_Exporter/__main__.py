@@ -196,6 +196,10 @@ def setup_argument_parser() -> ArgumentParser:
         "--create-separated-media", dest="separate_media", default=False, action='store_true',
         help="Create a copy of the media seperated per chat in <MEDIA>/separated/ directory"
     )
+    media_group.add_argument(
+        "--only-separated-media", dest="only_separated_media", default=False, action='store_true',
+        help="Only copy/move referenced media (separated/ and thumbnails/) to the output directory instead of the whole media folder"
+    )
 
     # Media Timestamp Options
     timestamp_group = parser.add_argument_group('Media Timestamp Options')
@@ -631,18 +635,35 @@ def handle_media_directory(args) -> None:
             logging.info(
                 f"WhatsApp directory already exists in output directory. Skipping...")
         else:
-            if args.move_media:
-                try:
-                    logging.info(f"Moving media directory...", extra={"clear": True})
-                    shutil.move(args.media, f"{args.output}/")
-                    logging.info(f"Media directory has been moved to the output directory")
-                except PermissionError:
-                    logging.warning("Cannot remove original WhatsApp directory. "
-                                   "Perhaps the directory is opened?")
+            if args.only_separated_media:
+                source_separated = os.path.join(args.media, "separated")
+                source_thumbnails = os.path.join(args.media, "thumbnails")
+                
+                if os.path.isdir(source_separated) or os.path.isdir(source_thumbnails):
+                    logging.info("Copying only separated media and thumbnails...", extra={"clear": True})
+                    dest_media_dir = os.path.join(args.output, args.media)
+                    os.makedirs(dest_media_dir, exist_ok=True)
+                    
+                    if os.path.isdir(source_separated):
+                        shutil.copytree(source_separated, os.path.join(dest_media_dir, "separated"))
+                    if os.path.isdir(source_thumbnails):
+                        shutil.copytree(source_thumbnails, os.path.join(dest_media_dir, "thumbnails"))
+                    logging.info("Only referenced media has been copied to the output directory")
+                else:
+                    logging.warning("No separated media or thumbnails found to copy.")
             else:
-                logging.info(f"Copying media directory...", extra={"clear": True})
-                shutil.copytree(args.media, media_path)
-                logging.info(f"Media directory has been copied to the output directory")
+                if args.move_media:
+                    try:
+                        logging.info(f"Moving media directory...", extra={"clear": True})
+                        shutil.move(args.media, f"{args.output}/")
+                        logging.info(f"Media directory has been moved to the output directory")
+                    except PermissionError:
+                        logging.warning("Cannot remove original WhatsApp directory. "
+                                       "Perhaps the directory is opened?")
+                else:
+                    logging.info(f"Copying media directory...", extra={"clear": True})
+                    shutil.copytree(args.media, media_path)
+                    logging.info(f"Media directory has been copied to the output directory")
 
 
 def create_output_files(args, data: ChatCollection) -> None:
