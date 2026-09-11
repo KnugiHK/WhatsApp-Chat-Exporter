@@ -522,13 +522,29 @@ def _get_reactions(db, data):
 
         logging.info("Processing reactions...", extra={"clear": True})
 
-        c.execute("""
+        # Resolve LIDs to phone number JIDs the same way messages are keyed (see get_jid_map_join),
+        # so reactors match message senders and reactions in LID-keyed chats are not dropped.
+        if data.get_system("jid_map_exists"):
+            sender_selection = "COALESCE(sender_pn.raw_string, jid.raw_string)"
+            chat_selection = "COALESCE(chat_pn.raw_string, chat_jid.raw_string)"
+            jid_map_join = """LEFT JOIN jid_map AS sender_map
+                    ON message_add_on.sender_jid_row_id = sender_map.lid_row_id
+                LEFT JOIN jid sender_pn
+                    ON sender_map.jid_row_id = sender_pn._id
+                LEFT JOIN jid_map AS chat_map
+                    ON chat.jid_row_id = chat_map.lid_row_id
+                LEFT JOIN jid chat_pn
+                    ON chat_map.jid_row_id = chat_pn._id"""
+        else:
+            sender_selection, chat_selection, jid_map_join = "jid.raw_string", "chat_jid.raw_string", ""
+
+        c.execute(f"""
             SELECT
                 message_add_on.parent_message_row_id,
                 message_add_on_reaction.reaction,
                 message_add_on.from_me,
-                jid.raw_string as sender_jid_raw,
-                chat_jid.raw_string as chat_jid_raw,
+                {sender_selection} as sender_jid_raw,
+                {chat_selection} as chat_jid_raw,
                 message_add_on_reaction.sender_timestamp
             FROM message_add_on
                 INNER JOIN message_add_on_reaction 
@@ -539,6 +555,7 @@ def _get_reactions(db, data):
                     ON message_add_on.chat_row_id = chat._id
                 LEFT JOIN jid chat_jid 
                     ON chat.jid_row_id = chat_jid._id
+                {jid_map_join}
         """)
     except sqlite3.OperationalError:
         logging.warning(f"Could not fetch reactions (schema might be too old or incompatible)")
