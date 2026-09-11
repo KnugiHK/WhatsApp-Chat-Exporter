@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import logging
+import re
 import sqlite3
 import os
 import shutil
@@ -94,6 +95,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             table_message = True
         except Exception as e:
             raise e
+
+    data.set_system("lid_map", _get_lid_map(db) if data.get_system("jid_map_exists") else {})
 
     with tqdm(total=total_row_number, desc="Processing messages", unit="msg", leave=False) as pbar:
         while (content := _fetch_row_safely(content_cursor)) is not None:
@@ -392,6 +395,11 @@ def _process_single_message(data, content, table_message, timezone_offset):
         # Real message
         _process_regular_message(message, content, table_message)
 
+    # Show @mentions of LIDs the same way as message senders
+    message.data = _resolve_mentions(message.data, data)
+    message.caption = _resolve_mentions(message.caption, data)
+    message.quoted_data = _resolve_mentions(message.quoted_data, data)
+
     current_chat.add_message(content["_id"], message)
 
 
@@ -505,6 +513,34 @@ def _format_message_text(text):
     if "\n" in text:
         text = text.replace("\n", " <br>")
     return text
+
+
+def _get_lid_map(db):
+    """Map LID users to their phone number JIDs using the jid_map table."""
+    c = db.cursor()
+    c.execute("""SELECT lid.user AS lid_user, pn.raw_string AS pn_jid
+                 FROM jid_map
+                    INNER JOIN jid lid
+                        ON jid_map.lid_row_id = lid._id
+                    INNER JOIN jid pn
+                        ON jid_map.jid_row_id = pn._id""")
+    return {row["lid_user"]: row["pn_jid"] for row in c.fetchall()}
+
+
+def _resolve_mentions(text, data):
+    """Replace @<LID> mentions in text with the contact name or phone number, as used for message senders."""
+    lid_map = data.get_system("lid_map")
+    if not isinstance(text, str) or not lid_map or "@" not in text:
+        return text
+
+    def replace(match):
+        pn_jid = lid_map.get(match.group(1))
+        if pn_jid is None:
+            return match.group(0)
+        name = data.get_chat(pn_jid).name if pn_jid in data else None
+        return "@" + (name or pn_jid.split("@")[0])
+
+    return re.sub(r"@(\d+)", replace, text)
 
 
 def _get_reactions(db, data):
