@@ -823,6 +823,8 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
         message.data = "The media is missing"
         message.mime = "media"
         message.meta = True
+    # "media" above marks a missing file for rendering; keep the recorded type for JSON consumers
+    message.original_mime = content["mime_type"]
 
     # Handle thumbnail
     if content["thumbnail"] is not None:
