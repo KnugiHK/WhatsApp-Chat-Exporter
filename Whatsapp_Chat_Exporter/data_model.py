@@ -400,6 +400,7 @@ class Message:
         self.quoted_data = None
         self.caption = None
         self.thumb = None  # Android specific
+        self.original_mime = None  # Android specific: MIME type recorded by WhatsApp, kept when the file is missing
         self.sticker = False
         self.reactions = {}
         self.poll = None
