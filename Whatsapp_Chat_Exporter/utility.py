@@ -909,7 +909,7 @@ def get_reply_id(data: dict, reply_key: int) -> int | None:
 
 def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
     """Convert the data to the Telegram export format"""
-    timing = Timing(timezone_offset or CURRENT_TZ_OFFSET)
+    timing = Timing(timezone_offset or None)
     try:
         chat_id = int(''.join([c for c in jik if c.isdigit()]))
     except ValueError:

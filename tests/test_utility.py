@@ -374,3 +374,33 @@ def test_current_tz_offset(tz, expected):
         check=True,
     )
     assert float(result.stdout.strip()) == expected
+
+
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="TZ environment variable requires time.tzset")
+@pytest.mark.parametrize("tz, timezone_offset, expected", [
+    ("<-03>3", 0, "2022-12-31T22:30:00"),
+    ("<+07>-7", 0, "2023-01-01T08:30:00"),
+    ("<-03>3", 7, "2023-01-01T08:30:00"),
+])
+def test_telegram_json_format_date(monkeypatch, tz, timezone_offset, expected):
+    monkeypatch.setenv("TZ", tz)
+    time.tzset()
+    data = {
+        "name": "Test",
+        "messages": {
+            "1": {
+                "timestamp": 1672536600,
+                "from_me": True,
+                "sender": None,
+                "key_id": "A",
+                "reply": None,
+                "data": "Hello",
+            }
+        },
+    }
+    try:
+        result = telegram_json_format("1234567890@s.whatsapp.net", data, timezone_offset)
+    finally:
+        monkeypatch.undo()
+        time.tzset()
+    assert result["messages"][0]["date"] == expected
