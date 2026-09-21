@@ -228,7 +228,7 @@ Media Handling:
 
 Filtering Options:
   --time-offset {-12 to 14}
-                        Offset in hours (-12 to 14) for time displayed in the output
+                        Offset in hours (-12 to 14) for time displayed in the output. Defaults to the local time zone
   --date DATE           The date filter in specific format (inclusive)
   --date-format FORMAT  The date format for the date filter
   --include [phone number ...]

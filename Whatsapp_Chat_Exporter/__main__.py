@@ -212,7 +212,7 @@ def setup_argument_parser() -> ArgumentParser:
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument(
         "--time-offset", dest="timezone_offset", default=0, type=int, choices=range(-12, 15),
-        metavar="{-12 to 14}", help="Offset in hours (-12 to 14) for time displayed in the output"
+        metavar="{-12 to 14}", help="Offset in hours (-12 to 14) for time displayed in the output. Defaults to the local time zone"
     )
     filter_group.add_argument(
         "--date", dest="filter_date", default=None, metavar="DATE",
