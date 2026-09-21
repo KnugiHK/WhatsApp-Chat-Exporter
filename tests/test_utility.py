@@ -1,6 +1,10 @@
+import os
 import pytest
 import random
 import string
+import subprocess
+import sys
+import time
 from unittest.mock import patch, mock_open, MagicMock
 from Whatsapp_Chat_Exporter.utility import *
 
@@ -350,3 +354,23 @@ class TestGetChatCondition:
         
         result = get_chat_condition(["user-name"], True, ["username"])
         assert result == "AND ( username LIKE '%user-name%')"
+
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="TZ environment variable requires time.tzset")
+@pytest.mark.parametrize("tz, expected", [
+    ("<-03>3", -3.0),
+    ("<+07>-7", 7.0),
+    ("UTC", 0.0),
+])
+def test_current_tz_offset(tz, expected):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET; print(CURRENT_TZ_OFFSET)",
+        ],
+        env={**os.environ, "TZ": tz},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert float(result.stdout.strip()) == expected
