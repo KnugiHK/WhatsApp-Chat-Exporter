@@ -15,7 +15,14 @@ from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, JidType, Device, 
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
 from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, get_jid_map_selection
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable, determine_metadata
+from Whatsapp_Chat_Exporter.utility import log_missing_media
 from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
+
+
+MEDIA_PATH_HINT = (
+    "For Android, --media must point at the WhatsApp directory that contains the "
+    "\"Media\" folder (usually named \"WhatsApp\")."
+)
 
 
 
@@ -611,13 +618,18 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     # Ensure thumbnails directory exists
     Path(f"{media_folder}/thumbnails").mkdir(parents=True, exist_ok=True)
 
+    missing = 0
+    looked_up = 0
     with tqdm(total=total_row_number, desc="Processing media", unit="media", leave=False) as pbar:
         while (content := _fetch_row_safely(content_cursor)) is not None:
-            _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files,
-                              embed_exif, rename_media, timezone_offset)
+            looked_up += 1
+            if not _process_single_media(data, content, media_folder, mime, separate_media,
+                                         fix_dot_files, embed_exif, rename_media, timezone_offset):
+                missing += 1
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
     logging.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
+    log_missing_media(missing, looked_up, media_folder, MEDIA_PATH_HINT)
 
 
 # Helper functions for media processing
@@ -765,7 +777,12 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
 
 def _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files=False, 
                           embed_exif=False, rename_media=False, timezone_offset=0):
-    """Process a single media file."""
+    """
+    Process a single media file.
+
+    Returns:
+        bool: True if the media file was found on disk, False otherwise.
+    """
     file_path = f"{media_folder}/{content['file_path']}"
     current_chat = data.get_chat(content["key_remote_jid"])
     message = current_chat.get_message(content["message_row_id"])
@@ -819,10 +836,12 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
         else:
             final_path = file_path
         message.data = final_path
+        found = True
     else:
         message.data = "The media is missing"
         message.mime = "media"
         message.meta = True
+        found = False
 
     # Handle thumbnail
     if content["thumbnail"] is not None:
@@ -831,6 +850,8 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
             with open(thumb_path, "wb") as f:
                 f.write(content["thumbnail"])
         message.thumb = thumb_path
+
+    return found
 
 
 def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
