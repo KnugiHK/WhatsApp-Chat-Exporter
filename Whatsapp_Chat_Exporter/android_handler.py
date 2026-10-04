@@ -858,39 +858,28 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     logging.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
 
 def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
-    """Execute vCard query for modern WhatsApp database schema."""
+    """Execute vCard query for WhatsApp databases using messages_vcards + messages."""
 
-    # Build the filter conditions
     date_filter = f'AND messages.timestamp {filter_date}' if filter_date is not None else ''
-    empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "messages.needs_push")
+    empty_filter = get_cond_for_empty(filter_empty, "messages.key_remote_jid", "messages.needs_push")
     include_filter = get_chat_condition(
-        filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid", "android")
+        filter_chat[0], True, ["messages.key_remote_jid", "messages_vcards.sender_jid"], "jid_global", "android")
     exclude_filter = get_chat_condition(
-        filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid", "android")
+        filter_chat[1], False, ["messages.key_remote_jid", "messages_vcards.sender_jid"], "jid_global", "android")
 
-    query = f"""SELECT message_row_id,
-                    COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
-                    vcard,
+    query = f"""SELECT messages_vcards.message_row_id,
+                    messages.key_remote_jid,
+                    messages_vcards.vcard,
                     messages.media_name,
-                    COALESCE(lid_group.raw_string, jid_group.raw_string) as group_sender_jid
+                    messages_vcards.sender_jid as group_sender_jid
                 FROM messages_vcards
                     INNER JOIN messages
                         ON messages_vcards.message_row_id = messages._id
-                    INNER JOIN jid
-                        ON messages.key_remote_jid = jid.raw_string
+                    INNER JOIN jid jid_global
+                        ON messages.key_remote_jid = jid_global.raw_string
                     LEFT JOIN chat
-                        ON chat.jid_row_id = jid._id
-                    LEFT JOIN jid jid_group
-                        ON jid_group._id = message.sender_jid_row_id
-                    LEFT JOIN jid_map as jid_map_global
-                        ON chat.jid_row_id = jid_map_global.lid_row_id
-                    LEFT JOIN jid lid_global
-                        ON jid_map_global.jid_row_id = lid_global._id
-                    LEFT JOIN jid_map as jid_map_group
-                        ON message.sender_jid_row_id = jid_map_group.lid_row_id
-                    LEFT JOIN jid lid_group
-                        ON jid_map_group.jid_row_id = lid_group._id
-             WHERE 1=1
+                        ON chat.jid_row_id = jid_global._id
+             WHERE messages.key_remote_jid <> '-1'
                 {empty_filter}
                 {date_filter}
                 {include_filter}
@@ -945,7 +934,13 @@ def _process_vcard_row(row, path, data):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(row["vcard"])
 
-    message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
+    current_chat = data.get_chat(row["key_remote_jid"])
+    if current_chat is None:
+        return
+    message = current_chat.get_message(row["message_row_id"])
+    if message is None:
+        return
+
     message.data = (
         Markup("This media include the following vCard file(s):<br>")
         + Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
