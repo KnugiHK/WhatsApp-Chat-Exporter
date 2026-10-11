@@ -451,9 +451,6 @@ def _process_metadata_message(message, content, data, table_message):
 
     message.data = determine_metadata(content, name or fallback)
 
-    if isinstance(message.data, str) and "<br>" in message.data:
-        message.safe = True
-
     if message.data is None:
         if content["video_call"] is not None:  # Missed call
             message.meta = True

@@ -8,7 +8,7 @@ import re
 import math
 import shutil
 from bleach import clean as sanitize
-from markupsafe import Markup
+from markupsafe import Markup, escape
 from datetime import datetime, timedelta
 from enum import IntEnum
 from tqdm import tqdm
@@ -635,7 +635,7 @@ class DbType(StrEnum):
     CONTACT = "contact"
 
 
-def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optional[str]:
+def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optional[Markup]:
     """Determines the metadata of a message.
 
     Args:
@@ -643,79 +643,81 @@ def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optiona
         init_msg (Optional[str]): The initial message, if any.
 
     Returns:
-        The metadata as a string or None if the type is unsupported.
+        A Markup object containing the metadata, or None if the type is unsupported.
     """
-    msg = init_msg if init_msg else ""
+    msg = escape(init_msg) if init_msg else Markup("")
     if content["is_me_joined"] == 1:  # Override
-        return f"You were added into the group by {msg}"
+        return Markup("You were added into the group by ") + msg
     if content["action_type"] == 1:
-        msg += f''' changed the group name to "{content['data']}"'''
+        msg += Markup(' changed the group name to "') + escape(content['data'] or "") + Markup('"')
     elif content["action_type"] == 4:
-        msg += " was added to the group"
+        msg += Markup(" was added to the group")
     elif content["action_type"] == 5:
-        msg += " left the group"
+        msg += Markup(" left the group")
     elif content["action_type"] == 6:
-        msg += f" changed the group icon"
+        msg += Markup(" changed the group icon")
     elif content["action_type"] == 7:
-        msg = "You were removed"
+        msg = Markup("You were removed")
     elif content["action_type"] == 8:
-        msg += ("WhatsApp Internal Error Occurred: "
-                "you cannot send message to this group")
+        msg += Markup("WhatsApp Internal Error Occurred: "
+                      "you cannot send message to this group")
     elif content["action_type"] == 9:
-        msg += " created a broadcast channel"
+        msg += Markup(" created a broadcast channel")
     elif content["action_type"] == 10:
         try:
-            old = content['old_jid'].split('@')[0]
-            new = content['new_jid'].split('@')[0]
+            old = escape(content['old_jid'].split('@')[0])
+            new = escape(content['new_jid'].split('@')[0])
         except (AttributeError, IndexError):
             return None
         else:
-            msg = f"{old} changed their number to {new}"
+            msg = old + Markup(" changed their number to ") + new
     elif content["action_type"] == 11:
-        msg += f''' created a group with name: "{content['data']}"'''
+        msg += Markup(' created a group with name: "') + escape(content['data'] or "") + Markup('"')
     elif content["action_type"] == 12:
-        msg += f" added someone"  # TODO: Find out who
+        msg += Markup(" added someone")  # TODO: Find out who
     elif content["action_type"] == 13:
         return  # Someone left the group
     elif content["action_type"] == 14:
-        msg += f" removed someone"  # TODO: Find out who
+        msg += Markup(" removed someone")  # TODO: Find out who
     elif content["action_type"] == 15:
         return  # Someone promoted someone as an admin
     elif content["action_type"] == 18:
         if msg != "You":
-            msg = f"The security code between you and {msg} changed"
+            msg = Markup("The security code between you and ") + msg + Markup(" changed")
         else:
-            msg = "The security code in this chat changed"
+            msg = Markup("The security code in this chat changed")
     elif content["action_type"] == 19:
-        msg = "This chat is now end-to-end encrypted"
+        msg = Markup("This chat is now end-to-end encrypted")
     elif content["action_type"] == 20:
-        msg = "Someone joined this group by using a invite link"  # TODO: Find out who
+        msg = Markup("Someone joined this group by using a invite link")  # TODO: Find out who
     elif content["action_type"] == 27:
-        msg += " changed the group description to:<br>"
-        msg += (content['data'] or "Unknown").replace("\n", '<br>')
+        # Escape the description first, then replace literal newlines with <br>.
+        # Any <br> that was already in the description text becomes &lt;br&gt;.
+        description = escape(content['data'] or "Unknown").replace("\n", Markup("<br>"))
+        msg += Markup(" changed the group description to:<br>") + description
     elif content["action_type"] == 28:
         try:
-            old = content['old_jid'].split('@')[0]
-            new = content['new_jid'].split('@')[0]
+            old = escape(content['old_jid'].split('@')[0])
+            new = escape(content['new_jid'].split('@')[0])
         except (AttributeError, IndexError):
             return None
         else:
-            msg = f"{old} changed their number to {new}"
+            msg = old + Markup(" changed their number to ") + new
     elif content["action_type"] == 46:
         return  # Voice message in PM??? Seems no need to handle.
     elif content["action_type"] == 47:
-        msg = "The contact is an official business account"
+        msg = Markup("The contact is an official business account")
     elif content["action_type"] == 50:
-        msg = "The contact's account type changed from business to standard"
+        msg = Markup("The contact's account type changed from business to standard")
     elif content["action_type"] == 56:
-        msg = "Messgae timer was enabled/updated/disabled"
+        msg = Markup("Messgae timer was enabled/updated/disabled")
     elif content["action_type"] == 57:
         if msg != "You":
-            msg = f"The security code between you and {msg} changed"
+            msg = Markup("The security code between you and ") + msg + Markup(" changed")
         else:
-            msg = "The security code in this chat changed"
+            msg = Markup("The security code in this chat changed")
     elif content["action_type"] == 58:
-        msg = "You blocked/unblocked this contact"
+        msg = Markup("You blocked/unblocked this contact")
     elif content["action_type"] == 67:
         return  # (PM) this contact use secure service from Facebook???
     elif content["action_type"] == 69:
