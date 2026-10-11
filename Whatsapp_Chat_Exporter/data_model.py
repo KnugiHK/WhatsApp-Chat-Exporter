@@ -1,6 +1,8 @@
 import os
 from datetime import datetime, tzinfo, timedelta
 from typing import MutableMapping, Union, Optional, Dict, Any
+from markupsafe import Markup
+from bleach import clean as _bleach_clean
 
 
 class Timing:
@@ -427,4 +429,11 @@ class Message:
         for key, value in data.items():
             if hasattr(message, key) and key not in added:
                 setattr(message, key, value)
+        if message.safe and isinstance(message.data, str):
+            message.data = Markup(_bleach_clean(
+                message.data,
+                tags=["br", "a"],
+                attributes={"a": ["href"]},
+                strip=True,
+            ))
         return message
