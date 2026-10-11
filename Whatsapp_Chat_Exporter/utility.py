@@ -14,18 +14,7 @@ from enum import IntEnum
 from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
 from typing import Dict, List, Optional, Tuple, Union, Any
-try:
-    from enum import StrEnum, IntEnum
-except ImportError:
-    # < Python 3.11
-    # This should be removed when the support for Python 3.10 ends. (31 Oct 2026)
-    from enum import Enum
-
-    class StrEnum(str, Enum):
-        pass
-
-    class IntEnum(int, Enum):
-        pass
+from enum import StrEnum, IntEnum
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0

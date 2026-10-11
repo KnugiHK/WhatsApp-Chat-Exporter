@@ -19,7 +19,6 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -33,7 +32,7 @@ classifiers = [
     "Topic :: Utilities",
     "Topic :: Database"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "jinja2",
     "bleach",
