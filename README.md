@@ -5,7 +5,7 @@
 [![Matrix Chat Room](https://img.shields.io/matrix/wtsexporter:matrix.org.svg?label=Matrix%20Chat%20Room)](https://matrix.to/#/#wtsexporter:matrix.org)
 [![Since 2021](https://img.shields.io/github/created-at/knugihk/WhatsApp-Chat-Exporter?label=Since&color=purple)](https://wts.knugi.dev)
 
-A customizable Android and iPhone Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
+A customizable Android and iOS/iPadOS Whatsapp database parser that will give you the history of your Whatsapp conversations in HTML and JSON. Inspired by [Telegram Chat Export Tool](https://telegram.org/blog/export-and-more).  
 > [!TIP]
 > If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops.
 
@@ -275,7 +275,7 @@ Miscellaneous:
   --fix-dot-files       Fix files with a dot at the end of their name (allowing the outputs be stored in
                         FAT filesystems)
 
-WhatsApp Chat Exporter: 0.13.0 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
+WhatsApp Chat Exporter: 0.13.1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
 source licenses.
 ```
 
@@ -284,12 +284,12 @@ source licenses.
 To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries using the GitHub CLI.
 
 > [!NOTE]
-> Requires version 0.13.0 or newer. Legacy binaries are unsupported.
+> Requires version 0.13.1 or newer. Legacy binaries are unsupported.
 
 ### Using Bash (Linux/WSL/macOS)
 
 ```bash
-for file in wtsexporter*; do ; gh attestation verify "$file" -R KnugiHK/WhatsApp-Chat-Exporter; done
+for file in wtsexporter*; do gh attestation verify "$file" -R KnugiHK/WhatsApp-Chat-Exporter; done
 ```
 
 ### Using PowerShell (Windows)

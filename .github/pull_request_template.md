@@ -1,6 +1,11 @@
-# Important Note
+# Pre-flight Check
 
-**All PRs (except for changes unrelated to source files) should target and start from the `dev` branch.**
+**All pull requests (excluding those with changes unrelated to source files) must target and branch off from the `dev` branch.**
+
+Please select the applicable option below:
+
+- [ ] This PR does not modify any source files (e.g., only updates the README).
+- [ ] This PR modifies one or more source files and targets the `dev` branch.
 
 ## Related Issue
 
