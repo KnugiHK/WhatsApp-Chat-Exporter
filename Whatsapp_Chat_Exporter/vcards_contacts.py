@@ -10,7 +10,7 @@ from Whatsapp_Chat_Exporter.utility import Device
 
 class ExportedContactNumbers(TypedDict):
     full_name: str
-    numbers: List[str]
+    numbers: list[str]
 
 
 class ContactsFromVCards:
@@ -169,7 +169,7 @@ def process_vcard_entry(entry: str) -> dict | bool:
 
 def read_vcards_file(vcf_file_path, default_country_code: str):
     contacts = []
-    with open(vcf_file_path, "r", encoding="utf-8", errors="ignore") as f:
+    with open(vcf_file_path, encoding="utf-8", errors="ignore") as f:
         content = f.read()
 
     # Split into individual vCards

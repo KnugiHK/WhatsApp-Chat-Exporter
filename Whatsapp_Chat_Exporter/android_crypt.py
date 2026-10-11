@@ -47,7 +47,7 @@ class OffsetNotFoundError(DecryptionError):
     pass
 
 
-def _derive_main_enc_key(key_stream: bytes) -> Tuple[bytes, bytes]:
+def _derive_main_enc_key(key_stream: bytes) -> tuple[bytes, bytes]:
     """
     Derive the main encryption key for the given key stream.
 
@@ -55,14 +55,14 @@ def _derive_main_enc_key(key_stream: bytes) -> Tuple[bytes, bytes]:
         key_stream (bytes): The key stream to generate HMAC of HMAC.
 
     Returns:
-        Tuple[bytes, bytes]: A tuple containing the main encryption key and the original key stream.
+        tuple[bytes, bytes]: A tuple containing the main encryption key and the original key stream.
     """
     intermediate_hmac = hmac.new(b'\x00' * 32, key_stream, sha256).digest()
     key = hmac.new(intermediate_hmac, b"backup encryption\x01", sha256).digest()
     return key, key_stream
 
 
-def _extract_enc_key(keyfile: bytes) -> Tuple[bytes, bytes]:
+def _extract_enc_key(keyfile: bytes) -> tuple[bytes, bytes]:
     """
     Extract the encryption key from the keyfile.
 
@@ -70,7 +70,7 @@ def _extract_enc_key(keyfile: bytes) -> Tuple[bytes, bytes]:
         keyfile (bytes): The keyfile containing the encrypted key.
 
     Returns:
-        Tuple[bytes, bytes]: values from _derive_main_enc_key()
+        tuple[bytes, bytes]: values from _derive_main_enc_key()
     """
     key_stream = b''.join([byte.to_bytes(1, "big", signed=True) for byte in javaobj.loads(keyfile)])
     return _derive_main_enc_key(key_stream)
@@ -283,7 +283,7 @@ def _decrypt_crypt15(database: bytes, main_key: bytes, db_type: DbType) -> bytes
 
 def decrypt_backup(
     database: bytes,
-    key: Union[str, io.IOBase],
+    key: str | io.IOBase,
     output: str = None,
     crypt: Crypt = Crypt.CRYPT14,
     show_crypt15: bool = False,

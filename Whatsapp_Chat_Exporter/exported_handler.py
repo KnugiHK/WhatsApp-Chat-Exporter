@@ -29,11 +29,11 @@ def messages(path, data, assume_first_as_me=False):
     user_identification_done = False  # Flag to track if user identification has been done
 
     # First pass: count total lines for progress reporting
-    with open(path, "r", encoding="utf8") as file:
+    with open(path, encoding="utf8") as file:
         total_row_number = sum(1 for _ in file)
 
     # Second pass: process the messages
-    with open(path, "r", encoding="utf8") as file:
+    with open(path, encoding="utf8") as file:
          with tqdm(total=total_row_number, desc="Processing messages & media", unit="msg&media", leave=False) as pbar:
             for index, line in enumerate(file):
                 you, user_identification_done = process_line(

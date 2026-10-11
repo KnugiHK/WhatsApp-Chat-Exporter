@@ -25,7 +25,7 @@ import codecs
 from datetime import datetime, timedelta
 
 
-class BPListReader(object):
+class BPListReader:
     def __init__(self, s):
         self.data = s
         self.objects = []

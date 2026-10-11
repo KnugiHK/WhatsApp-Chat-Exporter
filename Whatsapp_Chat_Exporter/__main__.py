@@ -394,7 +394,7 @@ def validate_args(parser: ArgumentParser, args) -> None:
             )
 
 
-def validate_chat_filters(parser: ArgumentParser, chat_filter: Optional[List[str]]) -> None:
+def validate_chat_filters(parser: ArgumentParser, chat_filter: list[str] | None) -> None:
     """Validate chat filters to ensure they contain only phone numbers."""
     if chat_filter is not None:
         for chat in chat_filter:
@@ -685,7 +685,7 @@ def export_json(args, data: ChatCollection) -> None:
         export_multiple_json(args, data)
 
 
-def export_single_json(args, data: Dict) -> None:
+def export_single_json(args, data: dict) -> None:
     """Export data to a single JSON file."""
     with open(args.json, "w") as f:
         json_data = json.dumps(
@@ -698,7 +698,7 @@ def export_single_json(args, data: Dict) -> None:
     logging.info(f"JSON file saved...({bytes_to_readable(len(json_data))})")
 
 
-def export_multiple_json(args, data: Dict) -> None:
+def export_multiple_json(args, data: dict) -> None:
     """Export data to multiple JSON files, one per chat."""
     # Adjust output path if needed
     json_path = args.json[:-5] if args.json.endswith(".json") else args.json

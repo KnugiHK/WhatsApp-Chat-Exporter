@@ -218,7 +218,7 @@ END:VCARD
                     process_vcard(input_path, output_path)
 
                     # Read and verify the output
-                    with open(output_path, 'r', encoding='utf-8') as output_file:
+                    with open(output_path, encoding='utf-8') as output_file:
                         actual_output = output_file.read()
 
                     self.assertEqual(actual_output, expected_output)

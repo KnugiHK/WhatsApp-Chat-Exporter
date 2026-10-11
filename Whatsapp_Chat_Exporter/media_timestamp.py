@@ -155,7 +155,7 @@ def _handle_duplicate_filename(file_path: str) -> str:
 def process_media_with_timestamp(
     source_path: str,
     dest_path: str,
-    timestamp: Optional[float],
+    timestamp: float | None,
     timezone_offset: int = 0,
     embed_exif: bool = False,
     rename_media: bool = False

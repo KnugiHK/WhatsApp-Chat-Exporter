@@ -332,7 +332,7 @@ def _parse_group_action(ztext, data):
         except json.JSONDecodeError:
             return ztext  # Not a JSON string, return as-is
         entity = metadata.get('author', 'Someone')
-        if entity is not "Someone":
+        if entity != "Someone":
             name = None
             if entity in data:
                 name = data.get_chat(entity).name

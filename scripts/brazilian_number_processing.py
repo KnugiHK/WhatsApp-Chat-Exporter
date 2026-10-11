@@ -77,7 +77,7 @@ def process_vcard(input_vcard, output_vcard):
     Process a VCARD file to standardize telephone entries and add a second TEL line
     with the modified number (removing the extra ninth digit) for contacts with 9-digit subscribers.
     """
-    with open(input_vcard, 'r', encoding='utf-8') as file:
+    with open(input_vcard, encoding='utf-8') as file:
         lines = file.readlines()
 
     output_lines = []

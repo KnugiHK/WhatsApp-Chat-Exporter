@@ -100,6 +100,9 @@ class BackupExtractor:
             check_same_thread=False,
             decrypt_chunk_size=self.decrypt_chunk_size,
         )
+        if not self.backup.test_decryption():
+            logging.error("Failed to decrypt backup: incorrect password?")
+            exit(7)
         logging.info(f"iOS backup is opened successfully")
         logging.info("Decrypting WhatsApp database...")
         try:

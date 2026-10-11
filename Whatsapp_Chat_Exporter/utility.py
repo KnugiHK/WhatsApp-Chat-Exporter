@@ -78,7 +78,7 @@ def bytes_to_readable(size_bytes: int) -> str:
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
-    return "%s %s" % (s, size_name[i])
+    return f"{s} {size_name[i]}"
 
 
 def readable_to_bytes(size_str: str) -> int:
@@ -128,7 +128,7 @@ def sanitize_except(html: str) -> Markup:
     return Markup(sanitize(html, tags=["br"]))
 
 
-def determine_day(last: int, current: int) -> Optional[datetime.date]:
+def determine_day(last: int, current: int) -> datetime.date | None:
     """Determines if the day has changed between two timestamps. Exposed to Jinja's environment.
 
     Args:
@@ -233,7 +233,7 @@ def import_from_json(json_file: str, data: ChatCollection):
         json_file: The path to the JSON file.
         data: The dictionary to store the imported chat data.
     """
-    with open(json_file, "r") as f:
+    with open(json_file) as f:
         temp_data = json.loads(f.read())
     total_row_number = len(tuple(temp_data.keys()))
     with tqdm(total=total_row_number, desc="Importing chats from JSON", unit="chat", leave=False) as pbar:
@@ -258,7 +258,7 @@ class IncrementalMerger:
         self.pretty_print_json = pretty_print_json
         self.avoid_encoding_json = avoid_encoding_json
     
-    def _get_json_files(self, source_dir: str) -> List[str]:
+    def _get_json_files(self, source_dir: str) -> list[str]:
         """Get list of JSON files from source directory.
         
         Args:
@@ -291,7 +291,7 @@ class IncrementalMerger:
         os.makedirs(target_dir, exist_ok=True)
         shutil.copy2(source_path, target_path)
 
-    def _load_chat_data(self, file_path: str) -> Dict[str, Any]:
+    def _load_chat_data(self, file_path: str) -> dict[str, Any]:
         """Load JSON data from file.
         
         Args:
@@ -300,10 +300,10 @@ class IncrementalMerger:
         Returns:
             Loaded JSON data.
         """
-        with open(file_path, 'r') as file:
+        with open(file_path) as file:
             return json.load(file)
 
-    def _parse_chats_from_json(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_chats_from_json(self, data: dict[str, Any]) -> dict[str, Any]:
         """Parse JSON data into ChatStore objects.
         
         Args:
@@ -314,7 +314,7 @@ class IncrementalMerger:
         """
         return {jid: ChatStore.from_json(chat) for jid, chat in data.items()}
 
-    def _merge_chat_stores(self, source_chats: Dict[str, Any], target_chats: Dict[str, Any]) -> Dict[str, Any]:
+    def _merge_chat_stores(self, source_chats: dict[str, Any], target_chats: dict[str, Any]) -> dict[str, Any]:
         """Merge source chats into target chats.
         
         Args:
@@ -331,7 +331,7 @@ class IncrementalMerger:
                 target_chats[jid] = chat
         return target_chats
 
-    def _serialize_chats(self, chats: Dict[str, Any]) -> Dict[str, Any]:
+    def _serialize_chats(self, chats: dict[str, Any]) -> dict[str, Any]:
         """Serialize ChatStore objects to JSON format.
         
         Args:
@@ -342,7 +342,7 @@ class IncrementalMerger:
         """
         return {jid: chat.to_json() for jid, chat in chats.items()}
 
-    def _has_changes(self, merged_data: Dict[str, Any], original_data: Dict[str, Any]) -> bool:
+    def _has_changes(self, merged_data: dict[str, Any], original_data: dict[str, Any]) -> bool:
         """Check if merged data differs from original data.
         
         Args:
@@ -354,7 +354,7 @@ class IncrementalMerger:
         """
         return json.dumps(merged_data, sort_keys=True) != json.dumps(original_data, sort_keys=True)
 
-    def _save_merged_data(self, target_path: str, merged_data: Dict[str, Any]) -> None:
+    def _save_merged_data(self, target_path: str, merged_data: dict[str, Any]) -> None:
         """Save merged data to target file.
         
         Args:
@@ -472,7 +472,7 @@ def incremental_merge(source_dir: str, target_dir: str, media_dir: str, pretty_p
     merger.merge(source_dir, target_dir, media_dir)
 
 
-def get_file_name(contact: str, chat: ChatStore) -> Tuple[str, str]:
+def get_file_name(contact: str, chat: ChatStore) -> tuple[str, str]:
     """Generates a sanitized filename and contact name for a chat.
 
     Args:
@@ -541,11 +541,11 @@ def _get_group_condition(jid: str, platform: str) -> str:
 
 
 def get_chat_condition(
-    filter: Optional[List[str]],
+    filter: list[str] | None,
     include: bool,
-    columns: List[str],
-    jid: Optional[str] = None,
-    platform: Optional[str] = None
+    columns: list[str],
+    jid: str | None = None,
+    platform: str | None = None
 ) -> str:
     """Generates a SQL condition for filtering chats based on inclusion or exclusion criteria.
 
@@ -624,7 +624,7 @@ class DbType(StrEnum):
     CONTACT = "contact"
 
 
-def determine_metadata(content: sqlite3.Row, init_msg: Optional[str]) -> Optional[Markup]:
+def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | None:
     """Determines the metadata of a message.
 
     Args:
@@ -807,7 +807,7 @@ def get_transcription_selection(db: sqlite3.Connection) -> str:
         return "NULL AS transcription_text"
 
 
-def setup_template(template: Optional[str], no_avatar: bool, experimental: bool = False) -> jinja2.Template:
+def setup_template(template: str | None, no_avatar: bool, experimental: bool = False) -> jinja2.Template:
     """
     Sets up the Jinja2 template environment and loads the template.
 
@@ -839,7 +839,7 @@ def setup_template(template: Optional[str], no_avatar: bool, experimental: bool 
 APPLE_TIME = 978307200
 
 
-def safe_name(text: Union[str, bytes]) -> str:
+def safe_name(text: str | bytes) -> str:
     """
     Sanitize the input text and generates a safe file name.
     This function serves a similar purpose to slugify() from
@@ -849,7 +849,7 @@ def safe_name(text: Union[str, bytes]) -> str:
     As the project (MIT).
 
     Args:
-        text (str|bytes): The string to be sanitized.
+        text (str | bytes): The string to be sanitized.
 
     Returns:
         str: The sanitized string with only alphanumerics, underscores, or hyphens.
@@ -863,7 +863,7 @@ def safe_name(text: Union[str, bytes]) -> str:
     return "-".join(''.join(safe_chars).split())
 
 
-def get_from_string(msg: Dict, chat_id: str) -> str:
+def get_from_string(msg: dict, chat_id: str) -> str:
     """Return the number or name for the sender"""
     if msg["from_me"]:
         return "Me"
@@ -888,7 +888,7 @@ def get_chat_type(chat_id: str) -> str:
     return "private_group"
 
 
-def get_from_id(msg: Dict, chat_id: str) -> str:
+def get_from_id(msg: dict, chat_id: str) -> str:
     """Return the user id for the sender"""
     if msg["from_me"]:
         return "user00000"
@@ -897,7 +897,7 @@ def get_from_id(msg: Dict, chat_id: str) -> str:
     return f"user{chat_id}"
 
 
-def get_reply_id(data: Dict, reply_key: int) -> Optional[int]:
+def get_reply_id(data: dict, reply_key: int) -> int | None:
     """Get the id of the message corresponding to the reply"""
     if not reply_key:
         return None
@@ -907,7 +907,7 @@ def get_reply_id(data: Dict, reply_key: int) -> Optional[int]:
     return None
 
 
-def telegram_json_format(jik: str, data: Dict, timezone_offset) -> Dict:
+def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
     """Convert the data to the Telegram export format"""
     timing = Timing(timezone_offset or CURRENT_TZ_OFFSET)
     try:

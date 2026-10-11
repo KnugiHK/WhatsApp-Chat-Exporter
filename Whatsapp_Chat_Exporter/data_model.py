@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, tzinfo, timedelta
-from typing import MutableMapping, Union, Optional, Dict, Any
+from typing import Union, Optional, Dict, Any
+from collections.abc import MutableMapping
 from markupsafe import Markup
 from bleach import clean as _bleach_clean
 
@@ -10,21 +11,21 @@ class Timing:
     Handles timestamp formatting with timezone support.
     """
 
-    def __init__(self, timezone_offset: Optional[Union[int, float]] = None) -> None:
+    def __init__(self, timezone_offset: int | float | None = None) -> None:
         """
         Initialize Timing object.
 
         Args:
-            timezone_offset (Optional[Union[int, float]]): Hours offset from UTC. Defaults to None (auto-detect).
+            timezone_offset (int | float | None): Hours offset from UTC. Defaults to None (auto-detect).
         """
         self.tz = TimeZone(timezone_offset) if timezone_offset is not None else None
 
-    def format_timestamp(self, timestamp: Optional[Union[int, float]], format: str) -> Optional[str]:
+    def format_timestamp(self, timestamp: int | float | None, format: str) -> str | None:
         """
         Format a timestamp with the specified format string.
 
         Args:
-            timestamp (Optional[Union[int, float]]): Unix timestamp to format
+            timestamp (int | float | None): Unix timestamp to format
             format (str): strftime format string
 
         Returns:
@@ -41,20 +42,20 @@ class TimeZone(tzinfo):
     Custom timezone class with fixed offset.
     """
 
-    def __init__(self, offset: Union[int, float]) -> None:
+    def __init__(self, offset: int | float) -> None:
         """
         Initialize TimeZone object.
 
         Args:
-            offset (Union[int, float]): Hours offset from UTC
+            offset (int | float): Hours offset from UTC
         """
         self.offset = offset
 
-    def utcoffset(self, dt: Optional[datetime]) -> timedelta:
+    def utcoffset(self, dt: datetime | None) -> timedelta:
         """Get UTC offset."""
         return timedelta(hours=self.offset)
 
-    def dst(self, dt: Optional[datetime]) -> timedelta:
+    def dst(self, dt: datetime | None) -> timedelta:
         """Get DST offset (always 0)."""
         return timedelta(0)
 
@@ -67,8 +68,8 @@ class ChatCollection(MutableMapping):
 
     def __init__(self) -> None:
         """Initialize an empty chat collection."""
-        self._chats: Dict[str, ChatStore] = {}
-        self._system: Dict[str, Any] = {}
+        self._chats: dict[str, ChatStore] = {}
+        self._system: dict[str, Any] = {}
         self.set_system("master_lookup", {})
 
     def __getitem__(self, key: str) -> 'ChatStore':
@@ -110,7 +111,7 @@ class ChatCollection(MutableMapping):
         else:
             return None
 
-    def add_chat(self, chat_id: str, chat: 'ChatStore', alias: Optional[str] = None) -> 'ChatStore':
+    def add_chat(self, chat_id: str, chat: 'ChatStore', alias: str | None = None) -> 'ChatStore':
         """
         Add a new chat to the collection.
 
@@ -182,12 +183,12 @@ class ChatCollection(MutableMapping):
         """Get all chat IDs."""
         return self._chats.keys()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the collection to a dictionary.
 
         Returns:
-            Dict[str, Any]: Dictionary representation of all chats
+            dict[str, Any]: Dictionary representation of all chats
         """
         return {chat_id: chat.to_json() for chat_id, chat in self._chats.items()}
 
@@ -219,7 +220,7 @@ class ChatStore:
     Stores chat information and messages.
     """
 
-    def __init__(self, type: str, name: Optional[str] = None, media: Optional[str] = None) -> None:
+    def __init__(self, type: str, name: str | None = None, media: str | None = None) -> None:
         """
         Initialize ChatStore object.
 
@@ -234,7 +235,7 @@ class ChatStore:
         if name is not None and not isinstance(name, str):
             raise TypeError("Name must be a string or None")
         self.name = name
-        self._messages: Dict[str, 'Message'] = {}
+        self._messages: dict[str, 'Message'] = {}
         self.type = type
         if media is not None:
             from Whatsapp_Chat_Exporter.utility import Device
@@ -271,7 +272,7 @@ class ChatStore:
         if id in self._messages:
             del self._messages[id]
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         """Convert chat store to JSON-serializable dict."""
         json_dict = {
             key: value
@@ -282,7 +283,7 @@ class ChatStore:
         return json_dict
 
     @classmethod
-    def from_json(cls, data: Dict) -> 'ChatStore':
+    def from_json(cls, data: dict) -> 'ChatStore':
         """Create a chat store from JSON data."""
         chat = cls(data.get("type"), data.get("name"))
         for key, value in data.items():
@@ -339,23 +340,23 @@ class Message:
     def __init__(
             self,
             *,
-            from_me: Union[bool, int],
+            from_me: bool | int,
             timestamp: int,
-            time: Union[int, float, str],
-            key_id: Union[int, str],
+            time: int | float | str,
+            key_id: int | str,
             received_timestamp: int = None,
             read_timestamp: int = None,
-            timezone_offset: Optional[Timing] = Timing(0),
-            message_type: Optional[int] = None
+            timezone_offset: Timing | None = Timing(0),
+            message_type: int | None = None
     ) -> None:
         """
         Initialize Message object.
 
         Args:
-            from_me (Union[bool, int]): Whether message was sent by the user
+            from_me (bool | int): Whether message was sent by the user
             timestamp (int): Message timestamp
-            time (Union[int, float, str]): Message time
-            key_id (int): Message unique identifier
+            time (int | float | str): Message time
+            key_id (int | str): Message unique identifier
             received_timestamp (int, optional): When message was received. Defaults to None
             read_timestamp (int, optional): When message was read. Defaults to None
             timezone_offset (int, optional): Hours offset from UTC. Defaults to 0
@@ -406,15 +407,12 @@ class Message:
         self.reactions = {}
         self.poll = None
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         """Convert message to JSON-serializable dict."""
-        return {
-            key: value
-            for key, value in self.__dict__.items()
-        }
+        return {**self.__dict__}
 
     @classmethod
-    def from_json(cls, data: Dict) -> 'Message':
+    def from_json(cls, data: dict) -> 'Message':
         message = cls(
             from_me=data["from_me"],
             timestamp=data["timestamp"],
