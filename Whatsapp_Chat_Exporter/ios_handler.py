@@ -8,7 +8,7 @@ from glob import glob
 from tqdm import tqdm
 from pathlib import Path
 from mimetypes import MimeTypes
-from markupsafe import escape as htmle
+from markupsafe import Markup, escape
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, get_chat_condition, Device
 from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name
@@ -590,16 +590,19 @@ def process_vcard_item(content, path, data):
                 f.write(vcard_string)
 
     # Create vCard summary and update message
-    vcard_summary = "This media include the following vCard file(s):<br>"
-    vcard_summary += " | ".join([f'<a href="{htmle(fp)}">{htmle(name)}</a>' for name,
-                                fp in zip(vcard_names, file_paths)])
+    vcard_summary = (
+        Markup("This media include the following vCard file(s):<br>")
+        + Markup(" | ").join(
+            Markup(f'<a href="{escape(fp)}">{escape(name)}</a>')
+            for name, fp in zip(vcard_names, file_paths)
+        )
+    )
 
     message = data.get_chat(content["ZCONTACTJID"]).get_message(content["ZMESSAGE"])
     message.data = vcard_summary
     message.mime = "text/x-vcard"
     message.media = True
     message.meta = True
-    message.safe = True
 
 
 def calls(db, data, timezone_offset, filter_chat):

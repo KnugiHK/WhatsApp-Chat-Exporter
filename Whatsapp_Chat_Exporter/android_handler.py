@@ -7,7 +7,7 @@ import shutil
 from tqdm import tqdm
 from pathlib import Path
 from mimetypes import MimeTypes
-from markupsafe import escape as htmle
+from markupsafe import Markup, escape
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
@@ -397,12 +397,17 @@ def _process_single_message(data, content, table_message, timezone_offset):
 
 def _process_binary_message(message, content):
     """Process binary message data."""
-    message.data = ("The message is binary data and its base64 is "
-                    '<a href="https://gchq.github.io/CyberChef/#recipe=From_Base64'
-                    "('A-Za-z0-9%2B/%3D',true,false)Text_Encoding_Brute_Force"
-                    f"""('Decode')&input={b64encode(b64encode(content["data"])).decode()}">""")
-    message.data += b64encode(content["data"]).decode("utf-8") + "</a>"
-    message.safe = message.meta = True
+    encoded_input = b64encode(b64encode(content["data"])).decode()
+    link_text = b64encode(content["data"]).decode("utf-8")
+    message.data = (
+        Markup("The message is binary data and its base64 is "
+               '<a href="https://gchq.github.io/CyberChef/#recipe=From_Base64'
+               "('A-Za-z0-9%2B/%3D',true,false)Text_Encoding_Brute_Force"
+               "('Decode')&input=")
+        + Markup(encoded_input)
+        + Markup('">') + Markup(link_text) + Markup("</a>")
+    )
+    message.meta = True
 
 
 def _set_group_sender(message, content, data, table_message):
@@ -941,11 +946,12 @@ def _process_vcard_row(row, path, data):
             f.write(row["vcard"])
 
     message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
-    message.data = "This media include the following vCard file(s):<br>" \
-        f'<a href="{htmle(file_path)}">{htmle(media_name)}</a>'
+    message.data = (
+        Markup("This media include the following vCard file(s):<br>")
+        + Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
+    )
     message.mime = "text/x-vcard"
     message.meta = True
-    message.safe = True
 
 
 def calls(db, data, timezone_offset, filter_chat):
