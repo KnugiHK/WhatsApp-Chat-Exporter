@@ -275,7 +275,7 @@ Miscellaneous:
   --fix-dot-files       Fix files with a dot at the end of their name (allowing the outputs be stored in
                         FAT filesystems)
 
-WhatsApp Chat Exporter: 0.13.0 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
+WhatsApp Chat Exporter: 0.13.1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
 source licenses.
 ```
 
@@ -284,7 +284,7 @@ source licenses.
 To ensure that the binaries provided in the releases were built directly from this source code via GitHub Actions and have not been tampered with, GitHub Artifact Attestations is used. You can verify the authenticity of any pre-built binaries using the GitHub CLI.
 
 > [!NOTE]
-> Requires version 0.13.0 or newer. Legacy binaries are unsupported.
+> Requires version 0.13.1 or newer. Legacy binaries are unsupported.
 
 ### Using Bash (Linux/WSL/macOS)
 
