@@ -403,11 +403,7 @@
                                     {% elif msg.meta == true or msg.media == false and msg.data is none %}     
                                         <div class="flex justify-center mb-2">
                                             <div class="bg-[#FFF3C5] rounded-lg px-3 py-2 text-sm text-[#856404] flex items-center">
-                                                {% if msg.safe %}
-                                                    {{ msg.data | safe or 'Not supported WhatsApp internal message' }}
-                                                {% else %}
-                                                    {{ msg.data or 'Not supported WhatsApp internal message' }}
-                                                {% endif %}
+                                                {{ msg.data or 'Not supported WhatsApp internal message' }}
                                             </div>
                                         </div>
                                         {% if msg.caption is not none %}
@@ -528,11 +524,7 @@
                                     {% elif msg.meta == true or msg.media == false and msg.data is none %}
                                         <div class="flex justify-center mb-2">
                                             <div class="bg-[#FFF3C5] rounded-lg px-3 py-2 text-sm text-[#856404] flex items-center">
-                                                {% if msg.safe %}
-                                                    {{ msg.data | safe or 'Not supported WhatsApp internal message' }}
-                                                {% else %}
-                                                    {{ msg.data or 'Not supported WhatsApp internal message' }}
-                                                {% endif %}
+                                                {{ msg.data or 'Not supported WhatsApp internal message' }}
                                             </div>
                                         </div>
                                         {% if msg.caption is not none %}
