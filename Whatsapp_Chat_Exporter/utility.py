@@ -823,7 +823,7 @@ def setup_template(template: str | None, no_avatar: bool, experimental: bool = F
         template_dir = os.path.dirname(__file__)
         template_file = "whatsapp.html" if not experimental else template
     else:
-        template_dir = os.path.dirname(template)
+        template_dir = os.path.dirname(template) or os.path.dirname(__file__)
         template_file = os.path.basename(template)
     template_loader = jinja2.FileSystemLoader(searchpath=template_dir)
     template_env = jinja2.Environment(loader=template_loader, autoescape=True)
