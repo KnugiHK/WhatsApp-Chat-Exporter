@@ -1303,6 +1303,7 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
 def create_txt(data, output):
     """Generate text files from chat data."""
     os.makedirs(output, exist_ok=True)
+    used_names = set()
 
     for jik, chat in data.items():
         if len(chat) == 0:
@@ -1314,7 +1315,8 @@ def create_txt(data, output):
         else:
             contact = jik.replace('+', '')
 
-        output_file = os.path.join(output, f"{contact}.txt")
+        file_name = _get_unique_txt_name(contact, jik, used_names)
+        output_file = os.path.join(output, f"{file_name}.txt")
 
         with open(output_file, "w", encoding="utf8") as f:
             for message in chat.values():
@@ -1325,6 +1327,23 @@ def create_txt(data, output):
                 # Format the message
                 formatted_message = _format_message_for_txt(message, contact)
                 f.write(f"{formatted_message}\n")
+
+
+def _get_unique_txt_name(contact, jik, used_names):
+    """Return a text file name that is not used by another chat."""
+    name = contact
+    if name.casefold() in used_names:
+        clean_jid = ''.join(char for char in jik if char not in r'\/:*?"<>|')
+        name = f"{contact} ({clean_jid})"
+
+    base_name = name
+    counter = 2
+    while name.casefold() in used_names:
+        name = f"{base_name} {counter}"
+        counter += 1
+
+    used_names.add(name.casefold())
+    return name
 
 
 def _format_message_for_txt(message, contact):
