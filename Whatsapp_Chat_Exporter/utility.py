@@ -9,7 +9,7 @@ import math
 import shutil
 from bleach import clean as sanitize
 from markupsafe import Markup, escape
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from enum import IntEnum
 from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
@@ -128,7 +128,7 @@ def sanitize_except(html: str) -> Markup:
     return Markup(sanitize(html, tags=["br"]))
 
 
-def determine_day(last: int, current: int) -> datetime.date | None:
+def determine_day(last: int, current: int) -> date | None:
     """Determines if the day has changed between two timestamps. Exposed to Jinja's environment.
 
     Args:
@@ -138,12 +138,12 @@ def determine_day(last: int, current: int) -> datetime.date | None:
     Returns:
         The date of the current message if it's a different day than the last message, otherwise None.
     """
-    last = datetime.fromtimestamp(last).date()
-    current = datetime.fromtimestamp(current).date()
-    if last == current:
+    _last = datetime.fromtimestamp(last).date()
+    _current = datetime.fromtimestamp(current).date()
+    if _last == _current:
         return None
     else:
-        return current
+        return _current
 
 
 def check_update(include_beta: bool = False) -> int:
