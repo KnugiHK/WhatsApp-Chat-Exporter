@@ -40,17 +40,30 @@ def contacts(db, data):
             if not zwhatsapp_id.endswith("@s.whatsapp.net"):
                 zwhatsapp_id += "@s.whatsapp.net"
 
+            lid = content["ZLID"] if "ZLID" in columns and content["ZLID"] else None
+
+            # The address book can hold several rows for one WhatsApp ID, e.g. the
+            # same number saved under more than one name. Enrich the chat that is
+            # already there instead of adding a second one for the same ID.
+            if zwhatsapp_id in data:
+                existing_chat = data.get_chat(zwhatsapp_id)
+                existing_chat.name = existing_chat.name or content["ZFULLNAME"]
+                existing_chat.status = existing_chat.status or content["ZABOUTTEXT"]
+
+                if lid and lid not in existing_chat.aliases:
+                    data.add_alias(lid, zwhatsapp_id)
+                    existing_chat.aliases.append(lid)
+
+                pbar.update(1)
+                continue
+
             current_chat = ChatStore(Device.IOS)
             if content["ZFULLNAME"]:
                 current_chat.name = content["ZFULLNAME"]
             if content["ZABOUTTEXT"]:
                 current_chat.status = content["ZABOUTTEXT"]
             # Index by WhatsApp ID, with LID as alias if available
-            data.add_chat(
-                zwhatsapp_id,
-                current_chat,
-                content["ZLID"] if "ZLID" in columns and content["ZLID"] else None
-            )
+            data.add_chat(zwhatsapp_id, current_chat, lid)
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
