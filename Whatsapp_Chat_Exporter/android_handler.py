@@ -1333,13 +1333,15 @@ def _get_unique_txt_name(contact, jik, used_names):
     """Return a text file name that is not used by another chat."""
     name = contact
     if name.casefold() in used_names:
-        jid = ''.join(char for char in jik if char not in '\\/:*?"<>|')
-        name = f"{contact} ({jid})"
+        clean_jid = ''.join(char for char in jik if char not in r'\/:*?"<>|')
+        name = f"{contact} ({clean_jid})"
+
     base_name = name
     counter = 2
     while name.casefold() in used_names:
         name = f"{base_name} {counter}"
         counter += 1
+
     used_names.add(name.casefold())
     return name
 
