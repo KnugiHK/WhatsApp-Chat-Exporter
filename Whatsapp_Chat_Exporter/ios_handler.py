@@ -47,13 +47,13 @@ def contacts(db, data):
             # already there instead of adding a second one for the same ID.
             if zwhatsapp_id in data:
                 existing_chat = data.get_chat(zwhatsapp_id)
-                if existing_chat.name is None and content["ZFULLNAME"]:
-                    existing_chat.name = content["ZFULLNAME"]
-                if existing_chat.status is None and content["ZABOUTTEXT"]:
-                    existing_chat.status = content["ZABOUTTEXT"]
+                existing_chat.name = existing_chat.name or content["ZFULLNAME"]
+                existing_chat.status = existing_chat.status or content["ZABOUTTEXT"]
+
                 if lid and lid not in existing_chat.aliases:
                     data.add_alias(lid, zwhatsapp_id)
                     existing_chat.aliases.append(lid)
+
                 pbar.update(1)
                 continue
 
