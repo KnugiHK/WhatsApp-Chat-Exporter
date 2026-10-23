@@ -18,7 +18,7 @@ from enum import StrEnum, IntEnum
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
-CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().seconds / 3600
+CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().total_seconds() / 3600
 
 
 
@@ -909,7 +909,7 @@ def get_reply_id(data: dict, reply_key: int) -> int | None:
 
 def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
     """Convert the data to the Telegram export format"""
-    timing = Timing(timezone_offset or CURRENT_TZ_OFFSET)
+    timing = Timing(timezone_offset or None)
     try:
         chat_id = int(''.join([c for c in jik if c.isdigit()]))
     except ValueError:
