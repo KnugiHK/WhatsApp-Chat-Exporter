@@ -46,5 +46,6 @@ jobs:
 
       - name: Run pytest
         env:
-          PYTHONUTF8: ${{ matrix.python_utf8 || '0' }}  
+          PYTHONUTF8: ${{ matrix.python_utf8 || '0' }} 
+          TZ: UTC 
         run: pytest
