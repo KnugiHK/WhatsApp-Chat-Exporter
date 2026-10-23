@@ -247,8 +247,8 @@ def test_incremental_merge_existing_file_with_changes(mock_filesystem):
         incremental_merge(source_dir, target_dir, media_dir, 2, True)
 
         # Verify file operations using os.path.join
-        mock_file.assert_any_call(source_file, "r")
-        mock_file.assert_any_call(target_file, "r")
+        mock_file.assert_any_call(source_file)
+        mock_file.assert_any_call(target_file)
         mock_file.assert_any_call(target_file, "w")
 
         # Rest of verification code...
