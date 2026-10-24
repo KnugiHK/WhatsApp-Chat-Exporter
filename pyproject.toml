@@ -34,19 +34,19 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "jinja2",
-    "bleach",
-    "tqdm"
+    "jinja2>=3.1.6",
+    "bleach>=6.4.0",
+    "tqdm>=4.67.2",
 ]
 
 [project.optional-dependencies]
-android_backup = ["pycryptodome", "javaobj-py3"]
-crypt12 = ["pycryptodome"]
-crypt14 = ["pycryptodome"]
-crypt15 = ["pycryptodome", "javaobj-py3"]
-all = ["pycryptodome", "javaobj-py3"]
-everything = ["pycryptodome", "javaobj-py3"]
-backup = ["pycryptodome", "javaobj-py3"]
+crypt12 = ["pycryptodome>=3.24.1"]
+crypt14 = ["pycryptodome>=3.24.1"]
+crypt15 = ["pycryptodome>=3.24.1", "javaobj-py3>=0.4.4"]
+android_backup = ["pycryptodome>=3.24.1", "javaobj-py3>=0.4.4"]
+backup = ["whatsapp-chat-exporter[android_backup]"]
+all = ["whatsapp-chat-exporter[android_backup]"]
+everything = ["whatsapp-chat-exporter[android_backup]"]
 
 [project.scripts]
 wtsexporter = "Whatsapp_Chat_Exporter.__main__:main"
@@ -62,5 +62,5 @@ Whatsapp_Chat_Exporter = ["*.html"]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
+    "pytest",
 ]
