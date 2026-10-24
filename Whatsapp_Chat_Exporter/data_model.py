@@ -2,8 +2,7 @@ import os
 from datetime import datetime, tzinfo, timedelta
 from typing import Union, Optional, Dict, Any
 from collections.abc import MutableMapping
-from markupsafe import Markup
-from bleach import clean as _bleach_clean
+from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
 
 
 class Timing:
@@ -429,10 +428,10 @@ class Message:
             if hasattr(message, key) and key not in added:
                 setattr(message, key, value)
         if message.safe and isinstance(message.data, str):
-            message.data = Markup(_bleach_clean(
+            message.data = sanitize_except(
                 message.data,
-                tags=["br", "a"],
-                attributes={"a": ["href"]},
-                strip=True,
-            ))
+                tags={"br", "a"},
+                attributes={"a": {"href"}},
+                url_schemes={"http", "https", "mailto"},  # Restricts href protocols safely
+            )
         return message

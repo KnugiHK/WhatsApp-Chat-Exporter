@@ -7,13 +7,13 @@ import unicodedata
 import re
 import math
 import shutil
-from bleach import clean as sanitize
 from markupsafe import Markup, escape
 from datetime import datetime, timedelta, date
 from enum import IntEnum
 from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
-from typing import Dict, List, Optional, Tuple, Union, Any
+from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
+from typing import Any
 from enum import StrEnum, IntEnum
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
@@ -114,18 +114,6 @@ def readable_to_bytes(size_str: str) -> int:
     unit = ''.join(filter(str.isalpha, size_str)).strip()
     number = ''.join(c for c in size_str if c.isdigit() or c == '.').strip()
     return int(float(number) * SIZE_UNITS[unit])
-
-
-def sanitize_except(html: str) -> Markup:
-    """Sanitizes HTML, only allowing <br> tag.
-
-    Args:
-        html: The HTML string to sanitize.
-
-    Returns:
-        A Markup object containing the sanitized HTML.
-    """
-    return Markup(sanitize(html, tags=["br"]))
 
 
 def determine_day(last: int, current: int) -> date | None:
