@@ -24,7 +24,8 @@ def messages(path, data, assume_first_as_me=False):
     # Create a new chat in the data container
     chat = data.add_chat("ExportedChat", ChatStore(Device.EXPORTED))
     you = ""  # Will store the username of the current user
-    user_identification_done = False  # Flag to track if user identification has been done
+    # Flag to track if user identification has been done
+    user_identification_done = False
 
     # First pass: count total lines for progress reporting
     with open(path, encoding="utf8") as file:
@@ -32,7 +33,7 @@ def messages(path, data, assume_first_as_me=False):
 
     # Second pass: process the messages
     with open(path, encoding="utf8") as file:
-         with tqdm(total=total_row_number, desc="Processing messages & media", unit="msg&media", leave=False) as pbar:
+        with tqdm(total=total_row_number, desc="Processing messages & media", unit="msg&media", leave=False) as pbar:
             for index, line in enumerate(file):
                 you, user_identification_done = process_line(
                     line, index, chat, path, you,
@@ -40,7 +41,8 @@ def messages(path, data, assume_first_as_me=False):
                 )
                 pbar.update(1)
             total_time = pbar.format_dict['elapsed']
-    logging.info(f"Processed {total_row_number} messages & media in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} messages & media in {convert_time_unit(total_time)}")
 
     return data
 

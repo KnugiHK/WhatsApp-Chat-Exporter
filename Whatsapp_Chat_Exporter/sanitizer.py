@@ -8,24 +8,27 @@ _VOID_TAGS = frozenset({
     "link", "meta", "param", "source", "track", "wbr",
 })
 
+
 class _AllowlistParser(HTMLParser):
     def __init__(
-        self, 
-        allowed_tags: Iterable[str], 
+        self,
+        allowed_tags: Iterable[str],
         allowed_attributes: dict[str, set[str]] | None = None,
         url_schemes: Iterable[str] | None = None
     ) -> None:
         super().__init__(convert_charrefs=False)
         self.allowed_tags = {tag.lower() for tag in allowed_tags}
-        
+
         self.allowed_attributes = {}
         if allowed_attributes:
             for tag, attrs in allowed_attributes.items():
-                self.allowed_attributes[tag.lower()] = {attr.lower() for attr in attrs}
-                
-        self.url_schemes = {scheme.lower() for scheme in (url_schemes or set())}
+                self.allowed_attributes[tag.lower()] = {
+                    attr.lower() for attr in attrs}
+
+        self.url_schemes = {scheme.lower()
+                            for scheme in (url_schemes or set())}
         self.parts: list[str] = []
-        
+
         # Track tags that were successfully opened so we know whether to allow their closing tags
         self.active_allowed_tags: list[str] = []
 
@@ -38,20 +41,20 @@ class _AllowlistParser(HTMLParser):
         allowed_attrs_for_tag = self.allowed_attributes.get(tag, set())
         allow_all_attrs = "*" in allowed_attrs_for_tag
         safe_attrs = []
-        
+
         for attr_name, attr_value in attrs:
             attr_lower = attr_name.lower()
-            
+
             # If the attribute isn't allowed, reject the whole tag
             if not allow_all_attrs and attr_lower not in allowed_attrs_for_tag:
                 return None
-                
+
             # Validate URL attributes
             if attr_lower in {"href", "src", "action"} and attr_value:
                 clean_value = attr_value.strip()
                 parsed = urllib.parse.urlparse(clean_value)
                 scheme = parsed.scheme.lower()
-                
+
                 # If it has a scheme and it's not allowed, reject the whole tag
                 if scheme and scheme not in self.url_schemes:
                     return None
@@ -60,7 +63,7 @@ class _AllowlistParser(HTMLParser):
                 safe_attrs.append(attr_lower)
             else:
                 safe_attrs.append(f'{attr_lower}="{escape(attr_value)}"')
-                
+
         if safe_attrs:
             return " " + " ".join(safe_attrs)
         return ""
@@ -117,14 +120,14 @@ class _AllowlistParser(HTMLParser):
 
 
 def sanitize_except(
-    html: str, 
-    tags: Iterable[str] = ("br",), 
+    html: str,
+    tags: Iterable[str] = ("br",),
     attributes: dict[str, set[str]] | None = None,
     url_schemes: Iterable[str] | None = None
 ) -> Markup:
     parser = _AllowlistParser(
-        allowed_tags=tags, 
-        allowed_attributes=attributes, 
+        allowed_tags=tags,
+        allowed_attributes=attributes,
         url_schemes=url_schemes
     )
     parser.feed(html)

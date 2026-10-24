@@ -18,7 +18,8 @@ class Timing:
         Args:
             timezone_offset (int | float | None): Hours offset from UTC. Defaults to None (auto-detect).
         """
-        self.tz = TimeZone(timezone_offset) if timezone_offset is not None else None
+        self.tz = TimeZone(
+            timezone_offset) if timezone_offset is not None else None
 
     def format_timestamp(self, timestamp: int | float | None, format: str) -> str | None:
         """
@@ -126,7 +127,8 @@ class ChatCollection(MutableMapping):
         if not isinstance(chat, ChatStore):
             raise TypeError("Chat must be a ChatStore object")
         if chat_id in self._chats:
-            raise ValueError("Chat ID already exists. Use get_chat to retrieve existing chat.")
+            raise ValueError(
+                "Chat ID already exists. Use get_chat to retrieve existing chat.")
         if alias:
             self.get_system("master_lookup")[alias] = chat_id
             chat.aliases.append(alias)
@@ -150,7 +152,7 @@ class ChatCollection(MutableMapping):
         Args:
             alias (str): The alias to add
             chat_id (str): The ID of the chat to associate the alias with
-        """       
+        """
         if chat_id not in self._chats:
             raise ValueError("Chat ID does not exist. Add chat first.")
         self.get_system("master_lookup")[alias] = chat_id
@@ -163,13 +165,13 @@ class ChatCollection(MutableMapping):
         Args:
             alias (str): The alias to remove
         """
-        
+
         if alias in self.get_system("master_lookup"):
-            self._chats[self.get_system("master_lookup")[alias]].aliases.remove(alias)
-            del self.get_system("master_lookup")[alias] 
+            self._chats[self.get_system("master_lookup")[
+                alias]].aliases.remove(alias)
+            del self.get_system("master_lookup")[alias]
             return True
         return False
-
 
     def items(self):
         """Get chat items (id, chat) pairs."""
@@ -203,7 +205,7 @@ class ChatCollection(MutableMapping):
             Any: The system value if found, None otherwise
         """
         return self._system.get(key)
-    
+
     def set_system(self, key: str, value: Any) -> None:
         """
         Set a system value by its key.
@@ -212,7 +214,7 @@ class ChatCollection(MutableMapping):
             key (str): The key of the system value to set
             value (Any): The value to set
         """
-        self._system[key] = value 
+        self._system[key] = value
 
 
 class ChatStore:
@@ -279,7 +281,8 @@ class ChatStore:
             for key, value in self.__dict__.items()
             if key != '_messages'
         }
-        json_dict['messages'] = {id: msg.to_json() for id, msg in self._messages.items()}
+        json_dict['messages'] = {id: msg.to_json()
+                                 for id, msg in self._messages.items()}
         return json_dict
 
     @classmethod
@@ -369,7 +372,8 @@ class Message:
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
 
         if isinstance(time, (int, float)):
-            self.time = timezone_offset.format_timestamp(self.timestamp, "%H:%M")
+            self.time = timezone_offset.format_timestamp(
+                self.timestamp, "%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
@@ -403,7 +407,8 @@ class Message:
         self.quoted_data = None
         self.caption = None
         self.thumb = None  # Android specific
-        self.original_mime = None  # Android specific: MIME type recorded by WhatsApp, kept when the file is missing
+        # Android specific: MIME type recorded by WhatsApp, kept when the file is missing
+        self.original_mime = None
         self.sticker = False
         self.reactions = {}
         self.poll = None
@@ -433,6 +438,7 @@ class Message:
                 message.data,
                 tags={"br", "a"},
                 attributes={"a": {"href"}},
-                url_schemes={"http", "https", "mailto"},  # Restricts href protocols safely
+                # Restricts href protocols safely
+                url_schemes={"http", "https", "mailto"},
             )
         return message

@@ -24,8 +24,6 @@ else:
     support_crypt15 = True
 
 
-
-
 class DecryptionError(Exception):
     """Base class for decryption-related exceptions."""
     pass
@@ -57,7 +55,8 @@ def _derive_main_enc_key(key_stream: bytes) -> tuple[bytes, bytes]:
         tuple[bytes, bytes]: A tuple containing the main encryption key and the original key stream.
     """
     intermediate_hmac = hmac.new(b'\x00' * 32, key_stream, sha256).digest()
-    key = hmac.new(intermediate_hmac, b"backup encryption\x01", sha256).digest()
+    key = hmac.new(intermediate_hmac,
+                   b"backup encryption\x01", sha256).digest()
     return key, key_stream
 
 
@@ -71,7 +70,8 @@ def _extract_enc_key(keyfile: bytes) -> tuple[bytes, bytes]:
     Returns:
         tuple[bytes, bytes]: values from _derive_main_enc_key()
     """
-    key_stream = b''.join([byte.to_bytes(1, "big", signed=True) for byte in javaobj.loads(keyfile)])
+    key_stream = b''.join([byte.to_bytes(1, "big", signed=True)
+                          for byte in javaobj.loads(keyfile)])
     return _derive_main_enc_key(key_stream)
 
 
@@ -112,7 +112,7 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
     FOOTER_SIZE = 32
     if len(db_ciphertext) <= FOOTER_SIZE:
         raise ValueError("Input data too short to contain a valid GCM tag.")
-    
+
     actual_ciphertext = db_ciphertext[:-FOOTER_SIZE]
     tag = db_ciphertext[-FOOTER_SIZE: -FOOTER_SIZE + 16]
 
@@ -121,10 +121,12 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
         db_compressed = cipher.decrypt_and_verify(actual_ciphertext, tag)
     except ValueError:
         # This could be key, IV, or tag is wrong, but likely the key is wrong.
-        raise ValueError("Decryption/Authentication failed. Ensure you are using the correct key.")
+        raise ValueError(
+            "Decryption/Authentication failed. Ensure you are using the correct key.")
 
     if len(db_compressed) < 2 or db_compressed[0] != 0x78:
-        logging.debug(f"Data passes GCM but is not Zlib. Header: {db_compressed[:2].hex()}")
+        logging.debug(
+            f"Data passes GCM but is not Zlib. Header: {db_compressed[:2].hex()}")
         raise ValueError(
             "Key is correct, but decrypted data is not a valid compressed stream. "
             "Is this even a valid WhatsApp database backup?"
@@ -133,7 +135,8 @@ def _decrypt_database(db_ciphertext: bytes, main_key: bytes, iv: bytes) -> bytes
     try:
         db = zlib.decompress(db_compressed)
     except zlib.error as e:
-        raise zlib.error(f"Decompression failed (The backup file likely corrupted at source): {e}")
+        raise zlib.error(
+            f"Decompression failed (The backup file likely corrupted at source): {e}")
 
     if not db.startswith(b"SQLite"):
         raise ValueError(
@@ -158,14 +161,16 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
         OffsetNotFoundError: If no valid offsets are found.
     """
     if len(database) < 191:
-        raise InvalidFileFormatError("The crypt14 file must be at least 191 bytes")
+        raise InvalidFileFormatError(
+            "The crypt14 file must be at least 191 bytes")
 
     # Attempt known offsets first
     for offsets in CRYPT14_OFFSETS:
         iv = offsets["iv"]
         db = offsets["db"]
         try:
-            decrypted_db = _attempt_decrypt_task((iv, iv + 16, db), database, main_key)
+            decrypted_db = _attempt_decrypt_task(
+                (iv, iv + 16, db), database, main_key)
         except (zlib.error, ValueError):
             continue
         else:
@@ -177,7 +182,8 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
     logging.info(f"Common offsets failed. Will attempt to brute-force")
     offset_max = 200
     workers = max_worker
-    check_offset = partial(_attempt_decrypt_task, database=database, main_key=main_key)
+    check_offset = partial(_attempt_decrypt_task,
+                           database=database, main_key=main_key)
     all_offsets = list(brute_force_offset(offset_max, offset_max))
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
     try:
@@ -199,7 +205,8 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
             logging.info(
                 f"To include your offsets in the exporter, please report it in the discussion thread on GitHub:"
             )
-            logging.info(f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47")
+            logging.info(
+                f"https://github.com/KnugiHK/Whatsapp-Chat-Exporter/discussions/47")
             return result
 
     except KeyboardInterrupt:
@@ -208,18 +215,20 @@ def _decrypt_crypt14(database: bytes, main_key: bytes, max_worker: int = 10) -> 
         raise KeyboardInterrupt(
             f"Brute force interrupted by user (Ctrl+C). Shutting down gracefully..."
         )
-    
+
     finally:
         executor.shutdown(wait=False)
 
-    raise OffsetNotFoundError("Could not find the correct offsets for decryption.")
+    raise OffsetNotFoundError(
+        "Could not find the correct offsets for decryption.")
+
 
 def _attempt_decrypt_task(offset_tuple, database, main_key):
     """Attempt decryption with the given offsets."""
     start_iv, end_iv, start_db = offset_tuple
     iv = database[start_iv:end_iv]
     db_ciphertext = database[start_db:]
-    
+
     try:
         return _decrypt_database(db_ciphertext, main_key, iv)
     except (zlib.error, ValueError):
@@ -240,7 +249,8 @@ def _decrypt_crypt12(database: bytes, main_key: bytes) -> bytes:
             ValueError: If the file format is invalid or the signature mismatches.
     """
     if len(database) < 67:
-        raise InvalidFileFormatError("The crypt12 file must be at least 67 bytes")
+        raise InvalidFileFormatError(
+            "The crypt12 file must be at least 67 bytes")
 
     t2 = database[3:35]
     iv = database[51:67]
@@ -265,7 +275,8 @@ def _decrypt_crypt15(database: bytes, main_key: bytes, db_type: DbType) -> bytes
     if not support_crypt15:
         raise RuntimeError("Crypt15 is not supported")
     if len(database) < 131:
-        raise InvalidFileFormatError("The crypt15 file must be at least 131 bytes")
+        raise InvalidFileFormatError(
+            "The crypt15 file must be at least 131 bytes")
 
     if db_type == DbType.MESSAGE:
         iv = database[8:24]
@@ -314,7 +325,8 @@ def decrypt_backup(
         RuntimeError: for dependency errors
     """
     if not support_backup:
-        raise RuntimeError("Dependencies for backup decryption are not available.")
+        raise RuntimeError(
+            "Dependencies for backup decryption are not available.")
 
     if not dry_run and output is None:
         raise ValueError(
@@ -332,10 +344,12 @@ def decrypt_backup(
         t1 = key[30:62]
 
         if t1 != database[15:47] and crypt == Crypt.CRYPT14:
-            raise ValueError("The signature of key file and backup file mismatch")
+            raise ValueError(
+                "The signature of key file and backup file mismatch")
 
         if t1 != database[3:35] and crypt == Crypt.CRYPT12:
-            raise ValueError("The signature of key file and backup file mismatch")
+            raise ValueError(
+                "The signature of key file and backup file mismatch")
 
     if crypt == Crypt.CRYPT15:
         if keyfile_stream:
@@ -343,8 +357,10 @@ def decrypt_backup(
         else:
             main_key, hex_key = _derive_main_enc_key(key)
         if show_crypt15:
-            hex_key_str = ' '.join([hex_key.hex()[c:c+4] for c in range(0, len(hex_key.hex()), 4)])
-            logging.info(f"The HEX key of the crypt15 backup is: {hex_key_str}")
+            hex_key_str = ' '.join([hex_key.hex()[c:c+4]
+                                   for c in range(0, len(hex_key.hex()), 4)])
+            logging.info(
+                f"The HEX key of the crypt15 backup is: {hex_key_str}")
     else:
         main_key = key[126:]
 

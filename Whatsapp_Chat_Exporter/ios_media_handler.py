@@ -18,8 +18,6 @@ else:
     support_encrypted = True
 
 
-
-
 class BackupExtractor:
     """
     A class to handle the extraction of WhatsApp data from iOS backups,
@@ -73,9 +71,9 @@ class BackupExtractor:
         """
         if not support_encrypted:
             logging.error("You don't have the dependencies to handle encrypted backup."
-                         "Read more on how to deal with encrypted backup:"
-                         "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
-                         )
+                          "Read more on how to deal with encrypted backup:"
+                          "https://github.com/KnugiHK/Whatsapp-Chat-Exporter/blob/main/README.md#usage"
+                          )
             return
 
         logging.info(f"Encryption detected on the backup!")
@@ -143,7 +141,9 @@ class BackupExtractor:
 
     def _extract_decrypted_files(self):
         """Extract all WhatsApp files after decryption"""
-        pbar = tqdm(desc="Decrypting and extracting files", unit="file", leave=False)
+        pbar = tqdm(desc="Decrypting and extracting files",
+                    unit="file", leave=False)
+
         def extract_progress_handler(file_id, domain, relative_path, n, total_files):
             if pbar.total is None:
                 pbar.total = total_files
@@ -159,7 +159,8 @@ class BackupExtractor:
         )
         total_time = pbar.format_dict['elapsed']
         pbar.close()
-        logging.info(f"All required files are decrypted and extracted in {convert_time_unit(total_time)}")
+        logging.info(
+            f"All required files are decrypted and extracted in {convert_time_unit(total_time)}")
 
     def _extract_unencrypted_backup(self):
         """
@@ -172,9 +173,12 @@ class BackupExtractor:
         """
         Copies the WhatsApp message, contact, and call databases to the working directory.
         """
-        wts_db_path = os.path.join(self.base_dir, self.identifiers.MESSAGE[:2], self.identifiers.MESSAGE)
-        contact_db_path = os.path.join(self.base_dir, self.identifiers.CONTACT[:2], self.identifiers.CONTACT)
-        call_db_path = os.path.join(self.base_dir, self.identifiers.CALL[:2], self.identifiers.CALL)
+        wts_db_path = os.path.join(
+            self.base_dir, self.identifiers.MESSAGE[:2], self.identifiers.MESSAGE)
+        contact_db_path = os.path.join(
+            self.base_dir, self.identifiers.CONTACT[:2], self.identifiers.CONTACT)
+        call_db_path = os.path.join(
+            self.base_dir, self.identifiers.CALL[:2], self.identifiers.CALL)
 
         if not os.path.isfile(wts_db_path):
             if self.identifiers is WhatsAppIdentifier:
@@ -235,14 +239,16 @@ class BackupExtractor:
                     if flags == 2:  # Directory
                         os.makedirs(destination, exist_ok=True)
                     elif flags == 1:  # File
-                        shutil.copyfile(os.path.join(self.base_dir, folder, hashes), destination)
+                        shutil.copyfile(os.path.join(
+                            self.base_dir, folder, hashes), destination)
                         metadata = BPListReader(row["metadata"]).parse()
                         _creation = metadata["$objects"][1]["Birth"]
                         modification = metadata["$objects"][1]["LastModified"]
                         os.utime(destination, (modification, modification))
                     pbar.update(1)
             total_time = pbar.format_dict['elapsed']
-            logging.info(f"Extracted {total_row_number} WhatsApp files in {convert_time_unit(total_time)}")
+            logging.info(
+                f"Extracted {total_row_number} WhatsApp files in {convert_time_unit(total_time)}")
 
 
 def extract_media(base_dir, identifiers, decrypt_chunk_size):
