@@ -72,11 +72,11 @@ class ChatCollection(MutableMapping):
         self._system: dict[str, Any] = {}
         self.set_system("master_lookup", {})
 
-    def __getitem__(self, key: str) -> 'ChatStore':
+    def __getitem__(self, key: str) -> ChatStore:
         """Get a chat by its ID. Required for dict-like access."""
         return self._chats[key]
 
-    def __setitem__(self, key: str, value: 'ChatStore') -> None:
+    def __setitem__(self, key: str, value: ChatStore) -> None:
         """Set a chat by its ID. Required for dict-like access."""
         if not isinstance(value, ChatStore):
             raise TypeError("Value must be a ChatStore object")
@@ -111,7 +111,7 @@ class ChatCollection(MutableMapping):
         else:
             return None
 
-    def add_chat(self, chat_id: str, chat: 'ChatStore', alias: str | None = None) -> 'ChatStore':
+    def add_chat(self, chat_id: str, chat: ChatStore, alias: str | None = None) -> ChatStore:
         """
         Add a new chat to the collection.
 
@@ -257,13 +257,13 @@ class ChatStore:
         """Get number of chats. Required for dict-like access."""
         return len(self._messages)
 
-    def add_message(self, id: str, message: 'Message') -> None:
+    def add_message(self, id: str, message: Message) -> None:
         """Add a message to the chat store."""
         if not isinstance(message, Message):
             raise TypeError("message must be a Message object")
         self._messages[id] = message
 
-    def get_message(self, id: str) -> 'Message':
+    def get_message(self, id: str) -> Message:
         """Get a message from the chat store."""
         return self._messages.get(id)
 
@@ -283,7 +283,7 @@ class ChatStore:
         return json_dict
 
     @classmethod
-    def from_json(cls, data: dict) -> 'ChatStore':
+    def from_json(cls, data: dict) -> ChatStore:
         """Create a chat store from JSON data."""
         chat = cls(data.get("type"), data.get("name"))
         for key, value in data.items():
@@ -294,7 +294,7 @@ class ChatStore:
             chat.add_message(id, message)
         return chat
 
-    def get_last_message(self) -> 'Message':
+    def get_last_message(self) -> Message:
         """Get the most recent message in the chat."""
         return tuple(self._messages.values())[-1]
 
@@ -310,7 +310,7 @@ class ChatStore:
         """Get all message keys in the chat."""
         return self._messages.keys()
 
-    def merge_with(self, other: 'ChatStore'):
+    def merge_with(self, other: ChatStore):
         """Merge another ChatStore into this one.
 
         Args:
@@ -413,7 +413,7 @@ class Message:
         return {**self.__dict__}
 
     @classmethod
-    def from_json(cls, data: dict) -> 'Message':
+    def from_json(cls, data: dict) -> Message:
         message = cls(
             from_me=data["from_me"],
             timestamp=data["timestamp"],
