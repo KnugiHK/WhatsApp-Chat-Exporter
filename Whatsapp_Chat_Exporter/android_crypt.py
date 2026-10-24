@@ -4,7 +4,6 @@ import logging
 import zlib
 import concurrent.futures
 from tqdm import tqdm
-from typing import Tuple, Union
 from hashlib import sha256
 from functools import partial
 from Whatsapp_Chat_Exporter.utility import CRYPT14_OFFSETS, Crypt, DbType

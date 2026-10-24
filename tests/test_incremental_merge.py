@@ -1,9 +1,8 @@
 import os
 import json
 import pytest
-from unittest.mock import patch, mock_open, call, MagicMock
+from unittest.mock import patch, mock_open, MagicMock
 from Whatsapp_Chat_Exporter.utility import incremental_merge
-from Whatsapp_Chat_Exporter.data_model import ChatStore
 
 # Test data setup
 BASE_PATH = "AppDomainGroup-group.net.whatsapp.WhatsApp.shared"

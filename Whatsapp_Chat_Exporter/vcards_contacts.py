@@ -1,7 +1,6 @@
 import logging
-import re
 import quopri
-from typing import List, TypedDict
+from typing import TypedDict
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Device
 

@@ -1,7 +1,4 @@
 import sqlite3
-
-import pytest
-
 from Whatsapp_Chat_Exporter import ios_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection
 

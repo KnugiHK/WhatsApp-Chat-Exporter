@@ -617,7 +617,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | N
 
     Args:
         content (sqlite3.Row): A row from the messages table.
-        init_msg (Optional[str]): The initial message, if any.
+        init_msg (str | None): The initial message, if any.
 
     Returns:
         A Markup object containing the metadata, or None if the type is unsupported.
@@ -800,7 +800,7 @@ def setup_template(template: str | None, no_avatar: bool, experimental: bool = F
     Sets up the Jinja2 template environment and loads the template.
 
     Args:
-        template (Optional[str]): Path to custom template file. If None, uses default template.
+        template (str | None): Path to custom template file. If None, uses default template.
         no_avatar (bool): Whether to disable avatar display in the template.
         experimental (bool, optional): Whether to use experimental template features. Defaults to False.
 

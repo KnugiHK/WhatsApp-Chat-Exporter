@@ -7,7 +7,6 @@ with no external protobuf library dependency.
 """
 
 import struct
-import logging
 
 
 def _decode_varint(data, pos):

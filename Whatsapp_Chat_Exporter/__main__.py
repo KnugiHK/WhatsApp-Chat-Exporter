@@ -22,7 +22,6 @@ from datetime import datetime
 from getpass import getpass
 from tqdm import tqdm
 from sys import exit
-from typing import Optional, List, Dict
 from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 
 
@@ -452,7 +451,7 @@ def process_single_date_filter(parser: ArgumentParser, args) -> None:
             "Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
 
 
-def setup_contact_store(args) -> Optional['ContactsFromVCards']:
+def setup_contact_store(args) -> ContactsFromVCards | None:
     """Set up and return a contact store if needed."""
     if args.enrich_from_vcards is not None:
         contact_store = ContactsFromVCards()

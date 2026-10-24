@@ -1,5 +1,5 @@
 from html.parser import HTMLParser
-from typing import Iterable, Optional
+from typing import Iterable
 import urllib.parse
 from markupsafe import Markup, escape
 
@@ -12,8 +12,8 @@ class _AllowlistParser(HTMLParser):
     def __init__(
         self, 
         allowed_tags: Iterable[str], 
-        allowed_attributes: Optional[dict[str, set[str]]] = None,
-        url_schemes: Optional[Iterable[str]] = None
+        allowed_attributes: dict[str, set[str]] | None = None,
+        url_schemes: Iterable[str] | None = None
     ) -> None:
         super().__init__(convert_charrefs=False)
         self.allowed_tags = {tag.lower() for tag in allowed_tags}
@@ -29,7 +29,7 @@ class _AllowlistParser(HTMLParser):
         # Track tags that were successfully opened so we know whether to allow their closing tags
         self.active_allowed_tags: list[str] = []
 
-    def _filter_attributes(self, tag: str, attrs: list[tuple[str, str | None]]) -> Optional[str]:
+    def _filter_attributes(self, tag: str, attrs: list[tuple[str, str | None]]) -> str | None:
         """
         Returns a formatted string of safe attributes.
         If ANY attribute is not allowed (or fails URL scheme validation), 
@@ -119,8 +119,8 @@ class _AllowlistParser(HTMLParser):
 def sanitize_except(
     html: str, 
     tags: Iterable[str] = ("br",), 
-    attributes: Optional[dict[str, set[str]]] = None,
-    url_schemes: Optional[Iterable[str]] = None
+    attributes: dict[str, set[str]] | None = None,
+    url_schemes: Iterable[str] | None = None
 ) -> Markup:
     parser = _AllowlistParser(
         allowed_tags=tags, 

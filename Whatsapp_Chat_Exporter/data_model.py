@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, tzinfo, timedelta
-from typing import Union, Optional, Dict, Any
+from typing import Any
 from collections.abc import MutableMapping
 from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
 
@@ -28,7 +28,7 @@ class Timing:
             format (str): strftime format string
 
         Returns:
-            Optional[str]: Formatted timestamp string, or None if timestamp is None
+            str | None: Formatted timestamp string, or None if timestamp is None
         """
         if timestamp is not None:
             timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
@@ -93,7 +93,7 @@ class ChatCollection(MutableMapping):
         """Get number of chats. Required for dict-like access."""
         return len(self._chats)
 
-    def get_chat(self, chat_id: str) -> Optional['ChatStore']:
+    def get_chat(self, chat_id: str) -> ChatStore | None:
         """
         Get a chat by its ID.
 
@@ -101,7 +101,7 @@ class ChatCollection(MutableMapping):
             chat_id (str): The ID of the chat to retrieve
 
         Returns:
-            Optional['ChatStore']: The chat if found, None otherwise
+            ChatStore | None: The chat if found, None otherwise
         """
         if chat_id in self._chats:
             return self._chats[chat_id]
@@ -225,8 +225,8 @@ class ChatStore:
 
         Args:
             type (str): Device type (IOS or ANDROID)
-            name (Optional[str]): Chat name
-            media (Optional[str]): Path to media folder
+            name (str | None): Chat name
+            media (str | None): Path to media folder
 
         Raises:
             TypeError: If name is not a string or None
@@ -343,9 +343,9 @@ class Message:
             timestamp: int,
             time: int | float | str,
             key_id: int | str,
-            received_timestamp: int = None,
-            read_timestamp: int = None,
-            timezone_offset: Timing | None = Timing(0),
+            received_timestamp: int | None = None,
+            read_timestamp: int | None = None,
+            timezone_offset: Timing = Timing(0),
             message_type: int | None = None
     ) -> None:
         """
@@ -356,10 +356,10 @@ class Message:
             timestamp (int): Message timestamp
             time (int | float | str): Message time
             key_id (int | str): Message unique identifier
-            received_timestamp (int, optional): When message was received. Defaults to None
-            read_timestamp (int, optional): When message was read. Defaults to None
-            timezone_offset (int, optional): Hours offset from UTC. Defaults to 0
-            message_type (Optional[int], optional): Type of message. Defaults to None
+            received_timestamp (int | None): When message was received. Defaults to None
+            read_timestamp (int | None): When message was read. Defaults to None
+            timezone_offset (int): Hours offset from UTC. Defaults to 0
+            message_type (int | None): Type of message. Defaults to None
 
         Raises:
             TypeError: If time is not a string or number
