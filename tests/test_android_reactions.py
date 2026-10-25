@@ -71,3 +71,32 @@ def test_reactions_without_jid_map_table(db):
     _get_reactions(db, data)
     assert data[GROUP_JID].get_message(1000).reactions == {"11111111111111": "👍"}
     assert data["22222222222222@lid"].get_message(1001).reactions == {"22222222222222": "❤️"}
+
+
+def test_reaction_unmapped_lid_falls_back_to_lid(db):
+    # Insert an LID that has NO entry in jid_map
+    db.execute("INSERT INTO jid VALUES (6, '33333333333333', 'lid', '33333333333333@lid')")
+    db.execute("INSERT INTO message_add_on VALUES (102, 10, 1002, 0, 6)")
+    db.execute("INSERT INTO message_add_on_reaction VALUES (102, '🔥', 0)")
+    
+    data = _collection(jid_map_exists=True)
+    # Add the message we are testing against
+    data[GROUP_JID].add_message(1002, Message(from_me=False, timestamp=1700000000, time=1700000000, key_id=1002))
+    
+    _get_reactions(db, data)
+    
+    # It should fall back to the raw LID string because sender_pn will be NULL
+    assert data[GROUP_JID].get_message(1002).reactions == {"33333333333333": "🔥"}
+
+def test_reaction_standard_phone_number_is_unaffected(db):
+    # JID row 5 is already a standard phone number (from your fixture)
+    db.execute("INSERT INTO message_add_on VALUES (103, 10, 1003, 0, 5)")
+    db.execute("INSERT INTO message_add_on_reaction VALUES (103, '😂', 0)")
+    
+    data = _collection(jid_map_exists=True)
+    data[GROUP_JID].add_message(1003, Message(from_me=False, timestamp=1700000000, time=1700000000, key_id=1003))
+    
+    _get_reactions(db, data)
+    
+    # It should correctly bypass the map and return the phone number
+    assert data[GROUP_JID].get_message(1003).reactions == {"15550002222": "😂"}
