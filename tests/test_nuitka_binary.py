@@ -32,14 +32,14 @@ def command_runner():
     return _run_command
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 15),
+    reason="Python 3.15 is not yet fully supported by Nuitka.",
+)
 def test_nuitka_binary():
     """
     Tests the creation and execution of a Nuitka-compiled binary.
     """
-
-    if sys.version_info >= (3, 15):
-        print("Skipping Nuitka test: Python 3.15 is not yet fully supported by Nuitka.")
-        return
     
     nuitka_command = [
         "python", "-m", "nuitka", "--onefile", "--assume-yes-for-downloads",
