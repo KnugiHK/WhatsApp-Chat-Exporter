@@ -308,7 +308,7 @@ This project officially supports all non-EOL (End-of-Life) versions of Python. O
 
 This is a MIT licensed project.
 
-The Telegram Desktop's export is the reference for whatsapp.html in this repo.
+The Telegram Desktop's export is the reference for whatsapp_old.html in this repo.
 
 `bplist.py` was released by Vladimir "Farcaller" Pouzanov under MIT license.
 
