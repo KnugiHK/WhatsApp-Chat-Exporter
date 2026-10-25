@@ -9,6 +9,7 @@ from tqdm import tqdm
 from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import Markup, escape
+from contextlib import closing
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
@@ -519,14 +520,18 @@ def _format_message_text(text):
 
 def _get_lid_map(db):
     """Map LID users to their phone number JIDs using the jid_map table."""
-    c = db.cursor()
-    c.execute("""SELECT lid.user AS lid_user, pn.raw_string AS pn_jid
-                 FROM jid_map
-                    INNER JOIN jid lid
-                        ON jid_map.lid_row_id = lid._id
-                    INNER JOIN jid pn
-                        ON jid_map.jid_row_id = pn._id""")
-    return {row["lid_user"]: row["pn_jid"] for row in c.fetchall()}
+    query = """
+        SELECT lid.user AS lid_user, pn.raw_string AS pn_jid
+        FROM jid_map
+            INNER JOIN jid lid
+                ON jid_map.lid_row_id = lid._id
+            INNER JOIN jid pn
+                ON jid_map.jid_row_id = pn._id
+        WHERE lid.user IS NOT NULL AND pn.raw_string IS NOT NULL
+    """
+    with closing(db.cursor()) as c:
+        c.execute(query)
+        return {row["lid_user"]: row["pn_jid"] for row in c.fetchall()}
 
 
 def _resolve_mentions(text, data):
