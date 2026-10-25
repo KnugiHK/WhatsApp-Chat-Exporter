@@ -7,19 +7,18 @@ import unicodedata
 import re
 import math
 import shutil
-from bleach import clean as sanitize
 from markupsafe import Markup, escape
 from datetime import datetime, timedelta, date
 from enum import IntEnum
 from tqdm import tqdm
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
-from typing import Dict, List, Optional, Tuple, Union, Any
+from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
+from typing import Any
 from enum import StrEnum, IntEnum
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
 CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().total_seconds() / 3600
-
 
 
 def convert_time_unit(time_second: int) -> str:
@@ -110,22 +109,11 @@ def readable_to_bytes(size_str: str) -> int:
         return int(size_str)
     match = re.fullmatch(r'^(\d+(\.\d*)?)\s*([KMGTPEZY]?B)?$', size_str)
     if not match:
-        raise ValueError("Invalid size format for size_str. Expected format like '10MB', '1024GB', or '512'.")
+        raise ValueError(
+            "Invalid size format for size_str. Expected format like '10MB', '1024GB', or '512'.")
     unit = ''.join(filter(str.isalpha, size_str)).strip()
     number = ''.join(c for c in size_str if c.isdigit() or c == '.').strip()
     return int(float(number) * SIZE_UNITS[unit])
-
-
-def sanitize_except(html: str) -> Markup:
-    """Sanitizes HTML, only allowing <br> tag.
-
-    Args:
-        html: The HTML string to sanitize.
-
-    Returns:
-        A Markup object containing the sanitized HTML.
-    """
-    return Markup(sanitize(html, tags=["br"]))
 
 
 def determine_day(last: int, current: int) -> date | None:
@@ -163,11 +151,14 @@ def check_update(include_beta: bool = False) -> int:
         with raw:
             package_info = json.load(raw)
             if include_beta:
-                all_versions = [version.parse(v) for v in package_info["releases"].keys()]
-                latest_version = max(all_versions, key=lambda v: (v.release, v.pre))
+                all_versions = [version.parse(
+                    v) for v in package_info["releases"].keys()]
+                latest_version = max(
+                    all_versions, key=lambda v: (v.release, v.pre))
             else:
                 latest_version = version.parse(package_info["info"]["version"])
-            current_version = version.parse(importlib.metadata.version("whatsapp_chat_exporter"))
+            current_version = version.parse(
+                importlib.metadata.version("whatsapp_chat_exporter"))
             if current_version < latest_version:
                 logging.info(
                     "===============Update===============\n"
@@ -176,10 +167,12 @@ def check_update(include_beta: bool = False) -> int:
                     f"Latest version: {latest_version}"
                 )
                 pip_cmd = "pip" if platform == "win32" else "pip3"
-                logging.info(f"Update with: {pip_cmd} install --upgrade whatsapp-chat-exporter {'--pre' if include_beta else ''}")
+                logging.info(
+                    f"Update with: {pip_cmd} install --upgrade whatsapp-chat-exporter {'--pre' if include_beta else ''}")
                 logging.info("====================================")
             else:
-                logging.info("You are using the latest version of WhatsApp Chat Exporter.")
+                logging.info(
+                    "You are using the latest version of WhatsApp Chat Exporter.")
     return 0
 
 
@@ -242,31 +235,32 @@ def import_from_json(json_file: str, data: ChatCollection):
             data.add_chat(jid, chat)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Imported {total_row_number} chats from JSON in {convert_time_unit(total_time)}")
 
 
 class IncrementalMerger:
     """Handles incremental merging of WhatsApp chat exports."""
-    
+
     def __init__(self, pretty_print_json: int, avoid_encoding_json: bool):
         """Initialize the merger with JSON formatting options.
-        
+
         Args:
             pretty_print_json: JSON indentation level.
             avoid_encoding_json: Whether to avoid ASCII encoding.
         """
         self.pretty_print_json = pretty_print_json
         self.avoid_encoding_json = avoid_encoding_json
-    
+
     def _get_json_files(self, source_dir: str) -> list[str]:
         """Get list of JSON files from source directory.
-        
+
         Args:
             source_dir: Path to the source directory.
-            
+
         Returns:
             List of JSON filenames.
-            
+
         Raises:
             SystemExit: If no JSON files are found.
         """
@@ -274,13 +268,13 @@ class IncrementalMerger:
         if not json_files:
             logging.error("No JSON files found in the source directory.")
             raise SystemExit(1)
-        
+
         logging.debug("JSON files found:", json_files)
         return json_files
 
     def _copy_new_file(self, source_path: str, target_path: str, target_dir: str, json_file: str) -> None:
         """Copy a new JSON file to target directory.
-        
+
         Args:
             source_path: Path to source file.
             target_path: Path to target file.
@@ -293,10 +287,10 @@ class IncrementalMerger:
 
     def _load_chat_data(self, file_path: str) -> dict[str, Any]:
         """Load JSON data from file.
-        
+
         Args:
             file_path: Path to JSON file.
-            
+
         Returns:
             Loaded JSON data.
         """
@@ -305,10 +299,10 @@ class IncrementalMerger:
 
     def _parse_chats_from_json(self, data: dict[str, Any]) -> dict[str, Any]:
         """Parse JSON data into ChatStore objects.
-        
+
         Args:
             data: Raw JSON data.
-            
+
         Returns:
             Dictionary of JID to ChatStore objects.
         """
@@ -316,11 +310,11 @@ class IncrementalMerger:
 
     def _merge_chat_stores(self, source_chats: dict[str, Any], target_chats: dict[str, Any]) -> dict[str, Any]:
         """Merge source chats into target chats.
-        
+
         Args:
             source_chats: Source ChatStore objects.
             target_chats: Target ChatStore objects.
-            
+
         Returns:
             Merged ChatStore objects.
         """
@@ -333,10 +327,10 @@ class IncrementalMerger:
 
     def _serialize_chats(self, chats: dict[str, Any]) -> dict[str, Any]:
         """Serialize ChatStore objects to JSON format.
-        
+
         Args:
             chats: Dictionary of ChatStore objects.
-            
+
         Returns:
             Serialized JSON data.
         """
@@ -344,11 +338,11 @@ class IncrementalMerger:
 
     def _has_changes(self, merged_data: dict[str, Any], original_data: dict[str, Any]) -> bool:
         """Check if merged data differs from original data.
-        
+
         Args:
             merged_data: Merged JSON data.
             original_data: Original JSON data.
-            
+
         Returns:
             True if changes detected, False otherwise.
         """
@@ -356,7 +350,7 @@ class IncrementalMerger:
 
     def _save_merged_data(self, target_path: str, merged_data: dict[str, Any]) -> None:
         """Save merged data to target file.
-        
+
         Args:
             target_path: Path to target file.
             merged_data: Merged JSON data.
@@ -371,36 +365,39 @@ class IncrementalMerger:
 
     def _merge_json_file(self, source_path: str, target_path: str, json_file: str) -> None:
         """Merge a single JSON file.
-        
+
         Args:
             source_path: Path to source file.
             target_path: Path to target file.
             json_file: Name of the JSON file.
         """
-        logging.info(f"Merging '{json_file}' with existing file in target directory...", extra={"clear": True})
-        
+        logging.info(f"Merging '{json_file}' with existing file in target directory...", extra={
+                     "clear": True})
+
         source_data = self._load_chat_data(source_path)
         target_data = self._load_chat_data(target_path)
-        
+
         source_chats = self._parse_chats_from_json(source_data)
         target_chats = self._parse_chats_from_json(target_data)
-        
+
         merged_chats = self._merge_chat_stores(source_chats, target_chats)
         merged_data = self._serialize_chats(merged_chats)
-        
+
         if self._has_changes(merged_data, target_data):
-            logging.info(f"Changes detected in '{json_file}', updating target file...")
+            logging.info(
+                f"Changes detected in '{json_file}', updating target file...")
             self._save_merged_data(target_path, merged_data)
         else:
-            logging.info(f"No changes detected in '{json_file}', skipping update.")
+            logging.info(
+                f"No changes detected in '{json_file}', skipping update.")
 
     def _should_copy_media_file(self, source_file: str, target_file: str) -> bool:
         """Check if media file should be copied.
-        
+
         Args:
             source_file: Path to source media file.
             target_file: Path to target media file.
-            
+
         Returns:
             True if file should be copied, False otherwise.
         """
@@ -408,7 +405,7 @@ class IncrementalMerger:
 
     def _merge_media_directories(self, source_dir: str, target_dir: str, media_dir: str) -> None:
         """Merge media directories from source to target.
-        
+
         Args:
             source_dir: Source directory path.
             target_dir: Target directory path.
@@ -416,45 +413,48 @@ class IncrementalMerger:
         """
         source_media_path = os.path.join(source_dir, media_dir)
         target_media_path = os.path.join(target_dir, media_dir)
-        
-        logging.info(f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
-        
+
+        logging.info(
+            f"Merging media directories. Source: {source_media_path}, target: {target_media_path}")
+
         if not os.path.exists(source_media_path):
             return
-        
+
         for root, _, files in os.walk(source_media_path):
             relative_path = os.path.relpath(root, source_media_path)
             target_root = os.path.join(target_media_path, relative_path)
             os.makedirs(target_root, exist_ok=True)
-            
+
             for file in files:
                 source_file = os.path.join(root, file)
                 target_file = os.path.join(target_root, file)
-                
+
                 if self._should_copy_media_file(source_file, target_file):
-                    logging.debug(f"Copying '{source_file}' to '{target_file}'...")
+                    logging.debug(
+                        f"Copying '{source_file}' to '{target_file}'...")
                     shutil.copy2(source_file, target_file)
 
     def merge(self, source_dir: str, target_dir: str, media_dir: str) -> None:
         """Merge JSON files and media from source to target directory.
-        
+
         Args:
             source_dir: The path to the source directory containing JSON files.
             target_dir: The path to the target directory to merge into.
             media_dir: The path to the media directory.
         """
         json_files = self._get_json_files(source_dir)
-        
+
         logging.info("Starting incremental merge process...")
         for json_file in json_files:
             source_path = os.path.join(source_dir, json_file)
             target_path = os.path.join(target_dir, json_file)
-            
+
             if not os.path.exists(target_path):
-                self._copy_new_file(source_path, target_path, target_dir, json_file)
+                self._copy_new_file(source_path, target_path,
+                                    target_dir, json_file)
             else:
                 self._merge_json_file(source_path, target_path, json_file)
-        
+
         self._merge_media_directories(source_dir, target_dir, media_dir)
 
 
@@ -520,14 +520,14 @@ def get_cond_for_empty(enable: bool, jid_field: str, broadcast_field: str) -> st
 
 def _get_group_condition(jid: str, platform: str) -> str:
     """Generate platform-specific group identification condition.
-    
+
     Args:
         jid: The JID column name.
         platform: The platform ("android" or "ios").
-        
+
     Returns:
         SQL condition string for group identification.
-        
+
     Raises:
         ValueError: If platform is not supported.
     """
@@ -568,7 +568,7 @@ def get_chat_condition(
     """
     if not filter:
         return ""
-    
+
     if jid is not None and len(columns) < 2:
         raise ValueError(
             "There must be at least two elements in argument columns if jid is not None")
@@ -592,7 +592,7 @@ def get_chat_condition(
         # Secondary column condition for groups
         if len(columns) > 1 and is_group_condition:
             if include:
-                group_condition = f" OR ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})" 
+                group_condition = f" OR ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})"
             else:
                 group_condition = f" AND ({columns[1]} {operator} '%{chat}%' AND {is_group_condition})"
             conditions.append(group_condition)
@@ -629,7 +629,7 @@ def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | N
 
     Args:
         content (sqlite3.Row): A row from the messages table.
-        init_msg (Optional[str]): The initial message, if any.
+        init_msg (str | None): The initial message, if any.
 
     Returns:
         A Markup object containing the metadata, or None if the type is unsupported.
@@ -638,7 +638,8 @@ def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | N
     if content["is_me_joined"] == 1:  # Override
         return Markup("You were added into the group by ") + msg
     if content["action_type"] == 1:
-        msg += Markup(' changed the group name to "') + escape(content['data'] or "") + Markup('"')
+        msg += Markup(' changed the group name to "') + \
+            escape(content['data'] or "") + Markup('"')
     elif content["action_type"] == 4:
         msg += Markup(" was added to the group")
     elif content["action_type"] == 5:
@@ -661,7 +662,8 @@ def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | N
         else:
             msg = old + Markup(" changed their number to ") + new
     elif content["action_type"] == 11:
-        msg += Markup(' created a group with name: "') + escape(content['data'] or "") + Markup('"')
+        msg += Markup(' created a group with name: "') + \
+            escape(content['data'] or "") + Markup('"')
     elif content["action_type"] == 12:
         msg += Markup(" added someone")  # TODO: Find out who
     elif content["action_type"] == 13:
@@ -672,17 +674,20 @@ def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | N
         return  # Someone promoted someone as an admin
     elif content["action_type"] == 18:
         if msg != "You":
-            msg = Markup("The security code between you and ") + msg + Markup(" changed")
+            msg = Markup("The security code between you and ") + \
+                msg + Markup(" changed")
         else:
             msg = Markup("The security code in this chat changed")
     elif content["action_type"] == 19:
         msg = Markup("This chat is now end-to-end encrypted")
     elif content["action_type"] == 20:
-        msg = Markup("Someone joined this group by using a invite link")  # TODO: Find out who
+        # TODO: Find out who
+        msg = Markup("Someone joined this group by using a invite link")
     elif content["action_type"] == 27:
         # Escape the description first, then replace literal newlines with <br>.
         # Any <br> that was already in the description text becomes &lt;br&gt;.
-        description = escape(content['data'] or "Unknown").replace("\n", Markup("<br>"))
+        description = escape(content['data'] or "Unknown").replace(
+            "\n", Markup("<br>"))
         msg += Markup(" changed the group description to:<br>") + description
     elif content["action_type"] == 28:
         try:
@@ -697,12 +702,14 @@ def determine_metadata(content: sqlite3.Row, init_msg: str | None) -> Markup | N
     elif content["action_type"] == 47:
         msg = Markup("The contact is an official business account")
     elif content["action_type"] == 50:
-        msg = Markup("The contact's account type changed from business to standard")
+        msg = Markup(
+            "The contact's account type changed from business to standard")
     elif content["action_type"] == 56:
         msg = Markup("Messgae timer was enabled/updated/disabled")
     elif content["action_type"] == 57:
         if msg != "You":
-            msg = Markup("The security code between you and ") + msg + Markup(" changed")
+            msg = Markup("The security code between you and ") + \
+                msg + Markup(" changed")
         else:
             msg = Markup("The security code in this chat changed")
     elif content["action_type"] == 58:
@@ -755,7 +762,8 @@ def check_jid_map(db: sqlite3.Connection) -> bool:
         bool: True if the jid_map table exists, False otherwise.
     """
     cursor = db.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jid_map'")
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='jid_map'")
     return cursor.fetchone() is not None
 
 
@@ -775,6 +783,7 @@ def get_jid_map_join(jid_map_exists: bool) -> str:
                 LEFT JOIN jid lid_group
                     ON jid_map_group.jid_row_id = lid_group._id"""
 
+
 def get_jid_map_selection(jid_map_exists: bool) -> tuple:
     """
     Returns the SQL selection statements for jid_map table.
@@ -786,7 +795,7 @@ def get_jid_map_selection(jid_map_exists: bool) -> tuple:
             "COALESCE(lid_global.raw_string, jid_global.raw_string)",
             "COALESCE(lid_group.raw_string, jid_group.raw_string)"
         )
-        
+
 
 def get_transcription_selection(db: sqlite3.Connection) -> str:
     """
@@ -812,7 +821,7 @@ def setup_template(template: str | None, no_avatar: bool, experimental: bool = F
     Sets up the Jinja2 template environment and loads the template.
 
     Args:
-        template (Optional[str]): Path to custom template file. If None, uses default template.
+        template (str | None): Path to custom template file. If None, uses default template.
         no_avatar (bool): Whether to disable avatar display in the template.
         experimental (bool, optional): Whether to use experimental template features. Defaults to False.
 
@@ -859,7 +868,8 @@ def safe_name(text: str | bytes) -> str:
     elif not isinstance(text, str):
         raise TypeError("value must be a string or bytes")
     normalized_text = unicodedata.normalize("NFKC", text)
-    safe_chars = [char for char in normalized_text if char.isalnum() or char in "-_ ."]
+    safe_chars = [char for char in normalized_text if char.isalnum()
+                  or char in "-_ ."]
     return "-".join(''.join(safe_chars).split())
 
 
@@ -884,7 +894,8 @@ def get_chat_type(chat_id: str) -> str:
         return "status_broadcast"
     elif chat_id.endswith("@broadcast"):
         return "broadcast_channel"
-    logging.warning(f"Unknown chat type for {chat_id}, defaulting to private_group")
+    logging.warning(
+        f"Unknown chat type for {chat_id}, defaulting to private_group")
     return "private_group"
 
 
@@ -919,7 +930,7 @@ def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
         "name": data["name"] if data["name"] else jik,
         "type": get_chat_type(jik),
         "id": chat_id,
-        "messages": [ {
+        "messages": [{
             "id": int(msgId),
             "type": "message",
             "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
@@ -933,10 +944,10 @@ def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
                     # TODO this will lose formatting and different types
                     "type": "plain",
                     "text": msg["data"],
-                    }
-                ],
-            }
-        for msgId, msg in data["messages"].items()]
+                }
+            ],
+        }
+            for msgId, msg in data["messages"].items()]
     }
     # remove empty messages and replies
     for msg_id, msg in enumerate(json_obj["messages"]):

@@ -1,9 +1,9 @@
+from __future__ import annotations
 import os
 from datetime import datetime, tzinfo, timedelta
-from typing import Union, Optional, Dict, Any
+from typing import Any
 from collections.abc import MutableMapping
-from markupsafe import Markup
-from bleach import clean as _bleach_clean
+from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
 
 
 class Timing:
@@ -18,7 +18,8 @@ class Timing:
         Args:
             timezone_offset (int | float | None): Hours offset from UTC. Defaults to None (auto-detect).
         """
-        self.tz = TimeZone(timezone_offset) if timezone_offset is not None else None
+        self.tz = TimeZone(
+            timezone_offset) if timezone_offset is not None else None
 
     def format_timestamp(self, timestamp: int | float | None, format: str) -> str | None:
         """
@@ -29,7 +30,7 @@ class Timing:
             format (str): strftime format string
 
         Returns:
-            Optional[str]: Formatted timestamp string, or None if timestamp is None
+            str | None: Formatted timestamp string, or None if timestamp is None
         """
         if timestamp is not None:
             timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
@@ -72,11 +73,11 @@ class ChatCollection(MutableMapping):
         self._system: dict[str, Any] = {}
         self.set_system("master_lookup", {})
 
-    def __getitem__(self, key: str) -> 'ChatStore':
+    def __getitem__(self, key: str) -> ChatStore:
         """Get a chat by its ID. Required for dict-like access."""
         return self._chats[key]
 
-    def __setitem__(self, key: str, value: 'ChatStore') -> None:
+    def __setitem__(self, key: str, value: ChatStore) -> None:
         """Set a chat by its ID. Required for dict-like access."""
         if not isinstance(value, ChatStore):
             raise TypeError("Value must be a ChatStore object")
@@ -94,7 +95,7 @@ class ChatCollection(MutableMapping):
         """Get number of chats. Required for dict-like access."""
         return len(self._chats)
 
-    def get_chat(self, chat_id: str) -> Optional['ChatStore']:
+    def get_chat(self, chat_id: str) -> ChatStore | None:
         """
         Get a chat by its ID.
 
@@ -102,7 +103,7 @@ class ChatCollection(MutableMapping):
             chat_id (str): The ID of the chat to retrieve
 
         Returns:
-            Optional['ChatStore']: The chat if found, None otherwise
+            ChatStore | None: The chat if found, None otherwise
         """
         if chat_id in self._chats:
             return self._chats[chat_id]
@@ -111,7 +112,7 @@ class ChatCollection(MutableMapping):
         else:
             return None
 
-    def add_chat(self, chat_id: str, chat: 'ChatStore', alias: str | None = None) -> 'ChatStore':
+    def add_chat(self, chat_id: str, chat: ChatStore, alias: str | None = None) -> ChatStore:
         """
         Add a new chat to the collection.
 
@@ -126,7 +127,8 @@ class ChatCollection(MutableMapping):
         if not isinstance(chat, ChatStore):
             raise TypeError("Chat must be a ChatStore object")
         if chat_id in self._chats:
-            raise ValueError("Chat ID already exists. Use get_chat to retrieve existing chat.")
+            raise ValueError(
+                "Chat ID already exists. Use get_chat to retrieve existing chat.")
         if alias:
             self.get_system("master_lookup")[alias] = chat_id
             chat.aliases.append(alias)
@@ -150,7 +152,7 @@ class ChatCollection(MutableMapping):
         Args:
             alias (str): The alias to add
             chat_id (str): The ID of the chat to associate the alias with
-        """       
+        """
         if chat_id not in self._chats:
             raise ValueError("Chat ID does not exist. Add chat first.")
         self.get_system("master_lookup")[alias] = chat_id
@@ -163,13 +165,13 @@ class ChatCollection(MutableMapping):
         Args:
             alias (str): The alias to remove
         """
-        
+
         if alias in self.get_system("master_lookup"):
-            self._chats[self.get_system("master_lookup")[alias]].aliases.remove(alias)
-            del self.get_system("master_lookup")[alias] 
+            self._chats[self.get_system("master_lookup")[
+                alias]].aliases.remove(alias)
+            del self.get_system("master_lookup")[alias]
             return True
         return False
-
 
     def items(self):
         """Get chat items (id, chat) pairs."""
@@ -203,7 +205,7 @@ class ChatCollection(MutableMapping):
             Any: The system value if found, None otherwise
         """
         return self._system.get(key)
-    
+
     def set_system(self, key: str, value: Any) -> None:
         """
         Set a system value by its key.
@@ -212,7 +214,7 @@ class ChatCollection(MutableMapping):
             key (str): The key of the system value to set
             value (Any): The value to set
         """
-        self._system[key] = value 
+        self._system[key] = value
 
 
 class ChatStore:
@@ -226,8 +228,8 @@ class ChatStore:
 
         Args:
             type (str): Device type (IOS or ANDROID)
-            name (Optional[str]): Chat name
-            media (Optional[str]): Path to media folder
+            name (str | None): Chat name
+            media (str | None): Path to media folder
 
         Raises:
             TypeError: If name is not a string or None
@@ -257,13 +259,13 @@ class ChatStore:
         """Get number of chats. Required for dict-like access."""
         return len(self._messages)
 
-    def add_message(self, id: str, message: 'Message') -> None:
+    def add_message(self, id: str, message: Message) -> None:
         """Add a message to the chat store."""
         if not isinstance(message, Message):
             raise TypeError("message must be a Message object")
         self._messages[id] = message
 
-    def get_message(self, id: str) -> 'Message':
+    def get_message(self, id: str) -> Message:
         """Get a message from the chat store."""
         return self._messages.get(id)
 
@@ -279,11 +281,12 @@ class ChatStore:
             for key, value in self.__dict__.items()
             if key != '_messages'
         }
-        json_dict['messages'] = {id: msg.to_json() for id, msg in self._messages.items()}
+        json_dict['messages'] = {id: msg.to_json()
+                                 for id, msg in self._messages.items()}
         return json_dict
 
     @classmethod
-    def from_json(cls, data: dict) -> 'ChatStore':
+    def from_json(cls, data: dict) -> ChatStore:
         """Create a chat store from JSON data."""
         chat = cls(data.get("type"), data.get("name"))
         for key, value in data.items():
@@ -294,7 +297,7 @@ class ChatStore:
             chat.add_message(id, message)
         return chat
 
-    def get_last_message(self) -> 'Message':
+    def get_last_message(self) -> Message:
         """Get the most recent message in the chat."""
         return tuple(self._messages.values())[-1]
 
@@ -310,7 +313,7 @@ class ChatStore:
         """Get all message keys in the chat."""
         return self._messages.keys()
 
-    def merge_with(self, other: 'ChatStore'):
+    def merge_with(self, other: ChatStore):
         """Merge another ChatStore into this one.
 
         Args:
@@ -344,9 +347,9 @@ class Message:
             timestamp: int,
             time: int | float | str,
             key_id: int | str,
-            received_timestamp: int = None,
-            read_timestamp: int = None,
-            timezone_offset: Timing | None = Timing(0),
+            received_timestamp: int | None = None,
+            read_timestamp: int | None = None,
+            timezone_offset: Timing = Timing(0),
             message_type: int | None = None
     ) -> None:
         """
@@ -357,10 +360,10 @@ class Message:
             timestamp (int): Message timestamp
             time (int | float | str): Message time
             key_id (int | str): Message unique identifier
-            received_timestamp (int, optional): When message was received. Defaults to None
-            read_timestamp (int, optional): When message was read. Defaults to None
-            timezone_offset (int, optional): Hours offset from UTC. Defaults to 0
-            message_type (Optional[int], optional): Type of message. Defaults to None
+            received_timestamp (int | None): When message was received. Defaults to None
+            read_timestamp (int | None): When message was read. Defaults to None
+            timezone_offset (int): Hours offset from UTC. Defaults to 0
+            message_type (int | None): Type of message. Defaults to None
 
         Raises:
             TypeError: If time is not a string or number
@@ -369,7 +372,8 @@ class Message:
         self.timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
 
         if isinstance(time, (int, float)):
-            self.time = timezone_offset.format_timestamp(self.timestamp, "%H:%M")
+            self.time = timezone_offset.format_timestamp(
+                self.timestamp, "%H:%M")
         elif isinstance(time, str):
             self.time = time
         else:
@@ -403,6 +407,8 @@ class Message:
         self.quoted_data = None
         self.caption = None
         self.thumb = None  # Android specific
+        # Android specific: MIME type recorded by WhatsApp, kept when the file is missing
+        self.original_mime = None
         self.sticker = False
         self.reactions = {}
         self.poll = None
@@ -412,7 +418,7 @@ class Message:
         return {**self.__dict__}
 
     @classmethod
-    def from_json(cls, data: dict) -> 'Message':
+    def from_json(cls, data: dict) -> Message:
         message = cls(
             from_me=data["from_me"],
             timestamp=data["timestamp"],
@@ -428,10 +434,11 @@ class Message:
             if hasattr(message, key) and key not in added:
                 setattr(message, key, value)
         if message.safe and isinstance(message.data, str):
-            message.data = Markup(_bleach_clean(
+            message.data = sanitize_except(
                 message.data,
-                tags=["br", "a"],
-                attributes={"a": ["href"]},
-                strip=True,
-            ))
+                tags={"br", "a"},
+                attributes={"a": {"href"}},
+                # Restricts href protocols safely
+                url_schemes={"http", "https", "mailto"},
+            )
         return message

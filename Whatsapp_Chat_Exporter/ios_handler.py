@@ -21,12 +21,13 @@ def contacts(db, data):
     c = db.cursor()
     c.execute("""SELECT count() FROM ZWAADDRESSBOOKCONTACT""")
     total_row_number = c.fetchone()[0]
-    logging.info(f"Pre-processing contacts...({total_row_number})", extra={"clear": True})
+    logging.info(
+        f"Pre-processing contacts...({total_row_number})", extra={"clear": True})
 
-    # Check if expected columns exist before querying,  
+    # Check if expected columns exist before querying,
     # to handle different WhatsApp versions (mainly ZLID).
     c.execute("PRAGMA table_info(ZWAADDRESSBOOKCONTACT)")
-    column_names = [info[1] for info in c.fetchall()] 
+    column_names = [info[1] for info in c.fetchall()]
     all_cols = ["ZWHATSAPPID", "ZLID", "ZFULLNAME", "ZABOUTTEXT"]
     columns = [col for col in all_cols if col in column_names]
 
@@ -40,21 +41,35 @@ def contacts(db, data):
             if not zwhatsapp_id.endswith("@s.whatsapp.net"):
                 zwhatsapp_id += "@s.whatsapp.net"
 
+            lid = content["ZLID"] if "ZLID" in columns and content["ZLID"] else None
+
+            # The address book can hold several rows for one WhatsApp ID, e.g. the
+            # same number saved under more than one name. Enrich the chat that is
+            # already there instead of adding a second one for the same ID.
+            if zwhatsapp_id in data:
+                existing_chat = data.get_chat(zwhatsapp_id)
+                existing_chat.name = existing_chat.name or content["ZFULLNAME"]
+                existing_chat.status = existing_chat.status or content["ZABOUTTEXT"]
+
+                if lid and lid not in existing_chat.aliases:
+                    data.add_alias(lid, zwhatsapp_id)
+                    existing_chat.aliases.append(lid)
+
+                pbar.update(1)
+                continue
+
             current_chat = ChatStore(Device.IOS)
             if content["ZFULLNAME"]:
                 current_chat.name = content["ZFULLNAME"]
             if content["ZABOUTTEXT"]:
                 current_chat.status = content["ZABOUTTEXT"]
             # Index by WhatsApp ID, with LID as alias if available
-            data.add_chat(
-                zwhatsapp_id,
-                current_chat,
-                content["ZLID"] if "ZLID" in columns and content["ZLID"] else None
-            )
+            data.add_chat(zwhatsapp_id, current_chat, lid)
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Pre-processed {total_row_number} contacts in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Pre-processed {total_row_number} contacts in {convert_time_unit(total_time)}")
 
 
 def process_contact_avatars(current_chat, media_folder, contact_id):
@@ -74,7 +89,8 @@ def process_contact_avatars(current_chat, media_folder, contact_id):
 
 def get_contact_name(content):
     """Determine the appropriate contact name based on push name and partner name."""
-    is_phone = content["ZPARTNERNAME"].replace("+", "").replace(" ", "").isdigit()
+    is_phone = content["ZPARTNERNAME"].replace(
+        "+", "").replace(" ", "").isdigit()
     if content["ZPUSHNAME"] is None or (content["ZPUSHNAME"] and not is_phone):
         return content["ZPARTNERNAME"]
     else:
@@ -141,25 +157,30 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
 
             # Add or update chat
             if contact_id not in data:
-                current_chat = data.add_chat(contact_id, ChatStore(Device.IOS, contact_name, media_folder))
+                current_chat = data.add_chat(contact_id, ChatStore(
+                    Device.IOS, contact_name, media_folder))
             else:
                 current_chat = data.get_chat(contact_id)
                 # Only overwrite name if we have a better one (not a phone number)
                 # or if there's no existing name
                 if current_chat.name is None or contact_name is not None:
-                    is_phone = contact_name.replace("+", "").replace(" ", "").isdigit() if contact_name else True
+                    is_phone = contact_name.replace(
+                        "+", "").replace(" ", "").isdigit() if contact_name else True
                     if not is_phone or current_chat.name is None:
                         current_chat.name = contact_name
-                current_chat.my_avatar = os.path.join(media_folder, "Media/Profile/Photo.jpg")
+                current_chat.my_avatar = os.path.join(
+                    media_folder, "Media/Profile/Photo.jpg")
 
             # Process avatar images
             process_contact_avatars(current_chat, media_folder, contact_id)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} contacts in {convert_time_unit(total_time)}")
 
     # Pre-load push names for JIDs not yet in data (especially @lid group members)
-    c.execute("""SELECT ZJID, ZPUSHNAME FROM ZWAPROFILEPUSHNAME WHERE ZPUSHNAME IS NOT NULL""")
+    c.execute(
+        """SELECT ZJID, ZPUSHNAME FROM ZWAPROFILEPUSHNAME WHERE ZPUSHNAME IS NOT NULL""")
     while (row := c.fetchone()) is not None:
         jid = row["ZJID"]
         if jid not in data:
@@ -184,7 +205,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(message_count_query)
     total_row_number = c.fetchone()[0]
-    logging.info(f"Processing messages...(0/{total_row_number})", extra={"clear": True})
+    logging.info(
+        f"Processing messages...(0/{total_row_number})", extra={"clear": True})
 
     # Fetch messages
     messages_query = f"""
@@ -223,7 +245,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                      WHERE ZTEXT IS NOT NULL
                         OR ZTITLE IS NOT NULL;"""
     cursor2.execute(reply_query)
-    message_map = {row[0][:17]: row[1] or row[2] for row in cursor2.fetchall() if row[0]}
+    message_map = {row[0][:17]: row[1] or row[2]
+                   for row in cursor2.fetchall() if row[0]}
 
     # Process each message
     with tqdm(total=total_row_number, desc="Processing messages", unit="msg", leave=False) as pbar:
@@ -248,12 +271,14 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 key_id=content["ZSTANZAID"][:17],
                 timezone_offset=timezone_offset,
                 message_type=content["ZMESSAGETYPE"],
-                received_timestamp=APPLE_TIME + content["ZSENTDATE"] if content["ZSENTDATE"] else None,
+                received_timestamp=APPLE_TIME +
+                content["ZSENTDATE"] if content["ZSENTDATE"] else None,
                 read_timestamp=None  # TODO: Add timestamp
             )
 
             # Process message data
-            invalid = process_message_data(message, content, is_group_message, data, message_map, no_reply)
+            invalid = process_message_data(
+                message, content, is_group_message, data, message_map, no_reply)
 
             # Add valid messages to chat
             if not invalid:
@@ -261,7 +286,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
 
 
 def process_message_data(message, content, is_group_message, data, message_map, no_reply):
@@ -415,7 +441,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
     """
     c.execute(media_count_query)
     total_row_number = c.fetchone()[0]
-    logging.info(f"Processing media...(0/{total_row_number})", extra={"clear": True})
+    logging.info(
+        f"Processing media...(0/{total_row_number})", extra={"clear": True})
 
     # Fetch media items
     media_query = f"""
@@ -449,7 +476,8 @@ def media(db, data, media_folder, filter_date, filter_chat, filter_empty, separa
                                embed_exif, rename_media, timezone_offset)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} media in {convert_time_unit(total_time)}")
 
 
 def process_media_item(content, data, media_folder, mime, separate_media, fix_dot_files=False,
@@ -470,7 +498,7 @@ def process_media_item(content, data, media_folder, mime, separate_media, fix_do
             message.mime = guess if guess is not None else "application/octet-stream"
         else:
             message.mime = content["ZVCARDSTRING"]
-        
+
         if fix_dot_files and file_path.endswith("."):
             extension = mime.guess_extension(message.mime)
             if message.mime == "application/octet-stream" or not extension:
@@ -486,7 +514,8 @@ def process_media_item(content, data, media_folder, mime, separate_media, fix_do
             chat_display_name = safe_name(
                 current_chat.name or message.sender or content["ZCONTACTJID"].split('@')[0])
             current_filename = file_path.split("/")[-1]
-            new_folder = os.path.join(media_folder, "separated", chat_display_name)
+            new_folder = os.path.join(
+                media_folder, "separated", chat_display_name)
             Path(new_folder).mkdir(parents=True, exist_ok=True)
             new_path = os.path.join(new_folder, current_filename)
             # Use timestamp processing if enabled
@@ -553,7 +582,8 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     c.execute(vcard_query)
     contents = c.fetchall()
     total_row_number = len(contents)
-    logging.info(f"Processing vCards...(0/{total_row_number})", extra={"clear": True})
+    logging.info(
+        f"Processing vCards...(0/{total_row_number})", extra={"clear": True})
 
     # Create vCards directory
     path = f'{media_folder}/Message/vCards'
@@ -565,7 +595,8 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
             process_vcard_item(content, path, data)
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
 
 
 def process_vcard_item(content, path, data):
@@ -576,7 +607,8 @@ def process_vcard_item(content, path, data):
 
     # If this is a list of contacts
     if len(vcard_names) > len(vcard_strings):
-        vcard_names.pop(0)  # Dismiss the first element, which is the group name
+        # Dismiss the first element, which is the group name
+        vcard_names.pop(0)
 
     # Save each vCard file
     for name, vcard_string in zip(vcard_names, vcard_strings):
@@ -598,7 +630,8 @@ def process_vcard_item(content, path, data):
         )
     )
 
-    message = data.get_chat(content["ZCONTACTJID"]).get_message(content["ZMESSAGE"])
+    message = data.get_chat(
+        content["ZCONTACTJID"]).get_message(content["ZMESSAGE"])
     message.data = vcard_summary
     message.mime = "text/x-vcard"
     message.media = True
@@ -660,7 +693,8 @@ def calls(db, data, timezone_offset, filter_chat):
 
     # Add calls chat to data
     data.add_chat("000000000000000", chat)
-    logging.info(f"Processed {total_row_number} calls in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} calls in {convert_time_unit(total_time)}")
 
 
 def process_call_record(content, chat, data, timezone_offset):
@@ -774,7 +808,8 @@ def polls(db, data, filter_date, filter_chat, filter_empty):
     if total_row_number == 0:
         return
 
-    logging.info(f"Processing polls...(0/{total_row_number})", extra={"clear": True})
+    logging.info(
+        f"Processing polls...(0/{total_row_number})", extra={"clear": True})
 
     # Fetch poll data
     poll_query = f"""
@@ -833,7 +868,8 @@ def polls(db, data, filter_date, filter_chat, filter_empty):
             for vote in votes:
                 voter_name = _resolve_voter_name(
                     vote.get('voter_jid'), vote.get('is_creator', False), message, data)
-                voter_key = vote.get('voter_jid') or ("__creator__" if vote.get('is_creator') else "__unknown__")
+                voter_key = vote.get('voter_jid') or (
+                    "__creator__" if vote.get('is_creator') else "__unknown__")
                 if voter_key not in seen_voters:
                     seen_voters.add(voter_key)
                 for idx in vote.get('selected_indices', []):
@@ -848,7 +884,8 @@ def polls(db, data, filter_date, filter_chat, filter_empty):
             for i, opt_text in enumerate(options):
                 voters = option_votes.get(i, [])
                 vote_count = len(voters)
-                vote_pct = (vote_count / max_votes * 100) if max_votes > 0 else 0
+                vote_pct = (vote_count / max_votes *
+                            100) if max_votes > 0 else 0
                 option_list.append({
                     'text': opt_text,
                     'vote_count': vote_count,
@@ -869,7 +906,8 @@ def polls(db, data, filter_date, filter_chat, filter_empty):
 
             pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Processed {total_row_number} polls in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Processed {total_row_number} polls in {convert_time_unit(total_time)}")
 
 
 def format_call_data(call, content):

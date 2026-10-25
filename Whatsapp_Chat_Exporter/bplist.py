@@ -120,9 +120,11 @@ class BPListReader:
             elif obj_info == 0x09:  # bool   0000 1001           // true
                 return True
             elif obj_info == 0x0F:  # fill   0000 1111           // fill byte
-                raise Exception("0x0F Not Implemented")  # this is really pad byte, FIXME
+                # this is really pad byte, FIXME
+                raise Exception("0x0F Not Implemented")
             else:
-                raise Exception('unpack item type '+str(obj_header)+' at '+str(offset) + 'failed')
+                raise Exception('unpack item type ' +
+                                str(obj_header)+' at '+str(offset) + 'failed')
         elif obj_type == 0x10:  # int    0001 nnnn   ...     // # of bytes is 2^nnnn, big-endian bytes
             return self.__unpackInt(offset)
         elif obj_type == 0x20:  # real    0010 nnnn   ...     // # of bytes is 2^nnnn, big-endian bytes
@@ -132,7 +134,8 @@ class BPListReader:
         # data    0100 nnnn   [int]   ... // nnnn is number of bytes unless 1111 then int count follows, followed by bytes
         elif obj_type == 0x40:
             obj_count, objref = self.__resolveIntSize(obj_info, offset)
-            return self.data[objref:objref+obj_count]  # XXX: we return data as str
+            # XXX: we return data as str
+            return self.data[objref:objref+obj_count]
         # string  0101 nnnn   [int]   ... // ASCII string, nnnn is # of chars, else 1111 then int count, then bytes
         elif obj_type == 0x50:
             obj_count, objref = self.__resolveIntSize(obj_info, offset)
@@ -174,7 +177,8 @@ class BPListReader:
                 dic[keys[i]] = values[i]
             return dic
         else:
-            raise Exception('don\'t know how to unpack obj type '+hex(obj_type)+' at '+str(offset))
+            raise Exception('don\'t know how to unpack obj type ' +
+                            hex(obj_type)+' at '+str(offset))
 
     def __resolveObject(self, idx):
         try:
@@ -220,7 +224,8 @@ class BPListReader:
         for i in range(self.number_of_objects):
             offset_entry = ot[:self.offset_size]
             ot = ot[self.offset_size:]
-            self.offsets.append(self.__unpackIntStruct(self.offset_size, offset_entry))
+            self.offsets.append(self.__unpackIntStruct(
+                self.offset_size, offset_entry))
         # print "** plist offsets:",self.offsets
 
         # read object table

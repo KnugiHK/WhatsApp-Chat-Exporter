@@ -7,6 +7,7 @@ import sys
 import time
 from unittest.mock import patch, mock_open, MagicMock
 from Whatsapp_Chat_Exporter.utility import *
+from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
 
 
 def test_convert_time_unit():
@@ -99,12 +100,55 @@ class TestSanitizeExcept:
     def test_mixed_tags(self):
         html = "<b>Bold</b><br><i>Italic</i><img src='evil.gif'><script>alert('XSS')</script>"
         assert sanitize_except(html) == Markup(
-            "&lt;b&gt;Bold&lt;/b&gt;<br>&lt;i&gt;Italic&lt;/i&gt;&lt;img src='evil.gif'&gt;&lt;script&gt;alert('XSS')&lt;/script&gt;")
+            '&lt;b&gt;Bold&lt;/b&gt;<br>&lt;i&gt;Italic&lt;/i&gt;&lt;img src=&#39;evil.gif&#39;&gt;&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;')
 
     def test_attribute_stripping(self):
         html = "<br class='someclass'>"
-        assert sanitize_except(html) == Markup("<br>")
+        assert sanitize_except(html) == Markup("&lt;br class=&#39;someclass&#39;&gt;")
 
+    def test_advanced_sanitize_with_attributes_and_urls(self):
+        # The configuration you provided
+        kwargs = {
+            "tags": {"br", "a"},
+            "attributes": {"a": {"href"}},
+            "url_schemes": {"http", "https", "mailto"}
+        }
+
+        # 1. Allowed tag with allowed attribute and allowed scheme
+        html = "<a href='https://example.com'>Link</a>"
+        # The parser formats safe attributes with double quotes
+        assert sanitize_except(html, **kwargs) == Markup('<a href="https://example.com">Link</a>')
+
+        # 2. Allowed tag with another allowed scheme (mailto)
+        html = "<a href='mailto:test@example.com'>Email</a>"
+        assert sanitize_except(html, **kwargs) == Markup('<a href="mailto:test@example.com">Email</a>')
+
+        # 3. Relative URL (empty scheme), which should be allowed
+        html = "<a href='/about-us'>About</a>"
+        assert sanitize_except(html, **kwargs) == Markup('<a href="/about-us">About</a>')
+
+        # 4. Disallowed URL scheme (javascript:) -> Should escape the entire tag
+        html = "<a href='javascript:alert(1)'>Hack</a>"
+        assert sanitize_except(html, **kwargs) == Markup("&lt;a href=&#39;javascript:alert(1)&#39;&gt;Hack&lt;/a&gt;")
+
+        # 5. Disallowed URL scheme (data:) -> Should escape the entire tag
+        html = "<a href='data:text/html,<script>alert(1)</script>'>Hack</a>"
+        assert sanitize_except(html, **kwargs) == Markup("&lt;a href=&#39;data:text/html,&lt;script&gt;alert(1)&lt;/script&gt;&#39;&gt;Hack&lt;/a&gt;")
+
+        # 6. Allowed tag but contains a disallowed attribute (e.g., class, onclick) -> Should escape
+        html = "<a href='https://example.com' class='btn'>Link</a>"
+        assert sanitize_except(html, **kwargs) == Markup("&lt;a href=&#39;https://example.com&#39; class=&#39;btn&#39;&gt;Link&lt;/a&gt;")
+
+        html = "<a href='https://example.com' onclick='stealCookies()'>Link</a>"
+        assert sanitize_except(html, **kwargs) == Markup("&lt;a href=&#39;https://example.com&#39; onclick=&#39;stealCookies()&#39;&gt;Link&lt;/a&gt;")
+
+        # 7. Allowed tag with no attributes -> Should be fine
+        html = "<a>Empty</a>"
+        assert sanitize_except(html, **kwargs) == Markup("<a>Empty</a>")
+        
+        # 8. <br> tag should still work fine within this config
+        html = "Line 1<br>Line 2"
+        assert sanitize_except(html, **kwargs) == Markup("Line 1<br>Line 2")
 
 class TestDetermineDay:
     def test_same_day(self):

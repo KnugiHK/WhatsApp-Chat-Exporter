@@ -22,7 +22,6 @@ from datetime import datetime
 from getpass import getpass
 from tqdm import tqdm
 from sys import exit
-from typing import Optional, List, Dict
 from Whatsapp_Chat_Exporter.vcards_contacts import ContactsFromVCards
 
 
@@ -452,7 +451,7 @@ def process_single_date_filter(parser: ArgumentParser, args) -> None:
             "Unsupported date format. See https://wts.knugi.dev/docs?dest=date")
 
 
-def setup_contact_store(args) -> Optional['ContactsFromVCards']:
+def setup_contact_store(args) -> ContactsFromVCards | None:
     """Set up and return a contact store if needed."""
     if args.enrich_from_vcards is not None:
         contact_store = ContactsFromVCards()
@@ -465,7 +464,8 @@ def setup_contact_store(args) -> Optional['ContactsFromVCards']:
 def decrypt_android_backup(args) -> int:
     """Decrypt Android backup files and return error code."""
     if args.key is None or args.backup is None:
-        logging.error(f"You must specify the backup file with -b and a key with -k")
+        logging.error(
+            f"You must specify the backup file with -b and a key with -k")
         return 1
 
     logging.info(f"Decryption key specified, decrypting WhatsApp backup...")
@@ -532,11 +532,11 @@ def handle_decrypt_error(error: int) -> None:
     """Handle decryption errors with appropriate messages."""
     if error == 1:
         logging.error("Dependencies of decrypt_backup and/or extract_encrypted_key"
-                     " are not present. For details, see README.md.")
+                      " are not present. For details, see README.md.")
         exit(3)
     elif error == 2:
         logging.error("Failed when decompressing the decrypted backup. "
-                     "Possibly incorrect offsets used in decryption.")
+                      "Possibly incorrect offsets used in decryption.")
         exit(4)
     else:
         logging.error("Unknown error occurred.")
@@ -550,7 +550,8 @@ def process_contacts(args, data: ChatCollection) -> None:
     if os.path.isfile(contact_db):
         with sqlite3.connect(contact_db) as db:
             db.row_factory = sqlite3.Row
-            db.text_factory = lambda b: b.decode(encoding="utf-8", errors="replace")
+            db.text_factory = lambda b: b.decode(
+                encoding="utf-8", errors="replace")
             if args.android:
                 android_handler.contacts(db, data, args.enrich_from_vcards)
             else:
@@ -573,13 +574,15 @@ def process_messages(args, data: ChatCollection) -> None:
 
     with sqlite3.connect(msg_db) as db:
         db.row_factory = sqlite3.Row
-        db.text_factory = lambda b: b.decode(encoding="utf-8", errors="replace")
+        db.text_factory = lambda b: b.decode(
+            encoding="utf-8", errors="replace")
 
         # Process messages
         if args.android:
             message_handler = android_handler
             data.set_system("jid_map_exists", check_jid_map(db))
-            data.set_system("transcription_selection", get_transcription_selection(db))
+            data.set_system("transcription_selection",
+                            get_transcription_selection(db))
         else:
             message_handler = ios_handler
 
@@ -618,7 +621,8 @@ def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
     elif args.ios and args.call_db_ios is not None:
         with sqlite3.connect(args.call_db_ios) as cdb:
             cdb.row_factory = sqlite3.Row
-            cdb.text_factory = lambda b: b.decode(encoding="utf-8", errors="replace")
+            cdb.text_factory = lambda b: b.decode(
+                encoding="utf-8", errors="replace")
             ios_handler.calls(cdb, data, timing, filter_chat)
 
 
@@ -633,16 +637,20 @@ def handle_media_directory(args) -> None:
         else:
             if args.move_media:
                 try:
-                    logging.info(f"Moving media directory...", extra={"clear": True})
+                    logging.info(f"Moving media directory...",
+                                 extra={"clear": True})
                     shutil.move(args.media, f"{args.output}/")
-                    logging.info(f"Media directory has been moved to the output directory")
+                    logging.info(
+                        f"Media directory has been moved to the output directory")
                 except PermissionError:
                     logging.warning("Cannot remove original WhatsApp directory. "
-                                   "Perhaps the directory is opened?")
+                                    "Perhaps the directory is opened?")
             else:
-                logging.info(f"Copying media directory...", extra={"clear": True})
+                logging.info(f"Copying media directory...",
+                             extra={"clear": True})
                 shutil.copytree(args.media, media_path)
-                logging.info(f"Media directory has been copied to the output directory")
+                logging.info(
+                    f"Media directory has been copied to the output directory")
 
 
 def create_output_files(args, data: ChatCollection) -> None:
@@ -717,7 +725,8 @@ def export_multiple_json(args, data: dict) -> None:
                 contact = jik.replace('+', '')
 
             if args.telegram:
-                messages = telegram_json_format(jik, data[jik], args.timezone_offset)
+                messages = telegram_json_format(
+                    jik, data[jik], args.timezone_offset)
             else:
                 messages = {jik: data[jik]}
             with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
@@ -729,7 +738,8 @@ def export_multiple_json(args, data: dict) -> None:
                 f.write(file_content)
                 pbar.update(1)
         total_time = pbar.format_dict['elapsed']
-    logging.info(f"Generated {total} JSON files in {convert_time_unit(total_time)}")
+    logging.info(
+        f"Generated {total} JSON files in {convert_time_unit(total_time)}")
 
 
 def process_exported_chat(args, data: ChatCollection) -> None:
@@ -759,7 +769,7 @@ class ClearLineFilter(logging.Filter):
         is_clear = getattr(record, 'clear', False)
         if is_clear:
             record.line_end = "\r"
-            record.prefix = "\x1b[K" 
+            record.prefix = "\x1b[K"
         else:
             record.line_end = "\n"
             record.prefix = ""
@@ -773,10 +783,11 @@ def setup_logging(level):
     log_handler_stdout.set_name("console")
 
     handlers = [log_handler_stdout]
-    
+
     if level == logging.DEBUG:
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_handler_file = logging.FileHandler(f"wtsexporter-debug-{timestamp}.log", mode="w")
+        log_handler_file = logging.FileHandler(
+            f"wtsexporter-debug-{timestamp}.log", mode="w")
         log_handler_file.terminator = ""
         log_handler_file.addFilter(ClearLineFilter())
         handlers.append(log_handler_file)
@@ -796,8 +807,8 @@ def main():
 
     # Print banner if not suppressed
     if not args.no_banner:
-        # Note: This may raise UnicodeEncodeError on Windows if the terminal 
-        # doesn't support UTF-8 (e.g., Legacy CMD). Use a modern terminal 
+        # Note: This may raise UnicodeEncodeError on Windows if the terminal
+        # doesn't support UTF-8 (e.g., Legacy CMD). Use a modern terminal
         # or set PYTHONUTF8=1 in your environment.
         print(WTSEXPORTER_BANNER)
 

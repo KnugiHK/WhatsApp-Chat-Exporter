@@ -6,8 +6,6 @@ import os
 import logging
 import shutil
 from datetime import datetime
-from typing import Optional
-
 from Whatsapp_Chat_Exporter.data_model import TimeZone
 
 logger = logging.getLogger(__name__)

@@ -1,11 +1,8 @@
 import logging
-import re
 import quopri
-from typing import List, TypedDict
+from typing import TypedDict
 from Whatsapp_Chat_Exporter.data_model import ChatStore
 from Whatsapp_Chat_Exporter.utility import Device
-
-
 
 
 class ExportedContactNumbers(TypedDict):
@@ -21,20 +18,22 @@ class ContactsFromVCards:
         return self.contact_mapping == []
 
     def load_vcf_file(self, vcf_file_path: str, default_country_code: str):
-        self.contact_mapping = read_vcards_file(vcf_file_path, default_country_code)
+        self.contact_mapping = read_vcards_file(
+            vcf_file_path, default_country_code)
 
     def enrich_from_vcards(self, chats):
         for number, name in self.contact_mapping:
             # short number must be a bad contact, lets skip it
             if len(number) <= 5:
-                continue               
+                continue
             chats_search = filter_chats_by_prefix(chats, number).values()
             if chats_search:
                 for chat in chats_search:
                     if not hasattr(chat, 'name') or (hasattr(chat, 'name') and chat.name is None):
                         setattr(chat, 'name', name)
             else:
-                chats.add_chat(number + "@s.whatsapp.net", ChatStore(Device.ANDROID, name))
+                chats.add_chat(number + "@s.whatsapp.net",
+                               ChatStore(Device.ANDROID, name))
 
 
 def decode_quoted_printable(value: str, charset: str) -> str:
@@ -50,35 +49,37 @@ def decode_quoted_printable(value: str, charset: str) -> str:
         )
         return value
 
+
 def _parse_vcard_line(line: str) -> tuple[str, dict[str, str], str] | None:
     """
     Parses a single vCard property line into its components:
     Property Name, Parameters (as a dict), and Value.
-    
+
     Example: 'FN;CHARSET=UTF-8:John Doe' -> ('FN', {'CHARSET': 'UTF-8'}, 'John Doe')
     """
     # Find the first colon, which separates the property/parameters from the value.
     colon_index = line.find(':')
     if colon_index == -1:
-        return None # Invalid vCard line format
+        return None  # Invalid vCard line format
 
     prop_and_params = line[:colon_index].strip()
     value = line[colon_index + 1:].strip()
 
     # Split property name from parameters
     property_part, *params = prop_and_params.split(';')
-    
+
     # We only care about property name for now, but the grouping mechanism may be
     # useful in the future if we want to associate multiple properties together.
     parts = property_part.split('.')
     _, property_name = parts if len(parts) == 2 else (None, parts[0])
     property_name = property_name.upper()
-    
+
     parameters = {}
     for param in params:
         if '=' in param:
             key, val = param.split('=', 1)
-            parameters[key.upper()] = val.strip('"') # Remove potential quotes from value
+            # Remove potential quotes from value
+            parameters[key.upper()] = val.strip('"')
 
     return property_name, parameters, value
 
@@ -93,7 +94,7 @@ def get_vcard_value(entry: str, field_name: str) -> list[str]:
     cached_line = ""
     charset = "utf-8"
     values = []
-    
+
     for line in entry.splitlines():
         line = line.strip()
         if cached_line:
@@ -128,7 +129,8 @@ def get_vcard_value(entry: str, field_name: str) -> list[str]:
                     continue  # Wait for the next line to complete the value
                 values.append(decode_quoted_printable(raw_value, charset))
             elif encoding:
-                raise NotImplementedError(f"Encoding '{encoding}' not supported yet.")
+                raise NotImplementedError(
+                    f"Encoding '{encoding}' not supported yet.")
             else:
                 values.append(raw_value)
     return values
@@ -137,20 +139,21 @@ def get_vcard_value(entry: str, field_name: str) -> list[str]:
 def process_vcard_entry(entry: str) -> dict | bool:
     """
     Process a vCard entry using pure string manipulation
-    
+
     Args:
         entry: A string containing a single vCard block.
-        
+
     Returns:
         A dictionary of the extracted data or False if required fields are missing.
     """
-    
+
     name = None
-    
+
     # Extract name in priority: FN -> N -> ORG
     for field in ("FN", "N", "ORG"):
         if name_values := get_vcard_value(entry, field):
-            name = name_values[0].replace(';', ' ') # Simple cleanup for structured name
+            # Simple cleanup for structured name
+            name = name_values[0].replace(';', ' ')
             break
 
     if not name:
