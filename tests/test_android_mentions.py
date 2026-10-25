@@ -31,10 +31,23 @@ def test_unknown_numbers_are_left_untouched(data):
     assert _resolve_mentions(text, data) == text
 
 
+def test_false_positive_email_and_embedded_at_not_resolved(data):
+    """Ensure emails or embedded @<digits> do not leak contact names/phone numbers."""
+    text = "Email support@11111111111111.com or user@22222222222222org and check @11111111111111abc"
+    assert _resolve_mentions(text, data) == text
+
+
 def test_no_lid_map_or_no_text():
     data = ChatCollection()
     assert _resolve_mentions("Hi @11111111111111", data) == "Hi @11111111111111"
     assert _resolve_mentions(None, data) is None
+
+
+def test_resolve_mentions_with_null_pn_in_lid_map():
+    """Ensure a NULL/None pn_jid in lid_map does not crash and leaves the text untouched."""
+    data = ChatCollection()
+    data.set_system("lid_map", {"11111111111111": None, None: NAMED_PN_JID})
+    assert _resolve_mentions("Hi @11111111111111", data) == "Hi @11111111111111"
 
 
 def test_get_lid_map():
@@ -46,6 +59,32 @@ def test_get_lid_map():
         INSERT INTO jid VALUES (1, '11111111111111', 'lid', '11111111111111@lid');
         INSERT INTO jid VALUES (2, '15550001111', 's.whatsapp.net', '15550001111@s.whatsapp.net');
         INSERT INTO jid_map VALUES (1, 2);
+    """)
+    assert _get_lid_map(db) == {"11111111111111": NAMED_PN_JID}
+    db.close()
+
+
+def test_get_lid_map_ignores_null_lid_or_pn():
+    """Ensure rows where lid.user or pn.raw_string are NULL are excluded from the map."""
+    db = sqlite3.connect(":memory:")
+    db.row_factory = sqlite3.Row
+    db.executescript("""
+        CREATE TABLE jid (_id INTEGER PRIMARY KEY, user TEXT, server TEXT, raw_string TEXT);
+        CREATE TABLE jid_map (lid_row_id INTEGER, jid_row_id INTEGER);
+        -- Valid pair
+        INSERT INTO jid VALUES (1, '11111111111111', 'lid', '11111111111111@lid');
+        INSERT INTO jid VALUES (2, '15550001111', 's.whatsapp.net', '15550001111@s.whatsapp.net');
+        -- NULL lid.user
+        INSERT INTO jid VALUES (3, NULL, 'lid', '33333333333333@lid');
+        INSERT INTO jid VALUES (4, '15550003333', 's.whatsapp.net', '15550003333@s.whatsapp.net');
+        -- NULL pn.raw_string
+        INSERT INTO jid VALUES (5, '44444444444444', 'lid', '44444444444444@lid');
+        INSERT INTO jid VALUES (6, '15550004444', 's.whatsapp.net', NULL);
+        -- Both NULL
+        INSERT INTO jid VALUES (7, NULL, 'lid', NULL);
+        INSERT INTO jid VALUES (8, NULL, 's.whatsapp.net', NULL);
+
+        INSERT INTO jid_map VALUES (1, 2), (3, 4), (5, 6), (7, 8);
     """)
     assert _get_lid_map(db) == {"11111111111111": NAMED_PN_JID}
     db.close()
