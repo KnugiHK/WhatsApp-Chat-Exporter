@@ -18,8 +18,6 @@ from enum import StrEnum, IntEnum
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
 ROW_SIZE = 0x3D0
-CURRENT_TZ_OFFSET = datetime.now().astimezone().utcoffset().total_seconds() / 3600
-
 
 def convert_time_unit(time_second: int) -> str:
     """Converts a time duration in seconds to a human-readable string.

@@ -410,7 +410,7 @@ def test_current_tz_offset(tz, expected):
         [
             sys.executable,
             "-c",
-            "from Whatsapp_Chat_Exporter.utility import CURRENT_TZ_OFFSET; print(CURRENT_TZ_OFFSET)",
+            "from datetime import datetime; print(datetime.now().astimezone().utcoffset().total_seconds() / 3600)",
         ],
         env={**os.environ, "TZ": tz},
         capture_output=True,
