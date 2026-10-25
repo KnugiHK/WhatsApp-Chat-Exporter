@@ -542,7 +542,7 @@ def _resolve_mentions(text, data):
         name = data.get_chat(pn_jid).name if pn_jid in data else None
         return "@" + (name or pn_jid.split("@")[0])
 
-    return re.sub(r"@(\d+)", replace, text)
+    return re.sub(r"(?<!\w)@(\d+)\b", replace, text)
 
 
 def _get_reactions(db, data):
