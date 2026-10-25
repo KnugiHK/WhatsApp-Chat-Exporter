@@ -12,7 +12,7 @@ import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
 from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, CURRENT_TZ_OFFSET, Crypt
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
 from Whatsapp_Chat_Exporter.utility import import_from_json, incremental_merge, check_update
 from Whatsapp_Chat_Exporter.utility import telegram_json_format, convert_time_unit, DbType
@@ -211,7 +211,7 @@ def setup_argument_parser() -> ArgumentParser:
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument(
         "--time-offset", dest="timezone_offset", default=0, type=int, choices=range(-12, 15),
-        metavar="{-12 to 14}", help="Offset in hours (-12 to 14) for time displayed in the output"
+        metavar="{-12 to 14}", help="Offset in hours (-12 to 14) for time displayed in the output. Defaults to the local time zone"
     )
     filter_group.add_argument(
         "--date", dest="filter_date", default=None, metavar="DATE",
@@ -570,8 +570,7 @@ def process_messages(args, data: ChatCollection) -> None:
         exit(6)
 
     filter_chat = (args.filter_chat_include, args.filter_chat_exclude)
-    timing = Timing(
-        args.timezone_offset if args.timezone_offset else CURRENT_TZ_OFFSET)
+    timing = Timing(args.timezone_offset or None)
 
     with sqlite3.connect(msg_db) as db:
         db.row_factory = sqlite3.Row

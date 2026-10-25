@@ -1,6 +1,10 @@
+import os
 import pytest
 import random
 import string
+import subprocess
+import sys
+import time
 from unittest.mock import patch, mock_open, MagicMock
 from Whatsapp_Chat_Exporter.utility import *
 from Whatsapp_Chat_Exporter.sanitizer import sanitize_except
@@ -394,3 +398,53 @@ class TestGetChatCondition:
         
         result = get_chat_condition(["user-name"], True, ["username"])
         assert result == "AND ( username LIKE '%user-name%')"
+
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="TZ environment variable requires time.tzset")
+@pytest.mark.parametrize("tz, expected", [
+    ("<-03>3", -3.0),
+    ("<+07>-7", 7.0),
+    ("UTC", 0.0),
+])
+def test_current_tz_offset(tz, expected):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from datetime import datetime; print(datetime.now().astimezone().utcoffset().total_seconds() / 3600)",
+        ],
+        env={**os.environ, "TZ": tz},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert float(result.stdout.strip()) == expected
+
+
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="TZ environment variable requires time.tzset")
+@pytest.mark.parametrize("tz, timezone_offset, expected", [
+    ("<-03>3", 0, "2022-12-31T22:30:00"),
+    ("<+07>-7", 0, "2023-01-01T08:30:00"),
+    ("<-03>3", 7, "2023-01-01T08:30:00"),
+])
+def test_telegram_json_format_date(monkeypatch, tz, timezone_offset, expected):
+    monkeypatch.setenv("TZ", tz)
+    time.tzset()
+    data = {
+        "name": "Test",
+        "messages": {
+            "1": {
+                "timestamp": 1672536600,
+                "from_me": True,
+                "sender": None,
+                "key_id": "A",
+                "reply": None,
+                "data": "Hello",
+            }
+        },
+    }
+    try:
+        result = telegram_json_format("1234567890@s.whatsapp.net", data, timezone_offset)
+    finally:
+        monkeypatch.undo()
+        time.tzset()
+    assert result["messages"][0]["date"] == expected
