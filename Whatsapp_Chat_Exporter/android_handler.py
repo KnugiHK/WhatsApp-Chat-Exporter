@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import logging
+import re
 import sqlite3
 import os
 import shutil
@@ -8,6 +9,7 @@ from tqdm import tqdm
 from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import Markup, escape
+from contextlib import closing
 from base64 import b64decode, b64encode
 from datetime import datetime
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
@@ -98,6 +100,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             table_message = True
         except Exception as e:
             raise e
+
+    data.set_system("lid_map", _get_lid_map(db) if data.get_system("jid_map_exists") else {})
 
     with tqdm(total=total_row_number, desc="Processing messages", unit="msg", leave=False) as pbar:
         while (content := _fetch_row_safely(content_cursor)) is not None:
@@ -407,6 +411,11 @@ def _process_single_message(data, content, table_message, timezone_offset):
         # Real message
         _process_regular_message(message, content, table_message)
 
+    # Show @mentions of LIDs the same way as message senders
+    message.data = _resolve_mentions(message.data, data)
+    message.caption = _resolve_mentions(message.caption, data)
+    message.quoted_data = _resolve_mentions(message.quoted_data, data)
+
     current_chat.add_message(content["_id"], message)
 
 
@@ -524,6 +533,38 @@ def _format_message_text(text):
     return text
 
 
+def _get_lid_map(db):
+    """Map LID users to their phone number JIDs using the jid_map table."""
+    query = """
+        SELECT lid.user AS lid_user, pn.raw_string AS pn_jid
+        FROM jid_map
+            INNER JOIN jid lid
+                ON jid_map.lid_row_id = lid._id
+            INNER JOIN jid pn
+                ON jid_map.jid_row_id = pn._id
+        WHERE lid.user IS NOT NULL AND pn.raw_string IS NOT NULL
+    """
+    with closing(db.cursor()) as c:
+        c.execute(query)
+        return {row["lid_user"]: row["pn_jid"] for row in c.fetchall()}
+
+
+def _resolve_mentions(text, data):
+    """Replace @<LID> mentions in text with the contact name or phone number, as used for message senders."""
+    lid_map = data.get_system("lid_map")
+    if not isinstance(text, str) or not lid_map or "@" not in text:
+        return text
+
+    def replace(match):
+        pn_jid = lid_map.get(match.group(1))
+        if pn_jid is None:
+            return match.group(0)
+        name = data.get_chat(pn_jid).name if pn_jid in data else None
+        return "@" + (name or pn_jid.split("@")[0])
+
+    return re.sub(r"(?<!\w)@(\d+)\b", replace, text)
+
+
 def _get_reactions(db, data):
     """
     Process message reactions. Only new schema is supported.
@@ -540,13 +581,29 @@ def _get_reactions(db, data):
 
         logging.info("Processing reactions...", extra={"clear": True})
 
-        c.execute("""
+        # Resolve LIDs to phone number JIDs the same way messages are keyed (see get_jid_map_join),
+        # so reactors match message senders and reactions in LID-keyed chats are not dropped.
+        if data.get_system("jid_map_exists"):
+            sender_selection = "COALESCE(sender_pn.raw_string, jid.raw_string)"
+            chat_selection = "COALESCE(chat_pn.raw_string, chat_jid.raw_string)"
+            jid_map_join = """LEFT JOIN jid_map AS sender_map
+                    ON message_add_on.sender_jid_row_id = sender_map.lid_row_id
+                LEFT JOIN jid sender_pn
+                    ON sender_map.jid_row_id = sender_pn._id
+                LEFT JOIN jid_map AS chat_map
+                    ON chat.jid_row_id = chat_map.lid_row_id
+                LEFT JOIN jid chat_pn
+                    ON chat_map.jid_row_id = chat_pn._id"""
+        else:
+            sender_selection, chat_selection, jid_map_join = "jid.raw_string", "chat_jid.raw_string", ""
+
+        c.execute(f"""
             SELECT
                 message_add_on.parent_message_row_id,
                 message_add_on_reaction.reaction,
                 message_add_on.from_me,
-                jid.raw_string as sender_jid_raw,
-                chat_jid.raw_string as chat_jid_raw,
+                {sender_selection} as sender_jid_raw,
+                {chat_selection} as chat_jid_raw,
                 message_add_on_reaction.sender_timestamp
             FROM message_add_on
                 INNER JOIN message_add_on_reaction 
@@ -557,6 +614,7 @@ def _get_reactions(db, data):
                     ON message_add_on.chat_row_id = chat._id
                 LEFT JOIN jid chat_jid 
                     ON chat.jid_row_id = chat_jid._id
+                {jid_map_join}
         """)
     except sqlite3.OperationalError:
         logging.warning(
