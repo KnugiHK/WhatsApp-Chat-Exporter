@@ -581,6 +581,7 @@ def process_messages(args, data: ChatCollection) -> None:
                             get_transcription_selection(db))
         else:
             message_handler = ios_handler
+            ios_handler.load_lid_names(data)
 
         message_handler.messages(
             db, data, args.media, timing, args.filter_date,
