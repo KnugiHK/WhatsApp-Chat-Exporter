@@ -21,21 +21,31 @@ class Timing:
         self.tz = TimeZone(
             timezone_offset) if timezone_offset is not None else None
 
-    def format_timestamp(self, timestamp: int | float | None, format: str) -> str | None:
+    def format_timestamp(self, timestamp: int | float | None, fmt: str) -> str | None:
         """
-        Format a timestamp with the specified format string.
-
-        Args:
-            timestamp (int | float | None): Unix timestamp to format
-            format (str): strftime format string
+        Format a Unix timestamp (seconds or milliseconds) using the given strftime pattern.
 
         Returns:
-            str | None: Formatted timestamp string, or None if timestamp is None
+            str | None: Formatted string, or None if timestamp is None.
+
+        Raises:
+            ValueError: If timestamp is non-positive or cannot be parsed into a valid date.
         """
-        if timestamp is not None:
-            timestamp = timestamp / 1000 if timestamp > 9999999999 else timestamp
-            return datetime.fromtimestamp(timestamp, self.tz).strftime(format)
-        return None
+        if timestamp is None:
+            return None
+
+        if timestamp <= 0:
+            raise ValueError(f"Timestamp must be positive, got {timestamp!r}")
+
+        # Normalize milliseconds to seconds
+        if timestamp > 9_999_999_999:
+            timestamp /= 1000
+
+        try:
+            dt = datetime.fromtimestamp(timestamp, self.tz)
+            return dt.strftime(fmt)
+        except (OverflowError, OSError, ValueError) as err:
+            raise ValueError(f"Failed to format timestamp {timestamp!r}: {err}") from err
 
 
 class TimeZone(tzinfo):
