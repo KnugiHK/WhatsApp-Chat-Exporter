@@ -64,7 +64,7 @@ def contacts(db, data, enrich_from_vcards):
     return True
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty, no_reply):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
     """
     Process WhatsApp messages from the database.
 

@@ -97,7 +97,7 @@ def get_contact_name(content):
         return content["ZPUSHNAME"]
 
 
-def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty, no_reply):
+def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, filter_empty):
     """Process WhatsApp messages and contacts from the database."""
     c = db.cursor()
     cursor2 = db.cursor()
@@ -298,7 +298,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
 
             # Process message data
             invalid = process_message_data(
-                message, content, is_group_message, data, message_map, no_reply)
+                message, content, is_group_message, data, message_map)
 
             # Add valid messages to chat
             if not invalid:
@@ -310,7 +310,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
 
 
-def process_message_data(message, content, is_group_message, data, message_map, no_reply):
+def process_message_data(message, content, is_group_message, data, message_map):
     """Process and set message data from content row."""
     # Handle group sender info
     if is_group_message and content["ZISFROMME"] == 0:
@@ -334,7 +334,7 @@ def process_message_data(message, content, is_group_message, data, message_map, 
 
     # Handle quoted replies
     metadata = content["ZMETADATA"]
-    if metadata and not no_reply and len(metadata) >= 2 and metadata[0] == 0x2A:
+    if metadata and len(metadata) >= 2 and metadata[0] == 0x2A:
         # The byte after the 0x2A tag is the length of the quoted message ID
         quoted_len = metadata[1]
         quoted_bytes = metadata[2 : 2 + quoted_len]

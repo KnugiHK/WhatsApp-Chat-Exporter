@@ -130,10 +130,6 @@ def setup_argument_parser() -> ArgumentParser:
         "--size", "--output-size", "--split", dest="size", nargs='?', const="0", default=None,
         help="Maximum (rough) size of a single output file in bytes, 0 for auto"
     )
-    output_group.add_argument(
-        "--no-reply", dest="no_reply_ios", default=False, action='store_true',
-        help="Do not process replies (iOS only) (default: handle replies)"
-    )
 
     # JSON formatting options
     json_group = parser.add_argument_group('JSON Options')
@@ -588,7 +584,7 @@ def process_messages(args, data: ChatCollection) -> None:
 
         message_handler.messages(
             db, data, args.media, timing, args.filter_date,
-            filter_chat, args.filter_empty, args.no_reply_ios
+            filter_chat, args.filter_empty
         )
 
         # Process media

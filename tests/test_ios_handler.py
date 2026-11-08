@@ -138,7 +138,7 @@ def test_quoted_reply_detected_for_any_parent_id_length(parent_id):
     message_map = {parent_id: "parent text"}
 
     process_message_data(
-        message, make_content(quoted_metadata(parent_id)), False, None, message_map, False
+        message, make_content(quoted_metadata(parent_id)), False, None, message_map
     )
 
     assert message.reply == parent_id
@@ -150,27 +150,11 @@ def test_non_reply_metadata_starting_with_tag_byte_is_ignored():
 
     # Length byte claims 30 bytes but only 2 follow, so this is not a quoted reply.
     process_message_data(
-        message, make_content(b"\x2a\x1e\xff\xfe"), False, None, {}, False
+        message, make_content(b"\x2a\x1e\xff\xfe"), False, None, {}
     )
 
     assert message.reply is None
     assert message.quoted_data is None
-
-
-def test_no_reply_flag_skips_quoted_reply_parsing():
-    message = make_message()
-    parent_id = "D" * 20
-
-    process_message_data(
-        message,
-        make_content(quoted_metadata(parent_id)),
-        False,
-        None,
-        {parent_id: "parent text"},
-        True,
-    )
-
-    assert message.reply is None
 
 
 class TestNormalizePhoneLabel(unittest.TestCase):
@@ -280,7 +264,7 @@ class TestSenderAssignment(unittest.TestCase):
         data = self._make_data(self.BIDI_LABEL)
         message = self._make_message()
 
-        ios_handler.process_message_data(message, self._make_content(), True, data, {}, True)
+        ios_handler.process_message_data(message, self._make_content(), True, data, {})
 
         self.assertEqual(message.sender, self.BARE_LABEL)
         self.assertEqual(message.data, "Hello there")
@@ -289,7 +273,7 @@ class TestSenderAssignment(unittest.TestCase):
         data = self._make_data()
         message = self._make_message()
 
-        ios_handler.process_message_data(message, self._make_content(), True, data, {}, True)
+        ios_handler.process_message_data(message, self._make_content(), True, data, {})
 
         # The fallback JID local part is a bare number already
         self.assertEqual(message.sender, "12025550123")
@@ -298,7 +282,7 @@ class TestSenderAssignment(unittest.TestCase):
         data = self._make_data("John Doe")
         message = self._make_message()
 
-        ios_handler.process_message_data(message, self._make_content(), True, data, {}, True)
+        ios_handler.process_message_data(message, self._make_content(), True, data, {})
 
         self.assertEqual(message.sender, "John Doe")
 
