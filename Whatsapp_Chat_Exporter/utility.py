@@ -17,6 +17,7 @@ from typing import Any
 from enum import StrEnum, IntEnum
 
 MAX_SIZE = 4 * 1024 * 1024  # Default 4MB
+LARGE_HTML_SIZE = 25 * 1024 * 1024  # Browsers may not display files much larger than this in full
 ROW_SIZE = 0x3D0
 
 def convert_time_unit(time_second: int) -> str:
@@ -172,6 +173,23 @@ def check_update(include_beta: bool = False) -> int:
                 logging.info(
                     "You are using the latest version of WhatsApp Chat Exporter.")
     return 0
+
+
+def warn_about_large_html_files(output_folder: str) -> None:
+    """Warn about HTML files in the output folder that browsers may not display in full."""
+    large_files = sorted(
+        ((entry.name, entry.stat().st_size) for entry in os.scandir(output_folder)
+         if entry.name.endswith(".html") and entry.is_file() and entry.stat().st_size > LARGE_HTML_SIZE),
+        key=lambda item: item[1],
+        reverse=True
+    )
+    if large_files:
+        listing = "\n".join(f"  {name} ({bytes_to_readable(size)})" for name, size in large_files)
+        logging.warning(
+            f"{len(large_files)} chat(s) produced a very large HTML file, "
+            f"which browsers may not display in full:\n{listing}\n"
+            "Re-run with --size 0 to split large chats into smaller files."
+        )
 
 
 def rendering(

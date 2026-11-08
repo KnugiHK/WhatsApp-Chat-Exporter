@@ -16,6 +16,7 @@ from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import MAX_SIZE, ROW_SIZE, JidType, Device, get_jid_map_join
 from Whatsapp_Chat_Exporter.utility import rendering, get_file_name, setup_template, get_cond_for_empty
 from Whatsapp_Chat_Exporter.utility import get_status_location, convert_time_unit, get_jid_map_selection
+from Whatsapp_Chat_Exporter.utility import warn_about_large_html_files
 from Whatsapp_Chat_Exporter.utility import get_chat_condition, safe_name, bytes_to_readable, determine_metadata
 from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
 
@@ -1353,6 +1354,9 @@ def create_html(
         total_time = pbar.format_dict['elapsed']
     logging.info(
         f"Generated {total_row_number} chats in {convert_time_unit(total_time)}")
+
+    if maximum_size is None:
+        warn_about_large_html_files(output_folder)
 
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):

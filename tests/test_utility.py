@@ -1,3 +1,4 @@
+import logging
 import os
 import pytest
 import random
@@ -448,3 +449,27 @@ def test_telegram_json_format_date(monkeypatch, tz, timezone_offset, expected):
         monkeypatch.undo()
         time.tzset()
     assert result["messages"][0]["date"] == expected
+
+
+def _make_html_file(folder, name, size):
+    with open(folder / name, "wb") as f:
+        f.truncate(size)
+
+
+def test_warn_about_large_html_files(tmp_path, caplog):
+    _make_html_file(tmp_path, "big.html", LARGE_HTML_SIZE + 1)
+    _make_html_file(tmp_path, "small.html", LARGE_HTML_SIZE)
+    _make_html_file(tmp_path, "big.txt", LARGE_HTML_SIZE + 1)
+    with caplog.at_level(logging.WARNING):
+        warn_about_large_html_files(str(tmp_path))
+    assert "big.html" in caplog.text
+    assert "small.html" not in caplog.text
+    assert "big.txt" not in caplog.text
+    assert "--size 0" in caplog.text
+
+
+def test_no_warning_without_large_html_files(tmp_path, caplog):
+    _make_html_file(tmp_path, "small.html", 10)
+    with caplog.at_level(logging.WARNING):
+        warn_about_large_html_files(str(tmp_path))
+    assert caplog.text == ""
