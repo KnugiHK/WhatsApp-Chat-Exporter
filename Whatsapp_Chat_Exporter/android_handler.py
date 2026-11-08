@@ -206,8 +206,17 @@ def _get_messages_cursor_legacy(cursor, filter_empty, filter_date, filter_chat):
                             jid_old.raw_string as old_jid,
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
-                            COALESCE(receipt_user.receipt_timestamp, messages.received_timestamp) as received_timestamp,
-                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp, messages.read_device_timestamp) as read_timestamp
+                            CASE
+                                WHEN receipt_user.receipt_timestamp > 0 THEN receipt_user.receipt_timestamp
+                                WHEN messages.received_timestamp > 0 THEN messages.received_timestamp
+                                ELSE NULL
+                            END AS received_timestamp,
+                            CASE
+                                WHEN receipt_user.read_timestamp > 0 THEN receipt_user.read_timestamp
+                                WHEN receipt_user.played_timestamp > 0 THEN receipt_user.played_timestamp
+                                WHEN messages.read_device_timestamp > 0 THEN messages.read_device_timestamp
+                                ELSE NULL
+                            END AS read_timestamp
                     FROM messages
                         LEFT JOIN messages_quotes
                             ON messages.quoted_row_id = messages_quotes._id
@@ -282,8 +291,16 @@ def _get_messages_cursor_new(
                             jid_old.raw_string as old_jid,
                             jid_new.raw_string as new_jid,
                             jid_global.type as jid_type,
-                            COALESCE(receipt_user.receipt_timestamp, message.received_timestamp) as received_timestamp,
-                            COALESCE(receipt_user.read_timestamp, receipt_user.played_timestamp) as read_timestamp,
+                            CASE 
+                                WHEN receipt_user.receipt_timestamp > 0 THEN receipt_user.receipt_timestamp
+                                WHEN message.received_timestamp > 0 THEN message.received_timestamp
+                                ELSE message.timestamp
+                            END AS received_timestamp,
+                            CASE 
+                                WHEN receipt_user.read_timestamp > 0 THEN receipt_user.read_timestamp
+                                WHEN receipt_user.played_timestamp > 0 THEN receipt_user.played_timestamp
+                                ELSE receipt_user.played_timestamp
+                            END AS read_timestamp,
                             {transcription_selection}
                     FROM message
                         LEFT JOIN message_quoted
