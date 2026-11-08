@@ -217,6 +217,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             ZMESSAGEDATE,
             ZTEXT,
             ZMESSAGETYPE,
+            ZGROUPEVENTTYPE,
             ZWAGROUPMEMBER.ZMEMBERJID,
             ZMETADATA,
             ZSTANZAID,
@@ -328,6 +329,42 @@ def _is_edited(message_type, encoded_info):
     return any(field == 7 and wire_type == 'bytes' for field, wire_type, _ in fields)
 
 
+def _system_message_text(content, sender, is_group_message, data):
+    """Return the text of a known system message stored without text, or None."""
+    message_type = content["ZMESSAGETYPE"]
+    if message_type not in (6, 10, 12, 59, 60) or content["ZTEXT"]:
+        return None
+    event = (message_type, content["ZGROUPEVENTTYPE"])
+
+    if is_group_message:
+        who = sender or "A participant"
+        if event == (60, 2):
+            return "You sent message history" if content["ZISFROMME"] == 1 else f"{who} sent you message history"
+        return {
+            (10, 58): f"{who} pinned a message",
+            (10, 2): "Messages and calls are end-to-end encrypted",
+            (10, 3): f"Your security code with {who} changed",
+            (6, 2): f"{who} was added",
+            (6, 3): f"{who} left",
+            (6, 12): f"{who} created this group",
+            (6, 15): f"{who} joined using a group link",
+            (6, 30): f"Message history was shared with {who}",
+        }.get(event)
+
+    if event == (10, 3):
+        jid = content["ZCONTACTJID"]
+        name = data.get_chat(jid).name if jid in data else None
+        who = normalize_phone_label(name or jid.split('@')[0])
+        return f"Your security code with {who} changed"
+    return {
+        (10, 1): "Missed voice call",
+        (10, 2): "Messages and calls are end-to-end encrypted",
+        (10, 38): "This business changed how it manages this chat",
+        (12, 0): "Waiting for this message",
+        (59, 0): "Voice or video call",
+    }.get(event)
+
+
 def process_message_data(message, content, is_group_message, data, message_map):
     """Process and set message data from content row."""
     # Handle group sender info
@@ -345,6 +382,13 @@ def process_message_data(message, content, is_group_message, data, message_map):
         message.sender = normalize_phone_label(name or fallback)
     else:
         message.sender = None
+
+    # Handle system messages that are stored without text
+    system_text = _system_message_text(content, message.sender, is_group_message, data)
+    if system_text is not None:
+        message.data = system_text
+        message.meta = True
+        return False
 
     # Handle metadata messages
     if content["ZMESSAGETYPE"] == 6:
