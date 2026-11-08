@@ -36,6 +36,8 @@ KEY_TYPE_REGULAR = 0x01
 KEY_TYPE_E2E_SEPARATE_HMAC = 0x03
 MESSAGE_FILE = "ChatStorage.sqlite.enc"
 CALL_FILE = "CallHistory.sqlite.enc"
+LID_FILE = "LID.sqlite.enc"
+PUSH_NAME_FILE = "BackedUpStorageDatabase.sqlite.enc"
 TAR_BLOCK_SIZE = 512
 TAR_TYPE_ENCRYPTED = b"W"
 
@@ -277,7 +279,12 @@ def decrypt_e2e_backup(base_dir: str, key: str, identifiers, media_dir: Optional
         exit(1)
     try:
         backup_key = parse_key(key)
-        for name, target in ((MESSAGE_FILE, identifiers.MESSAGE), (CALL_FILE, identifiers.CALL)):
+        for name, target in (
+            (MESSAGE_FILE, identifiers.MESSAGE),
+            (CALL_FILE, identifiers.CALL),
+            (LID_FILE, "LID.sqlite"),
+            (PUSH_NAME_FILE, "BackedUpStorageDatabase.sqlite"),
+        ):
             path = os.path.join(base_dir, name)
             if not os.path.isfile(path):
                 logging.warning(f"{name} not found. Skipping...")

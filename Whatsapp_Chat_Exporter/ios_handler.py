@@ -5,6 +5,7 @@ import json
 import os
 import logging
 import shutil
+import sqlite3
 from glob import glob
 from tqdm import tqdm
 from pathlib import Path
@@ -328,21 +329,56 @@ def _is_edited(message_type, encoded_info):
     return any(field == 7 and wire_type == 'bytes' for field, wire_type, _ in fields)
 
 
+def _read_rows(path, query):
+    """Return all rows of a query on an optional database, or nothing if unavailable."""
+    if not os.path.isfile(path):
+        return []
+    try:
+        with sqlite3.connect(path) as db:
+            return db.execute(query).fetchall()
+    except sqlite3.Error as e:
+        logging.warning(f"Could not read {path}: {e}")
+        return []
+
+
+def load_lid_names(data, lid_db="LID.sqlite", push_name_db="BackedUpStorageDatabase.sqlite"):
+    """Build labels for LIDs, so members without a saved contact are not shown as raw IDs.
+
+    The best available label is used: profile name, then full phone number,
+    then the masked phone number WhatsApp stores when the number is hidden.
+
+    Args:
+        data (ChatCollection): The chat data collection.
+        lid_db (str): Path to LID.sqlite.
+        push_name_db (str): Path to BackedUpStorageDatabase.sqlite.
+    """
+    labels = {}
+    for jid, phone, masked in _read_rows(lid_db, "SELECT ZIDENTIFIER, ZPHONENUMBER, ZDISPLAYNAME FROM ZWAZACCOUNT"):
+        if jid and (phone or masked):
+            labels[jid] = f"+{phone}" if phone else masked
+    for jid, push_name in _read_rows(push_name_db, "SELECT jid, push_name FROM profile_push_name"):
+        if jid and push_name:
+            labels[jid] = push_name
+    data.set_system("lid_names", labels)
+
+
+def _jid_label(jid, data):
+    """Return the best label for a JID: saved contact, LID label, then the bare ID."""
+    name = data.get_chat(jid).name if jid in data else None
+    if name:
+        return name
+    label = (data.get_system("lid_names") or {}).get(jid)
+    if label:
+        return label
+    return jid.split('@')[0] if "@" in jid else None
+
+
 def process_message_data(message, content, is_group_message, data, message_map):
     """Process and set message data from content row."""
     # Handle group sender info
     if is_group_message and content["ZISFROMME"] == 0:
-        name = None
-        if content["ZMEMBERJID"] is not None:
-            if content["ZMEMBERJID"] in data:
-                name = data.get_chat(content["ZMEMBERJID"]).name
-            if "@" in content["ZMEMBERJID"]:
-                fallback = content["ZMEMBERJID"].split('@')[0]
-            else:
-                fallback = None
-        else:
-            fallback = None
-        message.sender = normalize_phone_label(name or fallback)
+        member = content["ZMEMBERJID"]
+        message.sender = normalize_phone_label(_jid_label(member, data) if member is not None else None)
     else:
         message.sender = None
 
@@ -392,14 +428,7 @@ def _parse_group_action(ztext, data):
     if ztext.endswith("@lid") or ztext.endswith("@s.whatsapp.net"):
         # This is likely a group member change action
         # Not really sure actually
-        name = None
-        if ztext in data:
-            name = data.get_chat(ztext).name
-        if "@" in ztext:
-            fallback = ztext.split('@')[0]
-        else:
-            fallback = None
-        entity = name or fallback
+        entity = _jid_label(ztext, data)
 
         return f"{entity} join the group"
 
@@ -410,14 +439,7 @@ def _parse_group_action(ztext, data):
             return ztext  # Not a JSON string, return as-is
         entity = metadata.get('author') or 'Someone'
         if entity != "Someone":
-            name = None
-            if entity in data:
-                name = data.get_chat(entity).name
-            if "@" in entity:
-                fallback = entity.split('@')[0]
-            else:
-                fallback = None
-            entity = name or fallback
+            entity = _jid_label(entity, data)
         return f"{entity} changed the group name to {metadata.get('subject', 'Unknown')}."
     elif ztext == "admin_add":
         return f"The administrator has restricted participant additions to admins only."
