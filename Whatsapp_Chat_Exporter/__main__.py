@@ -606,6 +606,10 @@ def process_messages(args, data: ChatCollection) -> None:
             filter_chat, args.filter_empty
         )
 
+        # Process reactions, which Android handles as part of messages
+        if message_handler is ios_handler:
+            ios_handler.reactions(db, data, args.filter_date, filter_chat)
+
         # Process calls
         process_calls(args, db, data, filter_chat, timing)
 
