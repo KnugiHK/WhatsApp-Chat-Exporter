@@ -56,6 +56,39 @@ class TestTiming:
         # Milliseconds as float
         assert t.format_timestamp(1672531200000.0, "%Y") == "2023"
 
+    def test_format_timestamp_none_returns_none(self):
+        """Verify that passing None returns None without raising an error."""
+        t = Timing(0)
+        assert t.format_timestamp(None, "%Y-%m-%d") is None
+
+    @pytest.mark.parametrize("invalid_ts", [
+        0,           # Exact Unix epoch (non-positive)
+        -1,          # Negative integer
+        -1672531200, # Distant past timestamp
+        -0.001,      # Negative float
+    ])
+    def test_format_timestamp_non_positive_raises_value_error(self, invalid_ts):
+        """Verify that timestamps <= 0 raise ValueError."""
+        t = Timing(0)
+        with pytest.raises(ValueError, match="Timestamp must be positive"):
+            t.format_timestamp(invalid_ts, "%Y-%m-%d")
+
+    @pytest.mark.parametrize("boundary_ts, expected_year", [
+        (9_999_999_999, "2286"),         # Exact cutoff boundary (treated as seconds)
+        (10_000_000_000, "1970"),        # Value > 9999999999 (divided by 1000 => seconds in 1970)
+        (10_000_000_000_000, "2286"),    # Large millisecond timestamp
+    ])
+    def test_millisecond_cutoff_boundary(self, boundary_ts, expected_year):
+        """Verify behavior right around the 9,999,999,999 millisecond detection boundary."""
+        t = Timing(0)
+        assert t.format_timestamp(boundary_ts, "%Y") == expected_year
+
+    def test_format_timestamp_overflow_raises_value_error(self):
+        """Verify extreme out-of-range timestamps raise ValueError via the try/except block."""
+        t = Timing(0)
+        with pytest.raises(ValueError, match="Failed to format timestamp"):
+            t.format_timestamp(1e25, "%Y-%m-%d")
+
 
 @pytest.fixture
 def local_tz(monkeypatch):
