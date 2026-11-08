@@ -32,6 +32,7 @@ HEADER_LENGTH = 18
 TAG_LENGTH = 32
 FLAG_COMPRESSED = 0x80
 KEY_TYPE_MASK = 0x7F
+KEY_TYPE_REGULAR = 0x01
 KEY_TYPE_E2E_SEPARATE_HMAC = 0x03
 MESSAGE_FILE = "ChatStorage.sqlite.enc"
 CALL_FILE = "CallHistory.sqlite.enc"
@@ -89,6 +90,13 @@ def decrypt_file(data: bytes, key: bytes) -> bytes:
     """
     if len(data) < HEADER_LENGTH + TAG_LENGTH + AES.block_size:
         raise InvalidFileFormatError("The file is too short.")
+    if data[0] & KEY_TYPE_MASK == KEY_TYPE_REGULAR:
+        raise InvalidFileFormatError(
+            "This is a regular WhatsApp backup, not an end-to-end encrypted one. Its key appears "
+            "to be held by WhatsApp and provided to your logged-in device, so your 64-digit key "
+            "cannot decrypt it. In WhatsApp, turn on end-to-end encrypted backup under "
+            "Settings > Chats > Chat Backup > Backup Settings, then make a new backup."
+        )
     if data[0] & KEY_TYPE_MASK != KEY_TYPE_E2E_SEPARATE_HMAC:
         raise InvalidFileFormatError(
             f"Unsupported file type {data[0]:#x}. The backup may not be end-to-end encrypted."

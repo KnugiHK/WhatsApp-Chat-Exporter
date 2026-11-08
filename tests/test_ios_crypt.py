@@ -57,9 +57,15 @@ def test_tampered_file_rejected():
         ios_crypt.decrypt_file(bytes(data), KEY)
 
 
-def test_non_e2e_file_rejected():
-    with pytest.raises(InvalidFileFormatError):
-        ios_crypt.decrypt_file(encrypt(PLAINTEXT, 0x81), KEY)
+@pytest.mark.parametrize("flags", [0x81, 0x01])
+def test_regular_backup_is_reported(flags):
+    with pytest.raises(InvalidFileFormatError, match="regular WhatsApp backup"):
+        ios_crypt.decrypt_file(encrypt(PLAINTEXT, flags), KEY)
+
+
+def test_unknown_key_type_rejected():
+    with pytest.raises(InvalidFileFormatError, match="Unsupported file type"):
+        ios_crypt.decrypt_file(encrypt(PLAINTEXT, 0x84), KEY)
 
 
 def test_parse_key_from_hex_and_file(tmp_path):
