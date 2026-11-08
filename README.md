@@ -119,6 +119,13 @@ pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 > [!NOTE]
 > You will need to disable the built-in end-to-end encryption for WhatsApp backups. See [WhatsApp's FAQ](https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup) for how to do it.
+### End-to-End Encrypted iCloud Backup
+WhatsApp's end-to-end encrypted iCloud backups can be decrypted with your 64-digit encryption key. Install the required dependencies and point `-b` to the folder containing `ChatStorage.sqlite.enc`.
+```sh
+pip install whatsapp-chat-exporter["ios_e2e"]
+wtsexporter -i -b /path/to/backup -k encryption_key.txt
+```
+`-k` accepts either the 64-digit key or a path to a file containing it. If it is given without a value, you will be prompted to enter the key. Messages, call history and the media in the backup's `.tar` files are decrypted.
 ### Extracting
 To extract messages from iOS/iPadOS backups, run the following command in the shell, making sure to replace the username and device ID with the correct values. Keep in mind that there are at least two possible paths for the backups on Windows.
 #### Windows
