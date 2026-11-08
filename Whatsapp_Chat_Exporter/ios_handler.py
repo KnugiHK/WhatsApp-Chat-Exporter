@@ -329,12 +329,39 @@ def _is_edited(message_type, encoded_info):
     return any(field == 7 and wire_type == 'bytes' for field, wire_type, _ in fields)
 
 
+def _member_label(jid, data):
+    """Return a display label for a group member JID."""
+    name = data.get_chat(jid).name if jid in data else None
+    return normalize_phone_label(name or jid.split('@')[0])
+
+
+def _members_added_text(ztext, data):
+    """Format a members-added event whose text is "actor;member,member"."""
+    actor, separator, members = ztext.partition(";")
+    if not separator or not members:
+        return None
+    names = [_member_label(jid, data) for jid in members.split(",")]
+    added = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+    return f"{_member_label(actor, data)} added {added}"
+
+
 def _system_message_text(content, sender, is_group_message, data):
     """Return the text of a known system message stored without text, or None."""
     message_type = content["ZMESSAGETYPE"]
-    if message_type not in (6, 10, 12, 59, 60) or content["ZTEXT"]:
+    if message_type not in (6, 10, 12, 59, 60):
         return None
     event = (message_type, content["ZGROUPEVENTTYPE"])
+
+    # These group events store member IDs in ZTEXT rather than readable text
+    if is_group_message and content["ZTEXT"]:
+        if event == (6, 50):
+            return _members_added_text(content["ZTEXT"], data)
+        if event == (6, 9):
+            return f"{sender or 'A participant'} changed their phone number"
+        if event == (6, 2) and content["ZTEXT"].endswith(("@lid", "@s.whatsapp.net")):
+            return f"{_member_label(content['ZTEXT'], data)} was added"
+    if content["ZTEXT"]:
+        return None
 
     if is_group_message:
         who = sender or "A participant"
@@ -344,18 +371,17 @@ def _system_message_text(content, sender, is_group_message, data):
             (10, 58): f"{who} pinned a message",
             (10, 2): "Messages and calls are end-to-end encrypted",
             (10, 3): f"Your security code with {who} changed",
+            (10, 36): f"Your security code with {who} changed",
             (6, 2): f"{who} was added",
             (6, 3): f"{who} left",
             (6, 12): f"{who} created this group",
+            (6, 78): "Anyone in this group can invite new members using a group link",
             (6, 15): f"{who} joined using a group link",
             (6, 30): f"Message history was shared with {who}",
         }.get(event)
 
-    if event == (10, 3):
-        jid = content["ZCONTACTJID"]
-        name = data.get_chat(jid).name if jid in data else None
-        who = normalize_phone_label(name or jid.split('@')[0])
-        return f"Your security code with {who} changed"
+    if event in ((10, 3), (10, 36)):
+        return f"Your security code with {_member_label(content['ZCONTACTJID'], data)} changed"
     return {
         (10, 1): "Missed voice call",
         (10, 2): "Messages and calls are end-to-end encrypted",
@@ -445,7 +471,7 @@ def _parse_group_action(ztext, data):
             fallback = None
         entity = name or fallback
 
-        return f"{entity} join the group"
+        return f"{entity} joined the group"
 
     elif ztext.startswith("{") and ztext.endswith("}"):
         try:
