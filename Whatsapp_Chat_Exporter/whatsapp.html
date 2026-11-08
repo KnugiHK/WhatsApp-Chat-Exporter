@@ -246,6 +246,11 @@
             font-weight: bold;
             font-style: normal;
         }
+        .date-separator {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
         </style>
         <script>
             function search(event) {
@@ -311,7 +316,7 @@
                     {% set last = {'last': 946688461.001} %}
                     {% for msg in msgs -%}
                         {% if determine_day(last.last, msg.timestamp) is not none  %}
-                            <div class="flex justify-center">
+                            <div class="flex justify-center date-separator">
                                 <div class="bg-[#e1f2fb] rounded-lg px-2 py-1 text-xs text-[#54656f]">
                                     {{ determine_day(last.last, msg.timestamp) }}
                                 </div>
