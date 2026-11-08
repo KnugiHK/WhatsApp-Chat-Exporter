@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     { name = "KnugiHK", email = "hello@knugi.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 keywords = [
     "android", "ios", "parsing", "history", "iphone", "message", "crypt15",
     "customizable", "whatsapp", "android-backup", "messages", "crypt14", 
@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Development Status :: 4 - Beta",
     "Environment :: Console",
