@@ -236,17 +236,37 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
     """
     c.execute(messages_query)
 
-    reply_query = """SELECT ZSTANZAID,
-                        ZTEXT,
-                        ZTITLE
-                     FROM ZWAMESSAGE
-                        LEFT JOIN ZWAMEDIAITEM
-                            ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE
-                     WHERE ZTEXT IS NOT NULL
-                        OR ZTITLE IS NOT NULL;"""
+    # Get quoted replies mapping
+    reply_query = """
+        SELECT ZWAMESSAGE.ZSTANZAID,
+               ZWAMESSAGE.ZTEXT,
+               ZWAMEDIAITEM.ZTITLE,
+               ZWAMESSAGE.ZMESSAGETYPE
+        FROM ZWAMESSAGE
+        LEFT JOIN ZWAMEDIAITEM
+            ON ZWAMESSAGE.Z_PK = ZWAMEDIAITEM.ZMESSAGE
+        WHERE ZWAMESSAGE.ZSTANZAID IS NOT NULL
+          AND (
+              (ZWAMESSAGE.ZTEXT IS NOT NULL AND ZWAMESSAGE.ZTEXT != '')
+              OR (ZWAMEDIAITEM.ZTITLE IS NOT NULL AND ZWAMEDIAITEM.ZTITLE != '')
+          );
+    """
     cursor2.execute(reply_query)
-    message_map = {row[0][:17]: row[1] or row[2]
-                   for row in cursor2.fetchall() if row[0]}
+
+    # Maps lookup_key -> (canonical_stanza_id, quoted_text)
+    message_map = {}
+
+    for stanza_id, text, title, msg_type in cursor2.fetchall():
+        # If deleted (type 14) or empty text, set text to None so it falls back to "Message deleted"
+        clean_text = text.strip() if (msg_type != 14 and text and text.strip()) else None
+        entry = (stanza_id, clean_text)
+
+        # Map primary stanza_id
+        message_map[stanza_id] = entry
+
+        # Map secondary ZTITLE reference to the exact same canonical stanza_id and text
+        if title and title != stanza_id:
+            message_map[title] = entry
 
     # Process each message
     with tqdm(total=total_row_number, desc="Processing messages", unit="msg", leave=False) as pbar:
@@ -268,7 +288,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 from_me=content["ZISFROMME"],
                 timestamp=ts,
                 time=ts,
-                key_id=content["ZSTANZAID"][:17],
+                key_id=content["ZSTANZAID"],
                 timezone_offset=timezone_offset,
                 message_type=content["ZMESSAGETYPE"],
                 received_timestamp=APPLE_TIME +
@@ -314,14 +334,17 @@ def process_message_data(message, content, is_group_message, data, message_map, 
 
     # Handle quoted replies
     metadata = content["ZMETADATA"]
-    if metadata is not None and not no_reply and len(metadata) >= 2 and metadata[0] == 0x2A:
-        # The byte after the 0x2A tag is the length of the quoted message ID,
-        # which is not always 0x14, so read it instead of assuming it.
-        quoted_msg_id_length = metadata[1]
-        quoted = metadata[2:2 + quoted_msg_id_length]
-        if len(quoted) == quoted_msg_id_length and quoted.isascii():
-            message.reply = quoted.decode("ascii")[:17]
-            message.quoted_data = message_map.get(message.reply)
+    if metadata and not no_reply and len(metadata) >= 2 and metadata[0] == 0x2A:
+        # The byte after the 0x2A tag is the length of the quoted message ID
+        quoted_len = metadata[1]
+        quoted_bytes = metadata[2 : 2 + quoted_len]
+
+        if len(quoted_bytes) == quoted_len:
+            raw_key = quoted_bytes.decode("utf-8", errors="ignore").strip()
+
+            resolved_stanza, quoted_text = message_map.get(raw_key, (raw_key, None))
+            message.reply = resolved_stanza
+            message.quoted_data = quoted_text or "Message deleted"
 
     # Skip poll vote update messages (type 66)
     if content["ZMESSAGETYPE"] == 66:
