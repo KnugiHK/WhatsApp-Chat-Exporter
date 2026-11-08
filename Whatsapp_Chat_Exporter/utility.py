@@ -959,6 +959,80 @@ def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
     return json_obj
 
 
+# The characters a phone number label needs: digits, the plus sign for
+# country codes and the hyphen as a digit group separator.
+_PHONE_NUMBER_CHARS = set("+-0123456789")
+
+# Decorative separators that iOS may add when formatting a phone number
+# label but that carry no meaning (spaces, parentheses, dots, slashes).
+_PHONE_DECORATION_CHARS = set(" ()./")
+
+# The characters a label may consist of to be considered phone-like.
+# Labels containing anything else (e.g. contact names) are left untouched.
+_PHONE_LABEL_CHARS = _PHONE_NUMBER_CHARS | _PHONE_DECORATION_CHARS
+
+
+def _is_phone_dash(char):
+    """Check whether a character is a dash (Unicode category "Pd")."""
+    return unicodedata.category(char) == "Pd"
+
+
+def normalize_phone_label(label):
+    """Reduce a phone-number label to a bare phone number.
+
+    The same contact may be labeled differently across backups: iOS
+    sometimes wraps phone-number labels in Unicode bidi/isolating control
+    characters and formats them with Unicode spaces and dashes (e.g.
+    "\u202a+1\u00a0(202)\u00a0555\u20110123\u202c" for "+1 (202) 555-0123"),
+    which breaks exact sender matching even though the WhatsApp ID is
+    unchanged. A label that consists only of phone-number characters is
+    therefore reduced to what a phone number actually needs (digits, "+"
+    and "-"): Unicode compatibility variants are folded to their ASCII
+    counterparts, invisible control characters are dropped and decorative
+    separators are removed. Labels that are not phone-like (e.g. contact
+    names) and empty labels are returned unchanged.
+
+    Args:
+        label (str | None): The label to normalize.
+
+    Returns:
+        str | None: The bare phone number, or the original label if it
+        is empty or not phone-like.
+    """
+    if not label:
+        return label
+
+    # Fold Unicode compatibility variants to their ASCII counterparts
+    # (e.g. "\u00a0" -> " ", fullwidth digits -> digits). Note that dash
+    # variants such as "\u2011" only fold to another dash ("\u2010"), so
+    # they are folded through their Unicode category ("Pd") below.
+    normalized = unicodedata.normalize("NFKC", label)
+
+    # Drop invisible control characters (e.g. bidi markers): a phone
+    # number label is carried by its visible characters alone.
+    visible = [char for char in normalized if char.isprintable()]
+
+    # Only a label made up entirely of phone-number characters is
+    # normalized; anything else (e.g. a contact name) is preserved.
+    is_phone_like = (
+        any(char.isdigit() for char in visible)
+        and all(
+            char in _PHONE_LABEL_CHARS or _is_phone_dash(char)
+            for char in visible
+        )
+    )
+    if not is_phone_like:
+        return label
+
+    # Keep only the characters a phone number actually needs: dashes
+    # become the ASCII hyphen, the decorative separators are dropped.
+    return "".join(
+        "-" if _is_phone_dash(char) else char
+        for char in visible
+        if char in _PHONE_NUMBER_CHARS or _is_phone_dash(char)
+    )
+
+
 class WhatsAppIdentifier(StrEnum):
     # AppDomainGroup-group.net.whatsapp.WhatsApp.shared-ChatStorage.sqlite
     MESSAGE = "7c7fba66680ef796b916b067077cc246adacf01d"

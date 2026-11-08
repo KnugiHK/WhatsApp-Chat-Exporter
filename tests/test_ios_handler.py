@@ -1,8 +1,10 @@
 import sqlite3
 import pytest
+import unittest
+from Whatsapp_Chat_Exporter.utility import Device, normalize_phone_label
 from Whatsapp_Chat_Exporter import ios_handler
-from Whatsapp_Chat_Exporter.data_model import ChatCollection
-from Whatsapp_Chat_Exporter.data_model import Message
+from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
+from Whatsapp_Chat_Exporter.data_model import Message, Timing
 from Whatsapp_Chat_Exporter.ios_handler import process_message_data
 
 
@@ -169,3 +171,158 @@ def test_no_reply_flag_skips_quoted_reply_parsing():
     )
 
     assert message.reply is None
+
+
+class TestNormalizePhoneLabel(unittest.TestCase):
+    """Tests for normalize_phone_label."""
+
+    def test_bidi_formatted_number_matches_plain_form(self):
+        """Both backups of the same number yield the same bare number."""
+        before = "+1 (202) 555-0123"
+        after = "\u202a+1\u00a0(202)\u00a0555\u20110123\u202c"
+
+        self.assertEqual(normalize_phone_label(before), "+1202555-0123")
+        self.assertEqual(normalize_phone_label(after), "+1202555-0123")
+        # The whole point: both backups produce the same sender label
+        self.assertEqual(
+            normalize_phone_label(before),
+            normalize_phone_label(after),
+        )
+
+    def test_isolates_thin_spaces_and_non_breaking_hyphens(self):
+        label = "\u2066+1\u2009202\u200a555\u20110123\u2069"
+        self.assertEqual(normalize_phone_label(label), "+1202555-0123")
+
+    def test_left_to_right_mark_is_removed(self):
+        label = "\u200e+1 \u200f(202) 555-0123"
+        self.assertEqual(normalize_phone_label(label), "+1202555-0123")
+
+    def test_fullwidth_digits_are_folded(self):
+        label = "\uff0b\uff11 (\uff12\uff10\uff12) \uff15\uff15\uff15-\uff10\uff11\uff12\uff13"
+        self.assertEqual(normalize_phone_label(label), "+1202555-0123")
+
+    def test_dash_variants_become_the_ascii_hyphen(self):
+        for label in (
+            "+1 (202) 555\u20110123",  # non-breaking hyphen
+            "+1 (202) 555\u20130123",  # en dash
+            "+1 (202) 555\u20140123",  # em dash
+            "+1 (202) 555\u20150123",  # horizontal bar
+        ):
+            with self.subTest(label=label):
+                self.assertEqual(normalize_phone_label(label), "+1202555-0123")
+
+    def test_decorative_separators_are_removed(self):
+        self.assertEqual(normalize_phone_label("+1.202.555.0123"), "+12025550123")
+        self.assertEqual(normalize_phone_label("+1/202/555/0123"), "+12025550123")
+
+    def test_plain_digits_unchanged(self):
+        self.assertEqual(normalize_phone_label("12025550123"), "12025550123")
+
+    def test_contact_names_are_preserved(self):
+        """Labels that are not phone-like must be returned untouched."""
+        for name in (
+            "John Doe",
+            "Mom \U0001f618",
+            "\u202aOffice Team\u202c",
+            "3 Amigos",
+            "+1 (202) 555-0123 ext. 42",
+        ):
+            with self.subTest(name=name):
+                self.assertEqual(normalize_phone_label(name), name)
+
+    def test_empty_and_none(self):
+        self.assertEqual(normalize_phone_label(""), "")
+        self.assertIsNone(normalize_phone_label(None))
+
+    def test_no_digits_is_not_phone_like(self):
+        label = "\u202a+\u00a0-()\u202c"
+        self.assertEqual(normalize_phone_label(label), label)
+
+    def test_normalization_is_idempotent(self):
+        label = "\u202a+1\u00a0(202)\u00a0555\u20110123\u202c"
+        once = normalize_phone_label(label)
+        self.assertEqual(once, "+1202555-0123")
+        self.assertEqual(normalize_phone_label(once), once)
+
+
+class TestSenderAssignment(unittest.TestCase):
+    """Sender labels are reduced to bare phone numbers when assigned."""
+
+    MEMBER_JID = "12025550123@s.whatsapp.net"
+    BIDI_LABEL = "\u202a+1\u00a0(202)\u00a0555\u20110123\u202c"
+    BARE_LABEL = "+1202555-0123"
+
+    def _make_data(self, name=None):
+        data = ChatCollection()
+        data.add_chat(self.MEMBER_JID, ChatStore(Device.IOS, name))
+        return data
+
+    def _make_message(self):
+        return Message(
+            from_me=0,
+            timestamp=0,
+            time="00:00",
+            key_id="key",
+            timezone_offset=Timing(0),
+            message_type=1
+        )
+
+    def _make_content(self):
+        return {
+            "ZISFROMME": 0,
+            "ZMEMBERJID": self.MEMBER_JID,
+            "ZMESSAGETYPE": 1,
+            "ZMETADATA": None,
+            "ZTEXT": "Hello there",
+        }
+
+    def test_process_message_data_normalizes_sender(self):
+        data = self._make_data(self.BIDI_LABEL)
+        message = self._make_message()
+
+        ios_handler.process_message_data(message, self._make_content(), True, data, {}, True)
+
+        self.assertEqual(message.sender, self.BARE_LABEL)
+        self.assertEqual(message.data, "Hello there")
+
+    def test_process_message_data_sender_fallback_normalized(self):
+        data = self._make_data()
+        message = self._make_message()
+
+        ios_handler.process_message_data(message, self._make_content(), True, data, {}, True)
+
+        # The fallback JID local part is a bare number already
+        self.assertEqual(message.sender, "12025550123")
+
+    def test_process_message_data_preserves_contact_name(self):
+        data = self._make_data("John Doe")
+        message = self._make_message()
+
+        ios_handler.process_message_data(message, self._make_content(), True, data, {}, True)
+
+        self.assertEqual(message.sender, "John Doe")
+
+    def test_process_call_record_normalizes_sender(self):
+        data = self._make_data(self.BIDI_LABEL)
+        content = {
+            "ZCALLIDSTRING": "call-1",
+            "ZGROUPCALLCREATORUSERJIDSTRING": self.MEMBER_JID,
+            "ZGROUPJIDSTRING": None,
+            "ZDATE": 0,
+            "ZOUTCOME": 0,
+            "ZDURATION": 30,
+            "ZVIDEO": 0,
+            "ZMISSED": 1,
+            "ZINCOMING": 1,
+            "bytes_transferred": 100,
+        }
+        chat = ChatStore(Device.ANDROID, "WhatsApp Calls")
+
+        ios_handler.process_call_record(content, chat, data, Timing(0))
+
+        call = chat.get_message("call-1")
+        self.assertEqual(call.sender, self.BARE_LABEL)
+
+
+if __name__ == '__main__':
+    unittest.main()

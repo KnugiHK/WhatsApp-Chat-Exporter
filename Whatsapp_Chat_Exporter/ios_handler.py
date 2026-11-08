@@ -10,7 +10,7 @@ from pathlib import Path
 from mimetypes import MimeTypes
 from markupsafe import Markup, escape
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
-from Whatsapp_Chat_Exporter.utility import APPLE_TIME, get_chat_condition, Device
+from Whatsapp_Chat_Exporter.utility import APPLE_TIME, get_chat_condition, Device, normalize_phone_label
 from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name
 from Whatsapp_Chat_Exporter.poll import decode_poll_from_receipt_blob
 from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
@@ -324,7 +324,7 @@ def process_message_data(message, content, is_group_message, data, message_map, 
                 fallback = None
         else:
             fallback = None
-        message.sender = name or fallback
+        message.sender = normalize_phone_label(name or fallback)
     else:
         message.sender = None
 
@@ -748,7 +748,7 @@ def process_call_record(content, chat, data, timezone_offset):
         fallback = _jid.split('@')[0]
     else:
         fallback = None
-    call.sender = name or fallback
+    call.sender = normalize_phone_label(name or fallback)
 
     # Set call metadata
     call.meta = True
