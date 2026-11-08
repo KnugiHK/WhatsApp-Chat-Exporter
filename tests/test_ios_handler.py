@@ -122,7 +122,7 @@ def make_content(metadata):
 
 
 def make_message():
-    return Message(from_me=1, timestamp=0, time=0, key_id="k", message_type=0)
+    return Message(from_me=1, timestamp=1792700001, time=1792700001, key_id="k", message_type=0)
 
 
 def quoted_metadata(parent_id):
