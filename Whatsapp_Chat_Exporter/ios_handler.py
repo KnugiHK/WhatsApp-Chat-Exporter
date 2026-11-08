@@ -342,7 +342,12 @@ def process_message_data(message, content, is_group_message, data, message_map, 
         if len(quoted_bytes) == quoted_len:
             raw_key = quoted_bytes.decode("utf-8", errors="ignore").strip()
 
-            resolved_stanza, quoted_text = message_map.get(raw_key, (raw_key, None))
+            lookup = message_map.get(raw_key, (raw_key, None))
+            if isinstance(lookup, tuple):
+                resolved_stanza, quoted_text = lookup
+            else:
+                resolved_stanza, quoted_text = raw_key, lookup
+
             message.reply = resolved_stanza
             message.quoted_data = quoted_text or "Message deleted"
 

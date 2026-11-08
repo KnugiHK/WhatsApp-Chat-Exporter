@@ -133,13 +133,13 @@ def quoted_metadata(parent_id):
 @pytest.mark.parametrize("parent_id", ["A" * 20, "B" * 22, "C" * 16])
 def test_quoted_reply_detected_for_any_parent_id_length(parent_id):
     message = make_message()
-    message_map = {parent_id[:17]: "parent text"}
+    message_map = {parent_id: "parent text"}
 
     process_message_data(
         message, make_content(quoted_metadata(parent_id)), False, None, message_map, False
     )
 
-    assert message.reply == parent_id[:17]
+    assert message.reply == parent_id
     assert message.quoted_data == "parent text"
 
 
@@ -164,7 +164,7 @@ def test_no_reply_flag_skips_quoted_reply_parsing():
         make_content(quoted_metadata(parent_id)),
         False,
         None,
-        {parent_id[:17]: "parent text"},
+        {parent_id: "parent text"},
         True,
     )
 
