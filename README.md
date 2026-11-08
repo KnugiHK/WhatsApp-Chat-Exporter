@@ -105,22 +105,35 @@ wtsexporter -a -k 133735053b5204b08e5c3823423399aa30ff061435ab89bc4e6713969cda13
 ```
 
 ## Working with iOS/iPadOS (iPhone or iPad)
-Do an iPhone/iPad Backup with iTunes/Finder first.
+These are the common sources of WhatsApp data on iOS, and "encrypted" means something different for each:
+
+| | iTunes/Finder backup | Regular WhatsApp iCloud backup | WhatsApp end-to-end encrypted iCloud backup |
+|---|---|---|---|
+| Created by | iTunes or Finder on your computer | WhatsApp, to iCloud Drive | WhatsApp, to iCloud Drive |
+| Encrypted by | Apple, if you enabled encrypted local backups | WhatsApp, with a key that appears to be held by WhatsApp. Media is not encrypted | WhatsApp, with your key |
+| Decrypted with | Your iPhone/iPad backup password | Not supported | Your 64-digit encryption key |
+| WhatsApp end-to-end encrypted backup | Must be off | Off | Must be on |
+
+> [!TIP]
+> We recommend WhatsApp's end-to-end encrypted backup with a 64-digit encryption key, so that only you hold the key to your iCloud backup. Store the key somewhere safe and durable, such as a password manager. Without it, the backup cannot be decrypted.
+
+### iTunes/Finder Backup
+Do an iPhone/iPad backup with iTunes/Finder first.
 * iPhone backup on Mac: https://support.apple.com/HT211229
 * iPhone backup on Windows: https://support.apple.com/HT212156
 * iPad backup: https://support.apple.com/guide/ipad/ipad9a74df05xx/ipados
-### Encrypted iOS/iPadOS Backup
+### Encrypted iTunes/Finder Backup
 > [!NOTE]
-> If you are working on unencrypted iOS/iPadOS backup, skip this.
+> If your iTunes/Finder backup is not encrypted, skip this.
 
-If you want to work on an encrypted iOS/iPadOS Backup, you should install `iphone_backup_decrypt` from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the `ios_media_handler.py`.
+If your iTunes/Finder backup is encrypted, install `iphone_backup_decrypt` from [KnugiHK/iphone_backup_decrypt](https://github.com/KnugiHK/iphone_backup_decrypt) before you run the `ios_media_handler.py`.
 ```sh
 pip install git+https://github.com/KnugiHK/iphone_backup_decrypt
 ```
 > [!NOTE]
-> You will need to disable the built-in end-to-end encryption for WhatsApp backups. See [WhatsApp's FAQ](https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup) for how to do it.
+> WhatsApp leaves your messages out of iTunes/Finder backups while its end-to-end encrypted backup is on, so this method requires turning it off. See [WhatsApp's FAQ](https://faq.whatsapp.com/490592613091019#turn-off-end-to-end-encrypted-backup) for how to do it. To keep it on, use the [end-to-end encrypted iCloud backup](#end-to-end-encrypted-icloud-backup) method instead.
 ### End-to-End Encrypted iCloud Backup
-WhatsApp's end-to-end encrypted iCloud backups can be decrypted with your 64-digit encryption key. Install the required dependencies and point `-b` to the folder containing `ChatStorage.sqlite.enc`.
+WhatsApp's end-to-end encrypted iCloud backups can be decrypted with your 64-digit encryption key. Turn it on in WhatsApp under Settings > Chats > Chat Backup > Backup Settings. Install the required dependencies and point `-b` to the folder containing `ChatStorage.sqlite.enc`.
 ```sh
 pip install whatsapp-chat-exporter["ios_e2e"]
 wtsexporter -i -b /path/to/backup -k encryption_key.txt
