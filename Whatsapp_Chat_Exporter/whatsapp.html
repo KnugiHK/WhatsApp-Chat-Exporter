@@ -312,6 +312,21 @@
             </div>
             <div class="flex-1 p-5 message-list">
                 <div class="flex flex-col space-y-2">
+                    {% macro reaction_bubbles(reactions, bubble_class, overlay_side) -%}
+                        {% set groups = {} %}
+                        {% for sender, emoji in reactions.items() %}{% set _ = groups.setdefault(emoji, []).append(sender) %}{% endfor %}
+                        {% for emoji, senders in groups.items() %}
+                        <div class="{{ bubble_class }} relative group/reaction rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help">
+                            {{ emoji }}{% if senders|length > 1 %} <span class="text-gray-500">{{ senders|length }}</span>{% endif %}
+                            <div class="hidden group-hover/reaction:block absolute bottom-full {{ overlay_side }} z-50 pb-1">
+                                <div class="bg-gray-900 text-white rounded-lg shadow-lg p-2 w-max max-w-[16rem] max-h-[70vh] overflow-y-auto">
+                                    <div class="font-medium border-b border-gray-700 pb-1 mb-1">{{ emoji }} {{ senders|length }}</div>
+                                    {% for sender in senders %}<div class="whitespace-nowrap truncate">{{ sender }}</div>{% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {%- endmacro %}
                     <!--Date-->
                     {% set last = {'last': 946688461.001} %}
                     {% for msg in msgs -%}
@@ -453,12 +468,8 @@
                                     </span>
                                 </p>
                                 {% if msg.reactions %}
-                                <div class="flex flex-wrap gap-1 mt-1 justify-end absolute -bottom-3 -right-2">
-                                {% for sender, emoji in msg.reactions.items() %}
-                                    <div class="bg-white rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help" title="{{ sender }}">
-                                        {{ emoji }}
-                                    </div>
-                                {% endfor %}
+                                <div class="flex flex-wrap gap-1 mt-1 justify-end">
+                                {{ reaction_bubbles(msg.reactions, "bg-white", "right-0") }}
                                 </div>
                                 {% endif %}
                             </div>
@@ -574,12 +585,8 @@
                                     <span class="flex-shrink-0">{% if msg.edited %}Edited {% endif %}{{ msg.time }}</span>
                                     </div>
                                 {% if msg.reactions %}
-                                <div class="flex flex-wrap gap-1 mt-1 justify-start absolute -bottom-3 -left-2">
-                                {% for sender, emoji in msg.reactions.items() %}
-                                    <div class="bg-gray-100 rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-gray-200 cursor-help" title="{{ sender }}">
-                                        {{ emoji }}
-                                    </div>
-                                {% endfor %}
+                                <div class="flex flex-wrap gap-1 mt-1 justify-start">
+                                {{ reaction_bubbles(msg.reactions, "bg-gray-100", "left-0") }}
                                 </div>
                                 {% endif %}
                             </div>
