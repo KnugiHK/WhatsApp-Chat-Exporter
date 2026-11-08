@@ -357,7 +357,7 @@ def _parse_group_action(ztext, data):
             metadata = json.loads(ztext)
         except json.JSONDecodeError:
             return ztext  # Not a JSON string, return as-is
-        entity = metadata.get('author', 'Someone')
+        entity = metadata.get('author') or 'Someone'
         if entity != "Someone":
             name = None
             if entity in data:
