@@ -1,3 +1,4 @@
+import base64
 import sqlite3
 import pytest
 import unittest
@@ -6,6 +7,29 @@ from Whatsapp_Chat_Exporter import ios_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore
 from Whatsapp_Chat_Exporter.data_model import Message, Timing
 from Whatsapp_Chat_Exporter.ios_handler import process_message_data
+
+
+def encoded_info(fields):
+    return base64.b64encode(fields).decode()
+
+
+def test_is_edited_detects_field_seven():
+    edited = encoded_info(b"\x08\x01\x3a\x03abc")
+    assert ios_handler._is_edited(0, edited) is True
+
+
+def test_is_edited_without_field_seven():
+    assert ios_handler._is_edited(0, encoded_info(b"\x08\x01\x48\x01")) is False
+
+
+@pytest.mark.parametrize("message_type,info", [
+    (0, None),
+    (0, ""),
+    (0, "not base64!"),
+    (1, encoded_info(b"\x3a\x03abc")),
+])
+def test_is_edited_ignores_other_values(message_type, info):
+    assert ios_handler._is_edited(message_type, info) is False
 
 
 def make_contacts_db(rows, with_lid=True):
