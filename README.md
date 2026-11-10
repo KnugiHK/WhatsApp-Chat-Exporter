@@ -9,7 +9,7 @@ A customizable Android and iOS/iPadOS Whatsapp database parser that will give yo
 > [!TIP]
 > If you plan to uninstall WhatsApp or delete your WhatsApp account, please make a backup of your WhatsApp database. You may want to use this exporter again on the same database in the future as the exporter develops.
 
-If you would like to support this project, all you need to do is to contribute or share this project! If you think otherwise and want to make a donation, please refer to the [Donation Guide](https://blog.knugi.com/DONATE.html).
+If you would like to support this project, all you need to do is to contribute or share this project! If you think otherwise and want to make a donation, please refer to the [Donation Guide](https://blog.knugi.com/DONATE).
 
 To contribute, see the [Contributing Guidelines](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/blob/main/CONTRIBUTING.md).
 
