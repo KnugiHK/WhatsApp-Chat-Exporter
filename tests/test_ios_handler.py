@@ -284,6 +284,111 @@ class TestSenderAssignment(unittest.TestCase):
             "ZTEXT": "Hello there",
         }
 
+    def _make_system_content(self, message_type, event, **overrides):
+        content = self._make_content()
+        content.update({
+            "ZMESSAGETYPE": message_type,
+            "ZGROUPEVENTTYPE": event,
+            "ZTEXT": None,
+            "ZCONTACTJID": self.MEMBER_JID,
+        })
+        content.update(overrides)
+        return content
+
+    def test_group_system_messages(self):
+        data = self._make_data("John Doe")
+        expected = {
+            (10, 3): "Your security code with John Doe changed",
+            (6, 2): "John Doe was added",
+            (6, 15): "John Doe joined using a group link",
+            (6, 30): "Message history was shared with John Doe",
+            (6, 3): "John Doe left",
+            (6, 12): "John Doe created this group",
+            (60, 2): "John Doe sent you message history",
+            (10, 58): "John Doe pinned a message",
+            (10, 2): "Messages and calls are end-to-end encrypted",
+        }
+        for (message_type, event), text in expected.items():
+            message = self._make_message()
+            ios_handler.process_message_data(message, self._make_system_content(message_type, event), True, data, {})
+            self.assertEqual(message.data, text)
+            self.assertTrue(message.meta)
+
+    def test_direct_system_messages(self):
+        data = self._make_data("John Doe")
+        expected = {
+            (10, 3): "Your security code with John Doe changed",
+            (10, 2): "Messages and calls are end-to-end encrypted",
+            (59, 0): "Voice or video call",
+            (10, 1): "Missed voice call",
+            (12, 0): "Waiting for this message",
+            (10, 38): "This business changed how it manages this chat",
+        }
+        for (message_type, event), text in expected.items():
+            message = self._make_message()
+            ios_handler.process_message_data(message, self._make_system_content(message_type, event), False, data, {})
+            self.assertEqual(message.data, text)
+            self.assertTrue(message.meta)
+
+    def test_unknown_system_event_is_left_unchanged(self):
+        data = self._make_data("John Doe")
+        message = self._make_message()
+        ios_handler.process_message_data(message, self._make_system_content(10, 99), True, data, {})
+        self.assertIsNone(message.data)
+
+    def test_message_history_sent_by_self(self):
+        data = self._make_data("John Doe")
+        message = self._make_message()
+        content = self._make_system_content(60, 2, ZISFROMME=1)
+        ios_handler.process_message_data(message, content, True, data, {})
+        self.assertEqual(message.data, "You sent message history")
+
+    def test_group_members_added_event(self):
+        data = self._make_data("John Doe")
+        data.add_chat("2@lid", ChatStore(Device.IOS, "Jane"))
+        data.add_chat("3@lid", ChatStore(Device.IOS, "Sam"))
+        for members, expected in (
+            ("2@lid", "John Doe added Jane"),
+            ("2@lid,3@lid", "John Doe added Jane and Sam"),
+        ):
+            message = self._make_message()
+            content = self._make_system_content(6, 50, ZTEXT=f"{self.MEMBER_JID};{members}")
+            ios_handler.process_message_data(message, content, True, data, {})
+            self.assertEqual(message.data, expected)
+            self.assertTrue(message.meta)
+
+    def test_group_member_added_event_with_id_in_text(self):
+        data = self._make_data("John Doe")
+        message = self._make_message()
+        content = self._make_system_content(6, 2, ZTEXT=self.MEMBER_JID)
+        ios_handler.process_message_data(message, content, True, data, {})
+        self.assertEqual(message.data, "John Doe was added")
+
+    def test_group_phone_number_change_event(self):
+        data = self._make_data("John Doe")
+        message = self._make_message()
+        content = self._make_system_content(6, 9, ZTEXT="2@s.whatsapp.net")
+        ios_handler.process_message_data(message, content, True, data, {})
+        self.assertEqual(message.data, "John Doe changed their phone number")
+
+    def test_more_system_events(self):
+        data = self._make_data("John Doe")
+        for is_group, event, expected in (
+            (True, (6, 78), "Anyone in this group can invite new members using a group link"),
+            (True, (10, 36), "Your security code with John Doe changed"),
+            (False, (10, 36), "Your security code with John Doe changed"),
+        ):
+            message = self._make_message()
+            ios_handler.process_message_data(message, self._make_system_content(*event), is_group, data, {})
+            self.assertEqual(message.data, expected)
+
+    def test_system_event_with_text_keeps_its_text(self):
+        data = self._make_data("John Doe")
+        message = self._make_message()
+        content = self._make_system_content(10, 3, ZTEXT="Existing text")
+        ios_handler.process_message_data(message, content, True, data, {})
+        self.assertEqual(message.data, "Existing text")
+
     def test_process_message_data_normalizes_sender(self):
         data = self._make_data(self.BIDI_LABEL)
         message = self._make_message()
