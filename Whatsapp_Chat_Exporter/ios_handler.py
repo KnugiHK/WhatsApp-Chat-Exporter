@@ -815,6 +815,84 @@ def _resolve_voter_name(voter_jid, is_creator, message, data):
     return voter_jid
 
 
+def _decode_reactions(receipt_blob):
+    """Decode reactions from a ZRECEIPTINFO protobuf blob.
+
+    Field 7 holds repeated reaction records (field 1), each with the sender
+    JID (field 2, absent for your own reactions) and the emoji (field 3, empty
+    when the reaction was removed).
+
+    Args:
+        receipt_blob (bytes): The ZRECEIPTINFO protobuf blob.
+
+    Returns:
+        list: (sender_jid or None, emoji) tuples.
+    """
+    reactions = []
+    for field, wire_type, container in decode_protobuf_fields(receipt_blob):
+        if field != 7 or wire_type != 'bytes':
+            continue
+        for sub_field, sub_type, record in decode_protobuf_fields(container):
+            if sub_field != 1 or sub_type != 'bytes':
+                continue
+            values = {n: v for n, t, v in decode_protobuf_fields(record) if t == 'bytes'}
+            emoji = values.get(3, b"").decode("utf-8", errors="ignore")
+            if emoji:
+                sender = values.get(2, b"").decode("utf-8", errors="ignore")
+                reactions.append((sender or None, emoji))
+    return reactions
+
+
+def reactions(db, data, filter_date, filter_chat):
+    """Add reactions stored in ZWAMESSAGEINFO.ZRECEIPTINFO to their messages.
+
+    Args:
+        db: SQLite database connection.
+        data (ChatCollection): The chat data collection.
+        filter_date: Date filter SQL fragment or None.
+        filter_chat: Tuple of (include_filter, exclude_filter).
+    """
+    c = db.cursor()
+    chat_filter_include = get_chat_condition(
+        filter_chat[0], True, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")
+    chat_filter_exclude = get_chat_condition(
+        filter_chat[1], False, ["ZWACHATSESSION.ZCONTACTJID", "ZMEMBERJID"], "ZGROUPINFO", "ios")
+    date_filter = f'AND ZWAMESSAGE.ZMESSAGEDATE {filter_date}' if filter_date is not None else ''
+
+    logging.info("Processing reactions...", extra={"clear": True})
+    c.execute(f"""
+        SELECT ZWACHATSESSION.ZCONTACTJID,
+            ZWAMESSAGE.Z_PK AS ZMESSAGE,
+            ZWAMESSAGEINFO.ZRECEIPTINFO
+        FROM ZWAMESSAGE
+            JOIN ZWAMESSAGEINFO ON ZWAMESSAGEINFO.ZMESSAGE = ZWAMESSAGE.Z_PK
+            INNER JOIN ZWACHATSESSION
+                ON ZWAMESSAGE.ZCHATSESSION = ZWACHATSESSION.Z_PK
+            LEFT JOIN ZWAGROUPMEMBER
+                ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
+        WHERE ZWAMESSAGEINFO.ZRECEIPTINFO IS NOT NULL
+            {date_filter}
+            {chat_filter_include}
+            {chat_filter_exclude}
+    """)
+
+    total = 0
+    while (content := c.fetchone()) is not None:
+        current_chat = data.get_chat(content["ZCONTACTJID"])
+        message = current_chat.get_message(content["ZMESSAGE"]) if current_chat is not None else None
+        if message is None:
+            continue
+        for sender_jid, emoji in _decode_reactions(content["ZRECEIPTINFO"]):
+            if sender_jid is None:
+                sender_name = "You"
+            else:
+                name = data.get_chat(sender_jid).name if sender_jid in data else None
+                sender_name = normalize_phone_label(name or sender_jid.split('@')[0])
+            message.reactions[sender_name] = emoji
+            total += 1
+    logging.info(f"Processed {total} reactions")
+
+
 def polls(db, data, filter_date, filter_chat, filter_empty):
     """Process WhatsApp poll messages (type 46) from the database.
 
