@@ -935,7 +935,7 @@ def telegram_json_format(jik: str, data: dict, timezone_offset) -> dict:
         "messages": [{
             "id": int(msgId),
             "type": "message",
-            "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S"),
+            "date": timing.format_timestamp(msg["timestamp"], "%Y-%m-%dT%H:%M:%S") or "1970-01-01T00:00:00",
             "date_unixtime": int(msg["timestamp"]),
             "from": get_from_string(msg, chat_id),
             "from_id": get_from_id(msg, chat_id),
