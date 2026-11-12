@@ -177,12 +177,16 @@ def check_update(include_beta: bool = False) -> int:
 
 def warn_about_large_html_files(output_folder: str) -> None:
     """Warn about HTML files in the output folder that browsers may not display in full."""
-    large_files = sorted(
-        ((entry.name, entry.stat().st_size) for entry in os.scandir(output_folder)
-         if entry.name.endswith(".html") and entry.is_file() and entry.stat().st_size > LARGE_HTML_SIZE),
-        key=lambda item: item[1],
-        reverse=True
-    )
+    large_files: list[tuple[str, int]] = []
+    with os.scandir(output_folder) as entries:
+        for entry in entries:
+            if not entry.name.endswith(".html") or not entry.is_file():
+                continue
+            file_size = entry.stat().st_size
+            if file_size > LARGE_HTML_SIZE:
+                large_files.append((entry.name, file_size))
+    large_files.sort(key=lambda item: item[1], reverse=True)
+
     if large_files:
         listing = "\n".join(f"  {name} ({bytes_to_readable(size)})" for name, size in large_files)
         logging.warning(
