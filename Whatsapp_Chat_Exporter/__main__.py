@@ -694,7 +694,11 @@ def export_json(args, data: ChatCollection) -> None:
 
 def export_single_json(args, data: dict) -> None:
     """Export data to a single JSON file."""
-    with open(args.json, "w") as f:
+    json_file = args.json
+    if not os.path.isabs(json_file):
+        json_file = os.path.join(args.output, json_file)
+
+    with open(json_file, "w") as f:
         json_data = json.dumps(
             data,
             ensure_ascii=not args.avoid_encoding_json,
@@ -709,6 +713,8 @@ def export_multiple_json(args, data: dict) -> None:
     """Export data to multiple JSON files, one per chat."""
     # Adjust output path if needed
     json_path = args.json[:-5] if args.json.endswith(".json") else args.json
+    if not os.path.isabs(json_path):
+        json_path = os.path.join(args.output, json_path)
 
     # Create directory if it doesn't exist
     if not os.path.isdir(json_path):

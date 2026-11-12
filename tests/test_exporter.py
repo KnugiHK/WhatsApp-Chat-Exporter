@@ -1,6 +1,52 @@
+import json
 import subprocess
+from types import SimpleNamespace
+
 import pytest
 
+from Whatsapp_Chat_Exporter.__main__ import export_json
+
+
+def test_export_json_writes_relative_path_to_output_directory(tmp_path, monkeypatch):
+    """Relative JSON export paths should be resolved against --output."""
+    output = tmp_path / "out"
+    output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    args = SimpleNamespace(
+        json="result.json",
+        output=str(output),
+        json_per_chat=False,
+        telegram=False,
+        avoid_encoding_json=False,
+        pretty_print_json=None,
+    )
+
+    export_json(args, {})
+
+    assert (output / "result.json").is_file()
+    assert not (tmp_path / "result.json").exists()
+    assert json.loads((output / "result.json").read_text()) == {}
+
+
+def test_export_per_chat_json_writes_to_output_directory(tmp_path, monkeypatch):
+    """Per-chat JSON exports should also stay inside --output."""
+    output = tmp_path / "out"
+    output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    args = SimpleNamespace(
+        json="result.json",
+        output=str(output),
+        json_per_chat=True,
+        telegram=False,
+        avoid_encoding_json=False,
+        pretty_print_json=None,
+        timezone_offset=0,
+    )
+
+    export_json(args, {"123": {"name": "Alice", "messages": {}}})
+
+    assert (output / "result" / "Alice.json").is_file()
+    assert not (tmp_path / "result" / "Alice.json").exists()
 
 @pytest.fixture
 def command_runner():
