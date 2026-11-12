@@ -44,8 +44,9 @@ crypt14 = ["pycryptodome>=3.24.1"]
 crypt15 = ["pycryptodome>=3.24.1", "javaobj-py3>=0.4.4"]
 android_backup = ["pycryptodome>=3.24.1", "javaobj-py3>=0.4.4"]
 backup = ["whatsapp-chat-exporter[android_backup]"]
-all = ["whatsapp-chat-exporter[android_backup]"]
-everything = ["whatsapp-chat-exporter[android_backup]"]
+media_timestamp = ["piexif>=1.1.3", "Pillow>=12.3.0"]
+all = ["whatsapp-chat-exporter[android_backup]", "whatsapp-chat-exporter[media_timestamp]"]
+everything = ["whatsapp-chat-exporter[all]"]
 
 [project.scripts]
 wtsexporter = "Whatsapp_Chat_Exporter.__main__:main"
