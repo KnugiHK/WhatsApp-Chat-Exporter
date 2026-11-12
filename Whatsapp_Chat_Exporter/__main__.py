@@ -625,7 +625,10 @@ def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
 def handle_media_directory(args) -> None:
     """Handle media directory copying or moving."""
     if os.path.isdir(args.media):
-        media_path = os.path.join(args.output, args.media)
+        media_destination = args.media
+        if os.path.isabs(media_destination):
+            media_destination = os.path.basename(os.path.normpath(media_destination))
+        media_path = os.path.join(args.output, media_destination)
 
         if os.path.isdir(media_path):
             logging.info(
