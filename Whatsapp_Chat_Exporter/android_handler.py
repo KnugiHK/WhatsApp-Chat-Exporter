@@ -1315,6 +1315,7 @@ def create_html(
         os.mkdir(output_folder)
 
     w3css = get_status_location(output_folder, offline_static)
+    used_file_names = set()
 
     with tqdm(total=total_row_number, desc="Generating HTML", unit="file", leave=False) as pbar:
         for contact in data:
@@ -1324,6 +1325,8 @@ def create_html(
                 continue
 
             safe_file_name, name = get_file_name(contact, current_chat)
+            safe_file_name = _get_unique_html_name(
+                safe_file_name, used_file_names)
 
             if maximum_size is not None:
                 _generate_paginated_chat(
@@ -1353,6 +1356,18 @@ def create_html(
         total_time = pbar.format_dict['elapsed']
     logging.info(
         f"Generated {total_row_number} chats in {convert_time_unit(total_time)}")
+
+
+def _get_unique_html_name(file_name, used_names):
+    """Return a filename that is unique among chats in this export."""
+    name = file_name
+    counter = 1
+    while name.casefold() in used_names:
+        name = f"{file_name}_{counter}"
+        counter += 1
+
+    used_names.add(name.casefold())
+    return name
 
 
 def _generate_single_chat(current_chat, safe_file_name, name, contact, output_folder, template, w3css, headline):
