@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import base64
 import json
 import os
 import logging
@@ -12,7 +13,7 @@ from markupsafe import Markup, escape
 from Whatsapp_Chat_Exporter.data_model import ChatStore, Message
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, get_chat_condition, Device, normalize_phone_label
 from Whatsapp_Chat_Exporter.utility import bytes_to_readable, convert_time_unit, safe_name
-from Whatsapp_Chat_Exporter.poll import decode_poll_from_receipt_blob
+from Whatsapp_Chat_Exporter.poll import decode_poll_from_receipt_blob, decode_protobuf_fields
 from Whatsapp_Chat_Exporter.media_timestamp import process_media_with_timestamp
 
 
@@ -220,7 +221,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             ZMETADATA,
             ZSTANZAID,
             ZGROUPINFO,
-            ZSENTDATE
+            ZSENTDATE,
+            ZWAMESSAGE.ZPUSHNAME
         FROM ZWAMESSAGE
             LEFT JOIN ZWAGROUPMEMBER
                 ON ZWAMESSAGE.ZGROUPMEMBER = ZWAGROUPMEMBER.Z_PK
@@ -299,6 +301,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
             # Process message data
             invalid = process_message_data(
                 message, content, is_group_message, data, message_map)
+            message.edited = _is_edited(content["ZMESSAGETYPE"], content["ZPUSHNAME"])
 
             # Add valid messages to chat
             if not invalid:
@@ -308,6 +311,21 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         total_time = pbar.format_dict['elapsed']
     logging.info(
         f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
+
+
+def _is_edited(message_type, encoded_info):
+    """Check whether a text message was edited.
+
+    For messages, ZPUSHNAME holds base64-encoded protobuf rather than a name.
+    Field 7 marks edited text messages in the backups examined.
+    """
+    if message_type != 0 or not encoded_info:
+        return False
+    try:
+        fields = decode_protobuf_fields(base64.b64decode(encoded_info, validate=True))
+    except ValueError:
+        return False
+    return any(field == 7 and wire_type == 'bytes' for field, wire_type, _ in fields)
 
 
 def process_message_data(message, content, is_group_message, data, message_map):

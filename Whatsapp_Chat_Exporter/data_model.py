@@ -422,6 +422,7 @@ class Message:
         self.sticker = False
         self.reactions = {}
         self.poll = None
+        self.edited = False
 
     def to_json(self) -> dict[str, Any]:
         """Convert message to JSON-serializable dict."""

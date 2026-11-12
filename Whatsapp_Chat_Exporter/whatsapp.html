@@ -443,7 +443,7 @@
                                         {% endif %}
                                     {% endif %}
                                 </p>
-                                <p class="text-[10px] text-[#667781] text-right mt-1">{{ msg.time }}
+                                <p class="text-[10px] text-[#667781] text-right mt-1">{% if msg.edited %}Edited {% endif %}{{ msg.time }}
                                     <span class="status-indicator{% if msg.read_timestamp %} read{% endif %}">
                                         {% if msg.received_timestamp %}
                                         ✓✓
@@ -571,7 +571,7 @@
                                         {% endif %}
                                     </span>
                                     <span class="flex-grow min-w-[4px]"></span>
-                                    <span class="flex-shrink-0">{{ msg.time }}</span>
+                                    <span class="flex-shrink-0">{% if msg.edited %}Edited {% endif %}{{ msg.time }}</span>
                                     </div>
                                 {% if msg.reactions %}
                                 <div class="flex flex-wrap gap-1 mt-1 justify-start absolute -bottom-3 -left-2">
