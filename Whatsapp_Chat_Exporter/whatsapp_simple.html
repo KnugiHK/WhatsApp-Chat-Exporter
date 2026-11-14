@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ name }} - WhatsApp</title>
+<base href="{{ media_base }}" target="_blank">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 15px; color: #111; background: #e5ddd5; padding: 10px 0; }
+a { color: #075e54; }
+#container { max-width: 700px; margin: 0 auto; padding: 0 10px; }
+.headline { text-align: center; padding: 12px; font-size: 17px; font-weight: bold; color: #075e54; border-bottom: 1px solid #ccc; margin-bottom: 10px; }
+.nav { text-align: center; padding: 10px 0; font-size: 14px; }
+.nav a { margin: 0 8px; text-decoration: none; }
+.date-sep { text-align: center; margin: 16px 0; font-size: 12px; color: #555; }
+.system-msg { text-align: center; margin: 12px 0; font-size: 13px; color: #555; font-style: italic; }
+.msg-row { display: flex; margin-bottom: 8px; }
+.msg-row.incoming { justify-content: flex-start; }
+.msg-row.outgoing { justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 7px 9px; border-radius: 8px; position: relative; word-wrap: break-word; }
+.bubble.incoming { background: #fff; border: 1px solid #e0e0e0; }
+.bubble.outgoing { background: #dcf8c6; }
+.sender { font-size: 13px; font-weight: bold; color: #075e54; margin-bottom: 2px; }
+.text { font-size: 15px; line-height: 1.4; }
+.text img { max-width: 100%; height: auto; border-radius: 4px; }
+.media-img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin-bottom: 4px; }
+.audio-link { display: inline-block; padding: 8px 12px; background: #075e54; color: #fff !important; text-decoration: none; border-radius: 4px; font-size: 14px; }
+.caption { font-size: 14px; margin-top: 2px; }
+.quote { border-left: 3px solid #075e54; padding: 4px 8px; margin-bottom: 4px; font-size: 13px; background: rgba(0,0,0,0.03); border-radius: 4px; color: #555; }
+.time { font-size: 11px; color: #888; text-align: right; margin-top: 2px; }
+.reactions { font-size: 14px; margin-top: 2px; letter-spacing: 1px; }
+.status { text-align: center; font-size: 12px; color: #888; padding: 5px 0; }
+.footer { text-align: center; padding: 20px 0; font-size: 12px; color: #888; }
+</style>
+</head>
+<body>
+<div id="container">
+<div class="headline">{{ headline }}</div>
+{% set ns = namespace(last_ts=0) %}
+{% if previous %}
+<div class="nav"><a href="./{{ previous }}">&larr; Previous</a></div>
+{% endif %}
+{% for msg in msgs %}
+{% set day_change = determine_day(ns.last_ts, msg.timestamp) %}
+{% if day_change %}
+<div class="date-sep">{{ day_change.strftime("%B %d, %Y") }}</div>
+{% endif %}
+{% set ns.last_ts = msg.timestamp %}
+{% if msg.meta %}
+<div class="system-msg">{{ msg.data | default('') }}</div>
+{% elif msg.media %}
+<div class="msg-row {{ 'outgoing' if msg.from_me else 'incoming' }}">
+<div class="bubble {{ 'outgoing' if msg.from_me else 'incoming' }}">
+{% if not msg.from_me and msg.sender %}<div class="sender">{{ (msg.sender or '') | sanitize_except }}</div>{% endif %}
+{% if msg.thumb and ("image/" in (msg.mime or "") or msg.thumb.startswith("/9j/") or msg.thumb.startswith("iVBOR")) %}
+{% if msg.data and not msg.data.startswith("data:") %}<a href="{{ msg.data }}">{% endif %}
+<img class="media-img" src="data:image/jpeg;base64,{{ msg.thumb }}" alt="" />
+{% if msg.data and not msg.data.startswith("data:") %}</a>{% endif %}
+{% elif msg.data and (msg.data.startswith("data:image") or msg.data.startswith("http")) %}
+<img class="media-img" src="{{ msg.data }}" alt="" />
+{% elif msg.data and "image/" in (msg.mime or "") %}
+<a href="{{ msg.data }}"><img class="media-img" src="{{ msg.data }}" alt="" /></a>
+{% elif msg.data and "video/" in (msg.mime or "") %}
+<video class="media-img" controls preload="metadata" src="{{ msg.data }}"></video>
+{% elif msg.data and "audio/" in (msg.mime or "") %}
+<audio controls="controls" preload="metadata">
+<source src="{{ msg.data }}"{% if msg.mime and "/" in msg.mime %} type="{{ msg.mime }}"{% endif %} />
+</audio>
+<a class="audio-link" href="{{ msg.data }}">Audio message</a>
+{% elif msg.data %}
+<a href="{{ msg.data }}">{{ msg.data }}</a>
+{% endif %}
+{% if msg.caption %}<div class="caption">{{ (msg.caption or '') | sanitize_except }}</div>{% endif %}
+<div class="time">{{ msg.time }}</div>
+{% if msg.reactions %}<div class="reactions">{% for emoji, reactors in msg.reactions.items() %}{{ emoji }}{% endfor %}</div>{% endif %}
+</div>
+</div>
+{% else %}
+{% set replied = msgs | selectattr('key_id', 'equalto', msg.reply) | first if msg.reply else none %}
+<div class="msg-row {{ 'outgoing' if msg.from_me else 'incoming' }}">
+<div class="bubble {{ 'outgoing' if msg.from_me else 'incoming' }}">
+{% if not msg.from_me and msg.sender %}<div class="sender">{{ (msg.sender or '') | sanitize_except }}</div>{% endif %}
+{% if replied %}
+<div class="quote">
+{% if replied.sender %}<strong>{{ (replied.sender or '') | sanitize_except }}</strong>: {% endif %}{{ (replied.data or '') | sanitize_except if replied.data else "[Media]" }}
+</div>
+{% endif %}
+<div class="text">{{ (msg.data or '') | sanitize_except }}</div>
+<div class="time">{{ msg.time }}</div>
+{% if msg.reactions %}<div class="reactions">{% for emoji, reactors in msg.reactions.items() %}{{ emoji }}{% endfor %}</div>{% endif %}
+</div>
+</div>
+{% endif %}
+{% endfor %}
+{% if next %}
+<div class="nav"><a href="./{{ next }}">Next &rarr;</a></div>
+{% endif %}
+<div class="footer">Exported with WhatsApp Chat Exporter</div>
+</div>
+</body>
+</html>
