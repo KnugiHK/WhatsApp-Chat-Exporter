@@ -275,7 +275,7 @@ Miscellaneous:
   --fix-dot-files       Fix files with a dot at the end of their name (allowing the outputs be stored in
                         FAT filesystems)
 
-WhatsApp Chat Exporter: 0.14.0rc1 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
+WhatsApp Chat Exporter: 0.14.0rc2 Licensed with MIT. See https://wts.knugi.dev/docs?dest=osl for all open
 source licenses.
 ```
 
