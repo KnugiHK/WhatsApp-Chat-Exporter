@@ -174,7 +174,7 @@ def setup_argument_parser() -> ArgumentParser:
     )
     html_group.add_argument(
         "--old-theme", dest="telegram_theme", default=False, action='store_true',
-        help="Use the old Telegram-alike theme"
+        help="Use the old Telegram-alike theme (Deprecated)"
     )
     html_group.add_argument(
         "--headline", dest="headline", default="Chat history with ??",
@@ -367,6 +367,10 @@ def validate_args(parser: ArgumentParser, args) -> None:
 
     # Theme validation
     if args.telegram_theme:
+        logging.warning(
+            "The old Telegram-alike theme is deprecated and will be removed in future versions.\n"
+            "Please consider using the default theme or creating a custom template."
+        )
         args.template = "whatsapp_old.html"
 
     # Chat filter validation
