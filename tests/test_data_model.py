@@ -67,11 +67,10 @@ class TestTiming:
         -1672531200, # Distant past timestamp
         -0.001,      # Negative float
     ])
-    def test_format_timestamp_non_positive_raises_value_error(self, invalid_ts):
-        """Verify that timestamps <= 0 raise ValueError."""
+    def test_format_timestamp_non_positive_returns_none(self, invalid_ts):
+        """Verify that timestamps <= 0 return None."""
         t = Timing(0)
-        with pytest.raises(ValueError, match="Timestamp must be positive"):
-            t.format_timestamp(invalid_ts, "%Y-%m-%d")
+        assert t.format_timestamp(invalid_ts, "%Y-%m-%d") is None
 
     @pytest.mark.parametrize("boundary_ts, expected_year", [
         (9_999_999_999, "2286"),         # Exact cutoff boundary (treated as seconds)
