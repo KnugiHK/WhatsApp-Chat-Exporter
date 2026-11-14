@@ -27,15 +27,9 @@ class Timing:
 
         Returns:
             str | None: Formatted string, or None if timestamp is None.
-
-        Raises:
-            ValueError: If timestamp is non-positive or cannot be parsed into a valid date.
         """
-        if timestamp is None:
+        if timestamp is None or timestamp <= 0:
             return None
-
-        if timestamp <= 0:
-            raise ValueError(f"Timestamp must be positive, got {timestamp!r}")
 
         # Normalize milliseconds to seconds
         if timestamp > 9_999_999_999:
@@ -384,6 +378,8 @@ class Message:
         if isinstance(time, (int, float)):
             self.time = timezone_offset.format_timestamp(
                 self.timestamp, "%H:%M")
+            if self.time is None:
+                self.time = "00:00"  # Fallback for invalid timestamp
         elif isinstance(time, str):
             self.time = time
         else:
