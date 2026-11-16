@@ -10,7 +10,7 @@ import glob
 import logging
 import importlib.metadata
 from Whatsapp_Chat_Exporter import android_crypt, exported_handler, android_handler
-from Whatsapp_Chat_Exporter import ios_handler, ios_media_handler
+from Whatsapp_Chat_Exporter import ios_crypt, ios_handler, ios_media_handler
 from Whatsapp_Chat_Exporter.data_model import ChatCollection, ChatStore, Timing
 from Whatsapp_Chat_Exporter.utility import APPLE_TIME, Crypt
 from Whatsapp_Chat_Exporter.utility import readable_to_bytes, safe_name, bytes_to_readable
@@ -581,6 +581,7 @@ def process_messages(args, data: ChatCollection) -> None:
                             get_transcription_selection(db))
         else:
             message_handler = ios_handler
+            ios_handler.load_lid_names(data)
 
         message_handler.messages(
             db, data, args.media, timing, args.filter_date,
@@ -891,7 +892,14 @@ def main():
 
             # Extract media from backup if needed
             if args.backup is not None:
-                if not os.path.isdir(args.media):
+                if ios_crypt.is_e2e_backup(args.backup):
+                    if args.key is None:
+                        args.key = getpass("Enter your encryption key: ")
+                    media_dir = None if os.path.isdir(args.media) else args.media
+                    if media_dir is None:
+                        logging.info(f"WhatsApp directory already exists, skipping media extraction.")
+                    ios_crypt.decrypt_e2e_backup(args.backup, args.key, identifiers, media_dir)
+                elif not os.path.isdir(args.media):
                     ios_media_handler.extract_media(
                         args.backup, identifiers, args.decrypt_chunk_size)
                 else:
