@@ -412,9 +412,9 @@ def process_media_item(content, data, media_folder, mime, separate_media, fix_do
             Path(new_folder).mkdir(parents=True, exist_ok=True)
             new_path = os.path.join(new_folder, current_filename)
             shutil.copy2(file_path, new_path)
-            message.data = '/'.join(new_path.split("/")[1:])
+            message.data = '/'.join(Path(new_path).as_posix().split("/")[1:])
         else:
-            message.data = '/'.join(file_path.split("/")[1:])
+            message.data = '/'.join(Path(file_path).as_posix().split("/")[1:])
     else:
         # Handle missing media
         message.data = "The media is missing"

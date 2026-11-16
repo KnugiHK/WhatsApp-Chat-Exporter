@@ -757,6 +757,14 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
     return cursor
 
 
+def _to_html_media_path(path: str, media_folder: str) -> str:
+    """Convert a filesystem media path into a browser-safe relative POSIX path."""
+    if os.path.isabs(media_folder):
+        rel_root = os.path.dirname(os.path.normpath(media_folder))
+        path = os.path.relpath(path, rel_root)
+    return Path(path).as_posix()
+
+
 def _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files=False):
     """Process a single media file."""
     file_path = f"{media_folder}/{content['file_path']}"
@@ -794,9 +802,9 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
             Path(new_folder).mkdir(parents=True, exist_ok=True)
             new_path = os.path.join(new_folder, current_filename)
             shutil.copy2(file_path, new_path)
-            message.data = new_path
+            message.data = _to_html_media_path(new_path, media_folder)
         else:
-            message.data = file_path
+            message.data = _to_html_media_path(file_path, media_folder)
     else:
         message.data = "The media is missing"
         message.mime = "media"
@@ -808,7 +816,7 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
         if not os.path.isfile(thumb_path):
             with open(thumb_path, "wb") as f:
                 f.write(content["thumbnail"])
-        message.thumb = thumb_path
+        message.thumb = _to_html_media_path(thumb_path, media_folder)
 
 
 def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
