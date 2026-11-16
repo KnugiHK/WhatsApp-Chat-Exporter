@@ -622,7 +622,7 @@ def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
             ios_handler.calls(cdb, data, timing, filter_chat)
 
 
-def handle_media_directory(args) -> None:
+def handle_media_directory(args, data=None) -> None:
     """Handle media directory copying or moving."""
     if os.path.isdir(args.media):
         media_destination = args.media
@@ -633,6 +633,47 @@ def handle_media_directory(args) -> None:
         if os.path.isdir(media_path):
             logging.info(
                 f"WhatsApp directory already exists in output directory. Skipping...")
+        elif (getattr(args, "filter_chat_include", None) or getattr(args, "include", None)) and data:
+            logging.info(f"Copying media for included chat(s) only...", extra={"clear": True})
+            os.makedirs(media_path, exist_ok=True)
+            copied = 0
+            for chat in data.values():
+                for msg in chat.values():
+                    if msg.media and msg.data and msg.data != "The media is missing":
+                        src_rel = msg.data
+                        if src_rel.startswith("Media/") or src_rel.startswith("Media\\"):
+                            src_rel = src_rel[6:]
+                        src_full = os.path.join(args.media, src_rel)
+                        dst_full = os.path.join(media_path, src_rel)
+                        if os.path.isfile(src_full):
+                            os.makedirs(os.path.dirname(dst_full), exist_ok=True)
+                            if not os.path.isfile(dst_full):
+                                shutil.copy2(src_full, dst_full)
+                                copied += 1
+                    if msg.thumb:
+                        thumb_src = msg.thumb
+                        if thumb_src.startswith("Media/") or thumb_src.startswith("Media\\"):
+                            thumb_rel = thumb_src[6:]
+                            thumb_full = os.path.join(args.media, thumb_rel)
+                        else:
+                            thumb_full = thumb_src
+                            thumb_rel = os.path.basename(thumb_src)
+                        if os.path.isfile(thumb_full):
+                            dst_thumb = os.path.join(media_path, thumb_rel)
+                            os.makedirs(os.path.dirname(dst_thumb), exist_ok=True)
+                            if not os.path.isfile(dst_thumb):
+                                shutil.copy2(thumb_full, dst_thumb)
+            # Also copy vCards if present in args.media/vCards
+            vcards_dir = os.path.join(args.media, "vCards")
+            if os.path.isdir(vcards_dir):
+                dst_vcards = os.path.join(media_path, "vCards")
+                os.makedirs(dst_vcards, exist_ok=True)
+                for vf in os.listdir(vcards_dir):
+                    s_vf = os.path.join(vcards_dir, vf)
+                    d_vf = os.path.join(dst_vcards, vf)
+                    if os.path.isfile(s_vf) and not os.path.isfile(d_vf):
+                        shutil.copy2(s_vf, d_vf)
+            logging.info(f"Copied {copied} media files to {media_path}")
         else:
             if args.move_media:
                 try:
@@ -928,7 +969,7 @@ def main():
             create_output_files(args, data)
 
             # Handle media directory
-            handle_media_directory(args)
+            handle_media_directory(args, data)
 
         logging.info("Everything is done!")
 

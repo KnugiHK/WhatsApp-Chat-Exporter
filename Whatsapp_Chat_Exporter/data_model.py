@@ -113,8 +113,25 @@ class ChatCollection(MutableMapping):
             return self._chats[chat_id]
         elif chat_id in self.get_system("master_lookup"):
             return self._chats[self.get_system("master_lookup")[chat_id]]
-        else:
-            return None
+
+        lid_map = self.get_system("lid_map")
+        if lid_map and isinstance(chat_id, str):
+            user = chat_id.split("@")[0]
+            if user in lid_map:
+                pn_jid = lid_map[user]
+                if pn_jid in self._chats:
+                    return self._chats[pn_jid]
+            for lid_user, pn_jid in lid_map.items():
+                if pn_jid == chat_id:
+                    lid_jid = f"{lid_user}@lid"
+                    if lid_jid in self._chats:
+                        return self._chats[lid_jid]
+        return None
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+        return self.get_chat(key) is not None
 
     def add_chat(self, chat_id: str, chat: ChatStore, alias: str | None = None) -> ChatStore:
         """
