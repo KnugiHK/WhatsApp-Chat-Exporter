@@ -596,7 +596,23 @@ def process_calls(args, db, data: ChatCollection, filter_chat, timing) -> None:
 def handle_media_directory(args) -> None:
     """Handle media directory copying or moving."""
     if os.path.isdir(args.media):
-        media_path = os.path.join(args.output, args.media)
+        media_dest = (
+            os.path.basename(os.path.normpath(args.media))
+            if os.path.isabs(args.media)
+            else args.media
+        )
+        media_path = os.path.join(args.output, media_dest)
+
+        if getattr(args, "separate_media", False) and not args.move_media:
+            copied_any = False
+            for sub in ("separated", "thumbnails", "vCards", os.path.join("Media", "Profile"), os.path.join("Message", "vCards")):
+                src_sub = os.path.join(args.media, sub)
+                if os.path.isdir(src_sub):
+                    shutil.copytree(src_sub, os.path.join(media_path, sub), dirs_exist_ok=True)
+                    copied_any = True
+            if copied_any:
+                logging.info("Separated media directories have been copied to the output directory")
+            return
 
         if os.path.isdir(media_path):
             logging.info(
