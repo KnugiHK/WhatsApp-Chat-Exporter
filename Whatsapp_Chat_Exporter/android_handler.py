@@ -1097,6 +1097,7 @@ def create_html(
 
     w3css = get_status_location(output_folder, offline_static)
 
+    used_file_names = set()
     with tqdm(total=total_row_number, desc="Generating HTML", unit="file", leave=False) as pbar:
         for contact in data:
             current_chat = data.get_chat(contact)
@@ -1105,6 +1106,12 @@ def create_html(
                 continue
 
             safe_file_name, name = get_file_name(contact, current_chat)
+            base_file_name = safe_file_name
+            suffix = 1
+            while safe_file_name.casefold() in used_file_names:
+                suffix += 1
+                safe_file_name = f"{base_file_name}_{suffix}"
+            used_file_names.add(safe_file_name.casefold())
 
             if maximum_size is not None:
                 _generate_paginated_chat(
