@@ -293,8 +293,7 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 key_id=content["ZSTANZAID"],
                 timezone_offset=timezone_offset,
                 message_type=content["ZMESSAGETYPE"],
-                received_timestamp=APPLE_TIME +
-                content["ZSENTDATE"] if content["ZSENTDATE"] else None,
+                received_timestamp=_received_timestamp(content["ZSENTDATE"]),
                 read_timestamp=None  # TODO: Add timestamp
             )
 
@@ -311,6 +310,18 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
         total_time = pbar.format_dict['elapsed']
     logging.info(
         f"Processed {total_row_number} messages in {convert_time_unit(total_time)}")
+
+
+def _received_timestamp(sent_date):
+    """Convert ZSENTDATE (seconds since the Apple epoch) to a Unix timestamp.
+
+    Returns None when the date is missing or not after the Unix epoch. Some rows
+    store a placeholder such as -978307200, which is 0 in Unix time.
+    """
+    if not sent_date:
+        return None
+    timestamp = APPLE_TIME + sent_date
+    return timestamp if timestamp > 0 else None
 
 
 def _is_edited(message_type, encoded_info):

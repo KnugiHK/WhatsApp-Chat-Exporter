@@ -32,6 +32,31 @@ def test_is_edited_ignores_other_values(message_type, info):
     assert ios_handler._is_edited(message_type, info) is False
 
 
+@pytest.mark.parametrize("sent_date, expected", [
+    (None, None),
+    (0, None),
+    (-ios_handler.APPLE_TIME, None),
+    (-ios_handler.APPLE_TIME - 60, None),
+    (784111000.5, ios_handler.APPLE_TIME + 784111000.5),
+])
+def test_received_timestamp_skips_missing_and_placeholder_dates(sent_date, expected):
+    assert ios_handler._received_timestamp(sent_date) == expected
+
+
+def test_message_accepts_received_timestamp_from_placeholder_sent_date():
+    # A ZSENTDATE of -APPLE_TIME is 0 in Unix time, which Timing.format_timestamp rejects.
+    message = Message(
+        from_me=1,
+        timestamp=ios_handler.APPLE_TIME + 784111000,
+        time=ios_handler.APPLE_TIME + 784111000,
+        key_id="ABC",
+        timezone_offset=Timing(0),
+        message_type=0,
+        received_timestamp=ios_handler._received_timestamp(-ios_handler.APPLE_TIME),
+    )
+    assert message.received_timestamp is None
+
+
 def make_contacts_db(rows, with_lid=True):
     """Build an in-memory ZWAADDRESSBOOKCONTACT table.
 
