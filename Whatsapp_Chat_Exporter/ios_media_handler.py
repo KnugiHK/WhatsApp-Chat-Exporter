@@ -223,11 +223,15 @@ class BackupExtractor:
                     flags = row["flags"]
 
                     if flags == 2:  # Directory
-                        try:
-                            os.mkdir(destination)
-                        except FileExistsError:
-                            pass
+                        if os.path.isfile(destination) or os.path.islink(destination):
+                            os.unlink(destination)
+                        os.makedirs(destination, exist_ok=True)
                     elif flags == 1:  # File
+                        parent = os.path.dirname(destination)
+                        if parent:
+                            if os.path.isfile(parent) or os.path.islink(parent):
+                                os.unlink(parent)
+                            os.makedirs(parent, exist_ok=True)
                         shutil.copyfile(os.path.join(self.base_dir, folder, hashes), destination)
                         metadata = BPListReader(row["metadata"]).parse()
                         _creation = metadata["$objects"][1]["Birth"]
