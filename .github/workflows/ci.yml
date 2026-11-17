@@ -5,11 +5,17 @@ on:
     branches:
       - dev
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -33,11 +39,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }} on ${{ matrix.os }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
@@ -46,5 +55,5 @@ jobs:
 
       - name: Run pytest
         env:
-          PYTHONUTF8: ${{ matrix.python_utf8 || '0' }}  
+          PYTHONUTF8: ${{ matrix.python_utf8 || '0' }}
         run: pytest
