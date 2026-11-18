@@ -1049,23 +1049,48 @@ def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
     return c.fetchall()
 
 
+def _get_vcard_file_path(path, file_name, vcard):
+    """Return a path for this vCard that no different vCard already uses.
+
+    vCard files are named after the contact's display name, so two different
+    cards called e.g. "Alice" would otherwise share one file. An identical
+    card reuses its existing file.
+    """
+    content = vcard.encode("utf-8")
+    candidate = os.path.join(path, f"{file_name}.vcf")
+    counter = 1
+    while os.path.isfile(candidate):
+        # Compare bytes: vCards use CRLF, which text mode would translate
+        with open(candidate, "rb") as f:
+            if f.read() == content:
+                break
+        candidate = os.path.join(path, f"{file_name}_{counter}.vcf")
+        counter += 1
+    return candidate
+
+
 def _process_vcard_row(row, path, data):
     """Process a single vCard row and save to file."""
     media_name = row["media_name"] if row["media_name"] is not None else "Undefined vCard File"
     file_name = "".join(x for x in media_name if x.isalnum())
     file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
-    file_path = os.path.join(path, f"{file_name}.vcf")
+    file_path = _get_vcard_file_path(path, file_name, row["vcard"])
 
     if not os.path.isfile(file_path):
-        with open(file_path, "w", encoding="utf-8") as f:
+        with open(file_path, "w", encoding="utf-8", newline="") as f:
             f.write(row["vcard"])
 
     message = data.get_chat(row["key_remote_jid"]).get_message(
         row["message_row_id"])
-    message.data = (
-        Markup("This media include the following vCard file(s):<br>")
-        + Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
-    )
+    link = Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
+    if message.mime == "text/x-vcard" and message.data:
+        # A message can carry several vCards; list them all
+        message.data = message.data + Markup("<br>") + link
+    else:
+        message.data = (
+            Markup("This media include the following vCard file(s):<br>")
+            + link
+        )
     message.mime = "text/x-vcard"
     message.meta = True
 
