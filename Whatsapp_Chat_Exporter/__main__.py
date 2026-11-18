@@ -478,13 +478,21 @@ def decrypt_android_backup(args) -> int:
             f"Unknown backup format. The backup file must be crypt12, crypt14 or crypt15.")
         return 1
 
-    # Get key
+    # Get key: a key file, or the 64-digit hex key (spaces allowed)
     keyfile_stream = False
-    if not os.path.isfile(args.key) and all(char in string.hexdigits for char in args.key.replace(" ", "")):
-        key = bytes.fromhex(args.key.replace(" ", ""))
-    else:
+    hex_key = args.key.replace(" ", "")
+    if os.path.isfile(args.key):
         key = open(args.key, "rb")
         keyfile_stream = True
+    elif len(hex_key) == 64 and all(char in string.hexdigits for char in hex_key):
+        key = bytes.fromhex(hex_key)
+    else:
+        # Never include the value: it is the user's secret key, typically
+        # typed or pasted at the prompt, and error output ends up in logs.
+        logging.error(
+            "The key is neither a 64-digit hexadecimal key nor an existing key file "
+            "(value not shown). Please check it for typos.")
+        return 1
 
     # Read backup
     db = open(args.backup, "rb").read()
