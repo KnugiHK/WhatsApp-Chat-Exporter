@@ -164,6 +164,14 @@ def process_message_continuation(line, index, chat):
     lookback = index - 1
     while lookback not in chat.keys():
         lookback -= 1
+        if lookback < 0:
+            # Nothing to continue: a blank line before the first message, or a
+            # file in another layout (e.g. an iPhone export)
+            if not line.strip():
+                return
+            raise ValueError(
+                f"Line {index + 1} is not in the expected exported chat format: {line.strip()!r}"
+            )
 
     msg = chat.get_message(lookback)
 
