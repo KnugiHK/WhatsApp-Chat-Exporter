@@ -490,8 +490,8 @@ def decrypt_android_backup(args) -> int:
         # Never include the value: it is the user's secret key, typically
         # typed or pasted at the prompt, and error output ends up in logs.
         logging.error(
-            "The key is neither a 64-digit hexadecimal key nor an existing key file "
-            "(value not shown). Please check it for typos.")
+            "The key specified is neither a 64-digit hexadecimal key "
+            "nor an existing key file. Please check it for typos.")
         return 1
 
     # Read backup
