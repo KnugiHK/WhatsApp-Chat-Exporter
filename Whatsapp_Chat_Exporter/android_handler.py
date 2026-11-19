@@ -762,6 +762,13 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
     file_path = f"{media_folder}/{content['file_path']}"
     current_chat = data.get_chat(content["key_remote_jid"])
     message = current_chat.get_message(content["message_row_id"])
+    if (
+        message.caption is None
+        and not message.meta
+        and message.data
+        and message.message_type not in (2, 20)
+    ):
+        message.caption = str(message.data).replace(" <br>", "\n")
     message.media = True
 
     if os.path.isfile(file_path):
