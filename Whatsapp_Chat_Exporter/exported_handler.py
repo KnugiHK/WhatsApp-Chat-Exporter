@@ -47,6 +47,14 @@ def messages(path, data, assume_first_as_me=False):
     return data
 
 
+def _is_timestamp(text):
+    try:
+        datetime.strptime(text, "%d/%m/%Y, %H:%M")
+    except ValueError:
+        return False
+    return True
+
+
 def process_line(line, index, chat, file_path, you, assume_first_as_me, user_identification_done):
     """
     Process a single line from the chat file
@@ -56,8 +64,9 @@ def process_line(line, index, chat, file_path, you, assume_first_as_me, user_ide
     """
     parts = line.split(" - ", 1)
 
-    # Check if this is a new message (has timestamp format)
-    if len(parts) > 1:
+    # Check if this is a new message (has timestamp format). A continuation
+    # line can contain " - " too ("Option A - leaves at 7").
+    if len(parts) > 1 and _is_timestamp(parts[0]):
         time = parts[0]
         you, user_identification_done = process_new_message(
             time, parts[1], index, chat, you, file_path,
