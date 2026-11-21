@@ -42,7 +42,7 @@ def test_nuitka_binary():
     """
     
     nuitka_command = [
-        "python", "-m", "nuitka", "--onefile", "--assume-yes-for-downloads",
+        sys.executable, "-m", "nuitka", "--onefile", "--assume-yes-for-downloads",
         "--include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html",
         "Whatsapp_Chat_Exporter",
         "--output-filename=wtsexporter.exe"  # use .exe on all platforms for compatibility
