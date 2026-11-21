@@ -11,142 +11,47 @@ permissions:
   attestations: write
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.14'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==4.3.1
-        pip install .
-    - name: Build binary with Nuitka
-      run: |
-        python -m nuitka --onefile \
-          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
-          --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter_linux_x64
-        sha256sum wtsexporter_linux_x64
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-path: ./wtsexporter_linux_x64
-    - uses: actions/upload-artifact@v7
-      with:
-        name: binary-linux-x64
-        path: ./wtsexporter_linux_x64
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            filename: wtsexporter_linux_x64
+            artifact: binary-linux-x64
+          - os: windows-latest
+            filename: wtsexporter_win_x64.exe
+            artifact: binary-windows-x64
+          - os: windows-11-arm
+            filename: wtsexporter_win_arm64.exe
+            artifact: binary-windows-arm64
+          - os: macos-latest
+            filename: wtsexporter_macos_arm64
+            artifact: binary-macos-arm64
+          - os: macos-15-intel
+            filename: wtsexporter_macos_x64
+            artifact: binary-macos-x64
 
-  windows-x64:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.14'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==4.3.1
-        pip install .
-    - name: Build binary with Nuitka
-      run: |
-        python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter 
-        Rename-Item -Path "wtsexporter.exe" -NewName "wtsexporter_win_x64.exe"
-        Get-FileHash wtsexporter_win_x64.exe
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-path: .\wtsexporter_win_x64.exe
-    - uses: actions/upload-artifact@v7
-      with:
-        name: binary-windows-x64
-        path: .\wtsexporter_win_x64.exe
-
-  windows-arm:
-    runs-on: windows-11-arm
-    steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.14'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==4.3.1
-        pip install .
-    - name: Build binary with Nuitka
-      run: |
-        python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter
-        Rename-Item -Path "wtsexporter.exe" -NewName "wtsexporter_win_arm64.exe"
-        Get-FileHash wtsexporter_win_arm64.exe
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-path: .\wtsexporter_win_arm64.exe
-    - uses: actions/upload-artifact@v7
-      with:
-        name: binary-windows-arm64
-        path: .\wtsexporter_win_arm64.exe
-
-  macos-arm:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.14'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==4.3.1
-        pip install .
-    - name: Build binary with Nuitka
-      run: |
-        python -m nuitka --onefile \
-          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
-          --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter 
-        mv wtsexporter  wtsexporter_macos_arm64
-        shasum -a 256 wtsexporter_macos_arm64
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-path: ./wtsexporter_macos_arm64
-    - uses: actions/upload-artifact@v7
-      with:
-        name: binary-macos-arm64
-        path: ./wtsexporter_macos_arm64
-
-  macos-intel:
-    runs-on: macos-15-intel
-    steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.14'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==4.3.1
-        pip install .
-    - name: Build binary with Nuitka
-      run: |
-        python -m nuitka --onefile \
-          --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html \
-          --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=wtsexporter
-        mv wtsexporter wtsexporter_macos_x64
-        shasum -a 256 wtsexporter_macos_x64
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-path: ./wtsexporter_macos_x64
-    - uses: actions/upload-artifact@v7
-      with:
-        name: binary-macos-x64
-        path: ./wtsexporter_macos_x64
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pycryptodome javaobj-py3 ordered-set zstandard nuitka==4.3.1
+          pip install .
+      - name: Build binary with Nuitka
+        run: |
+          python -m nuitka --onefile --include-data-file=./Whatsapp_Chat_Exporter/whatsapp.html=./Whatsapp_Chat_Exporter/whatsapp.html --assume-yes-for-downloads Whatsapp_Chat_Exporter --output-filename=${{ matrix.filename }}
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ./${{ matrix.filename }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: ./${{ matrix.filename }}
