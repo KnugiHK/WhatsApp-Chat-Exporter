@@ -19,6 +19,9 @@ jobs:
           - os: ubuntu-latest
             filename: wtsexporter_linux_x64
             artifact: binary-linux-x64
+          - os: ubuntu-26.04-arm
+            filename: wtsexporter_linux_arm64
+            artifact: binary-linux-arm64
           - os: windows-latest
             filename: wtsexporter_win_x64.exe
             artifact: binary-windows-x64
