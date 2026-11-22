@@ -873,10 +873,31 @@ def _get_media_cursor_new(cursor, filter_empty, filter_date, filter_chat):
 def _process_single_media(data, content, media_folder, mime, separate_media, fix_dot_files=False,
                           embed_exif=False, rename_media=False, timezone_offset=0):
     """Process a single media file."""
-    file_path = f"{media_folder}/{content['file_path']}"
     current_chat = data.get_chat(content["key_remote_jid"])
+    if current_chat is None:
+        return
     message = current_chat.get_message(content["message_row_id"])
+    if message is None:
+        return
     message.media = True
+
+    file_rel = content['file_path']
+    if not file_rel:
+        message.data = "The media is missing"
+        message.mime = "media"
+        message.meta = True
+        message.original_mime = content["mime_type"]
+        return
+
+    # Check file path on disk:
+    file_path = f"{media_folder}/{file_rel}"
+    if not os.path.isfile(file_path):
+        if (file_rel.startswith("Media/") or file_rel.startswith("Media\\")) and os.path.basename(os.path.normpath(media_folder)).lower() == "media":
+            alt_path = os.path.join(media_folder, file_rel[6:])
+            if os.path.isfile(alt_path):
+                file_path = alt_path
+        elif os.path.isfile(file_rel):
+            file_path = file_rel
 
     if os.path.isfile(file_path):
         # Set mime type
@@ -917,6 +938,7 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
             else:
                 final_path = new_path
                 shutil.copy2(file_path, final_path)
+            message.data = final_path.replace("\\", "/")
         elif embed_exif or rename_media:
             # Handle in-place processing when not separating
             # Create a copy with timestamp processing in the same folder
@@ -924,9 +946,12 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
                 file_path, file_path, message.timestamp,
                 timezone_offset, embed_exif, rename_media
             )
+            message.data = final_path.replace("\\", "/")
         else:
-            final_path = file_path
-        message.data = final_path
+            norm_rel = file_rel.replace("\\", "/")
+            if not norm_rel.startswith("Media/"):
+                norm_rel = f"Media/{norm_rel}"
+            message.data = norm_rel
     else:
         message.data = "The media is missing"
         message.mime = "media"
@@ -936,11 +961,14 @@ def _process_single_media(data, content, media_folder, mime, separate_media, fix
 
     # Handle thumbnail
     if content["thumbnail"] is not None:
-        thumb_path = f"{media_folder}/thumbnails/{b64decode(content['file_hash']).hex()}.png"
+        thumb_hash = b64decode(content['file_hash']).hex()
+        thumb_dir = os.path.join(media_folder, "thumbnails")
+        Path(thumb_dir).mkdir(parents=True, exist_ok=True)
+        thumb_path = os.path.join(thumb_dir, f"{thumb_hash}.png")
         if not os.path.isfile(thumb_path):
             with open(thumb_path, "wb") as f:
                 f.write(content["thumbnail"])
-        message.thumb = thumb_path
+        message.thumb = f"Media/thumbnails/{thumb_hash}.png"
 
 
 def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
@@ -1026,27 +1054,54 @@ def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
     empty_filter = get_cond_for_empty(
         filter_empty, "key_remote_jid", "broadcast")
 
-    query = f"""SELECT message_row_id,
-                jid.raw_string as key_remote_jid,
-                vcard,
-                message.text_data as media_name
-             FROM message_vcard
-                INNER JOIN message
-                    ON message_vcard.message_row_id = message._id
-                LEFT JOIN chat
-                    ON chat._id = message.chat_row_id
-                INNER JOIN jid
-                    ON jid._id = chat.jid_row_id
-                LEFT JOIN jid jid_group
-                    ON jid_group._id = message.sender_jid_row_id
-            WHERE 1=1
-                {empty_filter}
-                {date_filter}
-                {chat_filter_include}
-                {chat_filter_exclude}
-             ORDER BY message.chat_row_id ASC;"""
-    c.execute(query)
-    return c.fetchall()
+    try:
+        query = f"""SELECT message_row_id,
+                    COALESCE(lid_global.raw_string, jid.raw_string) as key_remote_jid,
+                    vcard,
+                    message.text_data as media_name
+                 FROM message_vcard
+                    INNER JOIN message
+                        ON message_vcard.message_row_id = message._id
+                    LEFT JOIN chat
+                        ON chat._id = message.chat_row_id
+                    INNER JOIN jid
+                        ON jid._id = chat.jid_row_id
+                    LEFT JOIN jid jid_group
+                        ON jid_group._id = message.sender_jid_row_id
+                    LEFT JOIN jid_map as jid_map_global
+                        ON chat.jid_row_id = jid_map_global.lid_row_id
+                    LEFT JOIN jid lid_global
+                        ON jid_map_global.jid_row_id = lid_global._id
+                WHERE 1=1
+                    {empty_filter}
+                    {date_filter}
+                    {chat_filter_include}
+                    {chat_filter_exclude}
+                 ORDER BY message.chat_row_id ASC;"""
+        c.execute(query)
+        return c.fetchall()
+    except sqlite3.OperationalError:
+        query = f"""SELECT message_row_id,
+                    jid.raw_string as key_remote_jid,
+                    vcard,
+                    message.text_data as media_name
+                 FROM message_vcard
+                    INNER JOIN message
+                        ON message_vcard.message_row_id = message._id
+                    LEFT JOIN chat
+                        ON chat._id = message.chat_row_id
+                    INNER JOIN jid
+                        ON jid._id = chat.jid_row_id
+                    LEFT JOIN jid jid_group
+                        ON jid_group._id = message.sender_jid_row_id
+                WHERE 1=1
+                    {empty_filter}
+                    {date_filter}
+                    {chat_filter_include}
+                    {chat_filter_exclude}
+                 ORDER BY message.chat_row_id ASC;"""
+        c.execute(query)
+        return c.fetchall()
 
 
 def _process_vcard_row(row, path, data):
@@ -1060,11 +1115,16 @@ def _process_vcard_row(row, path, data):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(row["vcard"])
 
-    message = data.get_chat(row["key_remote_jid"]).get_message(
-        row["message_row_id"])
+    chat = data.get_chat(row["key_remote_jid"])
+    if chat is None:
+        return
+    message = chat.get_message(row["message_row_id"])
+    if message is None:
+        return
+    vcf_rel = f"Media/vCards/{file_name}.vcf"
     message.data = (
         Markup("This media include the following vCard file(s):<br>")
-        + Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
+        + Markup(f'<a href="{escape(vcf_rel)}">{escape(media_name)}</a>')
     )
     message.mime = "text/x-vcard"
     message.meta = True
@@ -1329,7 +1389,7 @@ def create_html(
             safe_file_name = _get_unique_html_name(
                 safe_file_name, used_file_names)
 
-            if maximum_size is not None:
+            if maximum_size is not None or len(current_chat) > 5000:
                 _generate_paginated_chat(
                     current_chat,
                     safe_file_name,
@@ -1338,7 +1398,7 @@ def create_html(
                     output_folder,
                     template,
                     w3css,
-                    maximum_size,
+                    maximum_size or MAX_SIZE,
                     headline
                 )
             else:
@@ -1447,6 +1507,11 @@ def _generate_paginated_chat(current_chat, safe_file_name, name, contact, output
                     False,
                     previous=f"{safe_file_name}-{current_page - 1}.html"
                 )
+
+    page1_path = f"{output_folder}/{safe_file_name}-1.html"
+    main_path = f"{output_folder}/{safe_file_name}.html"
+    if os.path.isfile(page1_path) and not os.path.isfile(main_path):
+        shutil.copy2(page1_path, main_path)
 
 
 def create_txt(data, output):
