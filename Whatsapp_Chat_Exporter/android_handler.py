@@ -818,7 +818,13 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
         rows = _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty)
     except sqlite3.OperationalError as e:
         logging.debug(f'Got sql error "{e}" in _execute_vcard_query_modern trying fallback.\n')
-        rows = _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty)
+        rows = _execute_vcard_query_legacy(
+            c,
+            filter_date,
+            filter_chat,
+            filter_empty,
+            data.get_system("jid_map_exists"),
+        )
 
     total_row_number = len(rows)
 
@@ -876,7 +882,9 @@ def _execute_vcard_query_modern(c, filter_date, filter_chat, filter_empty):
     return c.fetchall()
 
 
-def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
+def _execute_vcard_query_legacy(
+    c, filter_date, filter_chat, filter_empty, jid_map_exists=False
+):
     """Execute vCard query for legacy WhatsApp database schema."""
 
     # Build the filter conditions
@@ -886,9 +894,10 @@ def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
         filter_chat[1], False, ["key_remote_jid", "jid_group.raw_string"], "jid", "android")
     date_filter = f'AND message.timestamp {filter_date}' if filter_date is not None else ''
     empty_filter = get_cond_for_empty(filter_empty, "key_remote_jid", "broadcast")
+    remote_jid_selection, _ = get_jid_map_selection(jid_map_exists)
 
     query = f"""SELECT message_row_id,
-                jid.raw_string as key_remote_jid,
+                {remote_jid_selection} as key_remote_jid,
                 vcard,
                 message.text_data as media_name
              FROM message_vcard
@@ -898,8 +907,11 @@ def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
                     ON chat._id = message.chat_row_id
                 INNER JOIN jid
                     ON jid._id = chat.jid_row_id
+                INNER JOIN jid jid_global
+                    ON jid_global._id = chat.jid_row_id
                 LEFT JOIN jid jid_group
                     ON jid_group._id = message.sender_jid_row_id
+                {get_jid_map_join(jid_map_exists)}
             WHERE 1=1
                 {empty_filter}
                 {date_filter}
@@ -912,6 +924,19 @@ def _execute_vcard_query_legacy(c, filter_date, filter_chat, filter_empty):
 
 def _process_vcard_row(row, path, data):
     """Process a single vCard row and save to file."""
+    chat = data.get_chat(row["key_remote_jid"])
+    if chat is None:
+        logging.warning(
+            f"vCard skipped, chat not found: {row['key_remote_jid']} / message {row['message_row_id']}"
+        )
+        return
+    message = chat.get_message(row["message_row_id"])
+    if message is None:
+        logging.warning(
+            f"vCard skipped, message not found: {row['key_remote_jid']} / message {row['message_row_id']}"
+        )
+        return
+
     media_name = row["media_name"] if row["media_name"] is not None else "Undefined vCard File"
     file_name = "".join(x for x in media_name if x.isalnum())
     file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
@@ -921,7 +946,6 @@ def _process_vcard_row(row, path, data):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(row["vcard"])
 
-    message = data.get_chat(row["key_remote_jid"]).get_message(row["message_row_id"])
     message.data = (
         Markup("This media include the following vCard file(s):<br>")
         + Markup(f'<a href="{escape(file_path)}">{escape(media_name)}</a>')
