@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! Please fill out the **Must have** environment details below so we can reproduce the issue.
+        Thanks for taking the time to fill out this bug report! Please fill out the details below.
         > **Security Note:** If you have found a security vulnerability in the exporter itself, **do not open a public issue**. Please report it via a [Private Security Advisory](https://github.com/KnugiHK/WhatsApp-Chat-Exporter/security/advisories/new) on the Security tab.
 
   - type: input
