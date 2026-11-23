@@ -721,6 +721,27 @@ def export_single_json(args, data: dict) -> None:
     logging.info(f"JSON file saved...({bytes_to_readable(len(json_data))})")
 
 
+def _get_unique_json_name(contact, jik, used_names):
+    """Return a per-chat JSON file name that no other chat in this export uses.
+
+    The check runs on the sanitized name, because different chat names can
+    sanitize to the same file name. A colliding chat is told apart by its
+    chat id, so its file name does not depend on the export order.
+    """
+    name = safe_name(contact)
+    if name.casefold() in used_names:
+        name = safe_name(f"{contact} {jik}")
+
+    base_name = name
+    counter = 2
+    while name.casefold() in used_names:
+        name = f"{base_name}_{counter}"
+        counter += 1
+
+    used_names.add(name.casefold())
+    return name
+
+
 def export_multiple_json(args, data: dict) -> None:
     """Export data to multiple JSON files, one per chat."""
     # Adjust output path if needed
@@ -734,6 +755,7 @@ def export_multiple_json(args, data: dict) -> None:
 
     # Export each chat
     total = len(data.keys())
+    used_file_names = set()
     with tqdm(total=total, desc="Generating JSON files", unit="file", leave=False) as pbar:
         for jik in data.keys():
             if data[jik]["name"] is not None:
@@ -746,7 +768,8 @@ def export_multiple_json(args, data: dict) -> None:
                     jik, data[jik], args.timezone_offset)
             else:
                 messages = {jik: data[jik]}
-            with open(f"{json_path}/{safe_name(contact)}.json", "w") as f:
+            file_name = _get_unique_json_name(contact, jik, used_file_names)
+            with open(f"{json_path}/{file_name}.json", "w") as f:
                 file_content = json.dumps(
                     messages,
                     ensure_ascii=not args.avoid_encoding_json,

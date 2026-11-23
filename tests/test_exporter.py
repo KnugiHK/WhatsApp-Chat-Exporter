@@ -48,6 +48,47 @@ def test_export_per_chat_json_writes_to_output_directory(tmp_path, monkeypatch):
     assert (output / "result" / "Alice.json").is_file()
     assert not (tmp_path / "result" / "Alice.json").exists()
 
+
+@pytest.mark.parametrize(
+    "chat_names",
+    [
+        ("Same Chat", "Same Chat"),
+        ("Same Chat", "same chat"),
+        ("Same Chat!", "Same Chat?"),  # collide only after sanitising
+    ],
+)
+def test_export_per_chat_json_keeps_chats_with_colliding_names(
+    tmp_path, monkeypatch, chat_names
+):
+    """Two chats with the same name must not overwrite each other's JSON file."""
+    output = tmp_path / "out"
+    output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    args = SimpleNamespace(
+        json="result.json",
+        output=str(output),
+        json_per_chat=True,
+        telegram=False,
+        avoid_encoding_json=False,
+        pretty_print_json=None,
+        timezone_offset=0,
+    )
+
+    export_json(args, {
+        "123-1@g.us": {"name": chat_names[0], "messages": {}},
+        "456-2@g.us": {"name": chat_names[1], "messages": {}},
+    })
+
+    files = list((output / "result").glob("*.json"))
+    assert len(files) == 2
+    exported = set()
+    for path in files:
+        exported.update(json.loads(path.read_text()))
+    assert exported == {"123-1@g.us", "456-2@g.us"}
+    # the second chat is told apart by its id, not by export order
+    assert any("456-2" in path.name for path in files)
+
+
 @pytest.fixture
 def command_runner():
     """
