@@ -476,6 +476,36 @@ def vcard(db, data, media_folder, filter_date, filter_chat, filter_empty):
     logging.info(f"Processed {total_row_number} vCards in {convert_time_unit(total_time)}")
 
 
+def _resolve_vcard_path(path: str, base_name: str, vcard_string: str) -> str:
+    """Return a collision-free vCard file path, reusing an identical card on disk."""
+    candidate = os.path.join(path, f"{base_name}.vcf")
+    suffix = 2
+    while os.path.isfile(candidate):
+        try:
+            with open(candidate, "r", encoding="utf-8") as existing_file:
+                if existing_file.read() == vcard_string:
+                    # On case-insensitive filesystems, match the actual filename on disk
+                    # so links remain valid if the export is moved to a case-sensitive host.
+                    expected_name = os.path.basename(candidate)
+                    try:
+                        entries = os.listdir(path)
+                    except OSError:
+                        entries = []
+                    if expected_name not in entries:
+                        lowered = expected_name.casefold()
+                        for entry in entries:
+                            if entry.casefold() == lowered:
+                                return os.path.join(path, entry)
+                    return candidate
+        except OSError:
+            pass
+        candidate = os.path.join(path, f"{base_name}_{suffix}.vcf")
+        suffix += 1
+    with open(candidate, "w", encoding="utf-8") as f:
+        f.write(vcard_string)
+    return candidate
+
+
 def process_vcard_item(content, path, data):
     """Process a single vCard item."""
     file_paths = []
@@ -490,12 +520,8 @@ def process_vcard_item(content, path, data):
     for name, vcard_string in zip(vcard_names, vcard_strings):
         file_name = "".join(x for x in name if x.isalnum())
         file_name = file_name.encode('utf-8')[:230].decode('utf-8', 'ignore')
-        file_path = os.path.join(path, f"{file_name}.vcf")
+        file_path = _resolve_vcard_path(path, file_name, vcard_string)
         file_paths.append(file_path)
-
-        if not os.path.isfile(file_path):
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(vcard_string)
 
     # Create vCard summary and update message
     vcard_summary = (
