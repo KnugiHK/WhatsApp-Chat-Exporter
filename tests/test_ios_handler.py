@@ -32,6 +32,43 @@ def test_is_edited_ignores_other_values(message_type, info):
     assert ios_handler._is_edited(message_type, info) is False
 
 
+def make_lid_dbs(tmp_path):
+    lid_db = tmp_path / "LID.sqlite"
+    push_name_db = tmp_path / "BackedUpStorageDatabase.sqlite"
+    with sqlite3.connect(lid_db) as db:
+        db.execute("CREATE TABLE ZWAZACCOUNT (ZIDENTIFIER TEXT, ZPHONENUMBER TEXT, ZDISPLAYNAME TEXT)")
+        db.executemany("INSERT INTO ZWAZACCOUNT VALUES (?, ?, ?)", [
+            ("1@lid", "61400000001", "+61∙∙∙∙01"),
+            ("2@lid", "61400000002", "+61∙∙∙∙02"),
+            ("3@lid", None, "+61∙∙∙∙03"),
+        ])
+    with sqlite3.connect(push_name_db) as db:
+        db.execute("CREATE TABLE profile_push_name (jid TEXT, push_name TEXT)")
+        db.execute("INSERT INTO profile_push_name VALUES ('1@lid', 'Jane')")
+    return str(lid_db), str(push_name_db)
+
+
+def test_load_lid_names_uses_best_available_label(tmp_path):
+    data = ChatCollection()
+    ios_handler.load_lid_names(data, *make_lid_dbs(tmp_path))
+    assert data.get_system("lid_names") == {"1@lid": "Jane", "2@lid": "+61400000002", "3@lid": "+61∙∙∙∙03"}
+
+
+def test_load_lid_names_without_databases(tmp_path):
+    data = ChatCollection()
+    ios_handler.load_lid_names(data, str(tmp_path / "missing1"), str(tmp_path / "missing2"))
+    assert data.get_system("lid_names") == {}
+
+
+def test_jid_label_prefers_saved_contact(tmp_path):
+    data = ChatCollection()
+    ios_handler.load_lid_names(data, *make_lid_dbs(tmp_path))
+    data.add_chat("1@lid", ChatStore(Device.IOS, "Saved Name"))
+    assert ios_handler._jid_label("1@lid", data) == "Saved Name"
+    assert ios_handler._jid_label("2@lid", data) == "+61400000002"
+    assert ios_handler._jid_label("9@lid", data) == "9"
+
+
 def make_contacts_db(rows, with_lid=True):
     """Build an in-memory ZWAADDRESSBOOKCONTACT table.
 
