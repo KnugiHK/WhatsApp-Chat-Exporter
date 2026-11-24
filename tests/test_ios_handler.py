@@ -32,6 +32,56 @@ def test_is_edited_ignores_other_values(message_type, info):
     assert ios_handler._is_edited(message_type, info) is False
 
 
+def protobuf_bytes(field, value):
+    """Encode one length-delimited protobuf field with a short value."""
+    return bytes([field << 3 | 2, len(value)]) + value
+
+
+def reaction_blob(*records):
+    """Build a ZRECEIPTINFO blob from (sender JID or None, emoji) records."""
+    container = b""
+    for sender, emoji in records:
+        record = protobuf_bytes(1, b"KEY")
+        if sender is not None:
+            record += protobuf_bytes(2, sender.encode())
+        record += protobuf_bytes(3, emoji.encode())
+        container += protobuf_bytes(1, record)
+    return protobuf_bytes(7, container)
+
+
+def test_decode_reactions():
+    blob = reaction_blob(("1@lid", "😢"), (None, "👍"), ("2@lid", ""))
+    assert ios_handler._decode_reactions(blob) == [("1@lid", "😢"), (None, "👍")]
+
+
+def test_decode_reactions_without_reactions():
+    assert ios_handler._decode_reactions(protobuf_bytes(2, b"other")) == []
+
+
+def test_reactions_are_added_to_messages():
+    db = sqlite3.connect(":memory:")
+    db.row_factory = sqlite3.Row
+    db.executescript("""
+        CREATE TABLE ZWAMESSAGE (Z_PK INTEGER, ZCHATSESSION INTEGER, ZGROUPMEMBER INTEGER, ZMESSAGEDATE REAL);
+        CREATE TABLE ZWAMESSAGEINFO (ZMESSAGE INTEGER, ZRECEIPTINFO BLOB);
+        CREATE TABLE ZWACHATSESSION (Z_PK INTEGER, ZCONTACTJID TEXT);
+        CREATE TABLE ZWAGROUPMEMBER (Z_PK INTEGER, ZMEMBERJID TEXT);
+        INSERT INTO ZWAMESSAGE VALUES (5, 1, NULL, 0);
+        INSERT INTO ZWACHATSESSION VALUES (1, 'chat@g.us');
+    """)
+    blob = reaction_blob(("111@lid", "😢"), ("222@lid", "❤"), (None, "👍"))
+    db.execute("INSERT INTO ZWAMESSAGEINFO VALUES (5, ?)", (blob,))
+    data = ChatCollection()
+    data.add_chat("chat@g.us", ChatStore(Device.IOS))
+    data.add_chat("222@lid", ChatStore(Device.IOS, "Jane"))
+    message = make_message()
+    data.get_chat("chat@g.us").add_message(5, message)
+
+    ios_handler.reactions(db, data, None, (None, None))
+
+    assert message.reactions == {"111": "😢", "Jane": "❤", "You": "👍"}
+
+
 def make_contacts_db(rows, with_lid=True):
     """Build an in-memory ZWAADDRESSBOOKCONTACT table.
 
