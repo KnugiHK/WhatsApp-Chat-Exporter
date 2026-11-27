@@ -96,7 +96,8 @@ def messages(db, data, media_folder, timezone_offset, filter_date, filter_chat, 
                 filter_date,
                 filter_chat,
                 data.get_system("transcription_selection"),
-                data.get_system("jid_map_exists")
+                data.get_system("jid_map_exists"),
+                _call_log_tables_exist(c)
             )
             table_message = True
         except Exception as e:
@@ -255,7 +256,8 @@ def _get_messages_cursor_new(
     filter_date,
     filter_chat,
     transcription_selection,
-    jid_map_exists
+    jid_map_exists,
+    call_log_exists=False
 ):
     """Get cursor for new database schema."""
     empty_filter = get_cond_for_empty(
@@ -267,6 +269,22 @@ def _get_messages_cursor_new(
         filter_chat[0], True, ["key_remote_jid", "group_sender_jid"], "jid_global", "android")
     exclude_filter = get_chat_condition(
         filter_chat[1], False, ["key_remote_jid", "group_sender_jid"], "jid_global", "android")
+    if call_log_exists:
+        # Call entries shown inside a chat (message_type 90) link to call_log
+        call_log_selection = """call_log.video_call as call_video_call,
+                            call_log.call_result,
+                            call_log.duration as call_duration,
+                            call_log.bytes_transferred as call_bytes_transferred,"""
+        call_log_join = """LEFT JOIN message_call_log
+                            ON message_call_log.message_row_id = message._id
+                        LEFT JOIN call_log
+                            ON call_log._id = message_call_log.call_log_row_id"""
+    else:
+        call_log_selection = """NULL as call_video_call,
+                            NULL as call_result,
+                            NULL as call_duration,
+                            NULL as call_bytes_transferred,"""
+        call_log_join = ""
 
     cursor.execute(f"""SELECT {remote_jid_selection} as key_remote_jid,
                             message._id,
@@ -286,6 +304,7 @@ def _get_messages_cursor_new(
                             {group_jid_selection} as group_sender_jid,
                             chat.subject as chat_subject,
                             missed_call_logs.video_call,
+                            {call_log_selection}
                             message.sender_jid_row_id,
                             message_system.action_type,
                             message_system_group.is_me_joined,
@@ -334,6 +353,7 @@ def _get_messages_cursor_new(
                             ON jid_new._id = message_system_number_change.new_jid_row_id
                         LEFT JOIN receipt_user
                             ON receipt_user.message_row_id = message._id
+                        {call_log_join}
                         {get_jid_map_join(jid_map_exists)}
                     WHERE key_remote_jid <> '-1'
                         {empty_filter}
@@ -505,6 +525,13 @@ def _process_metadata_message(message, content, data, table_message):
                 message.data = "A video call was missed"
             elif content["video_call"] == 0:
                 message.data = "A voice call was missed"
+        elif table_message and content["call_result"] is not None:  # Call entry in the chat
+            message.meta = True
+            call_type = "video" if content["call_video_call"] else "voice"
+            outcome = _call_outcome(
+                content["call_result"], message.from_me,
+                content["call_duration"], content["call_bytes_transferred"])
+            message.data = f"A {call_type} call was {outcome}"
         elif content["data"] is None and content["thumb_image"] is None:
             message.meta = True
             message.data = None
@@ -1268,24 +1295,36 @@ def _construct_call_description(content, call):
         f"call {'to' if call.from_me else 'from'} "
         f"{call.sender} was "
     )
+    outcome = _call_outcome(
+        content['call_result'], call.from_me, content['duration'], content['bytes_transferred'])
+    return description + outcome + "."
 
-    if content['call_result'] in (0, 4, 7):
-        description += "cancelled." if call.from_me else "missed."
-    elif content['call_result'] == 2:
-        description += "not answered." if call.from_me else "missed."
-    elif content['call_result'] == 3:
-        description += "unavailable."
-    elif content['call_result'] == 5:
-        call_time = convert_time_unit(content['duration'])
-        call_bytes = bytes_to_readable(content['bytes_transferred'])
-        description += (
+
+def _call_outcome(call_result, from_me, duration, bytes_transferred):
+    """Describe how a call ended, e.g. "missed" or "initiated and lasted for ..."."""
+    if call_result in (0, 4, 7):
+        return "cancelled" if from_me else "missed"
+    elif call_result == 2:
+        return "not answered" if from_me else "missed"
+    elif call_result == 3:
+        return "unavailable"
+    elif call_result == 5:
+        call_time = convert_time_unit(duration)
+        call_bytes = bytes_to_readable(bytes_transferred)
+        return (
             f"initiated and lasted for {call_time} "
-            f"with {call_bytes} data transferred."
+            f"with {call_bytes} data transferred"
         )
     else:
-        description += "in an unknown state."
+        return "in an unknown state"
 
-    return description
+
+def _call_log_tables_exist(cursor):
+    """Check whether the tables linking call entries in chats to call_log exist."""
+    cursor.execute(
+        "SELECT count(*) FROM sqlite_master WHERE type='table' "
+        "AND name IN ('message_call_log', 'call_log')")
+    return cursor.fetchone()[0] == 2
 
 
 def polls(db, data, date_filter, chat_filter, empty_filter):
